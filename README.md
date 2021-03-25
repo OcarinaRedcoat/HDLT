@@ -14,6 +14,6 @@ specified above, namely tolerate Byzantine users.
 
 | User      | Tarefa     |  Status     |
 | :------------- | :----------: | -----------: |
-|  Caetano | --   | -- |
+|  Caetano | 1   | -- |
 | Cordeiro  | --  | -- |
-| Lopes  | --  | -- | 
+| Lopes  | 2  | -- | 
