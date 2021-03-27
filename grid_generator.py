@@ -20,6 +20,6 @@ while i < n_epochs:
 
         if [x, y] not in G:
             G.append([x,y])
-            print("user"+str(u), i ,x, y)
+            print("user" + str(u) + ", " + str(i) + ", " + str(x) + ", " + str(y))
             u += 1
     i += 1
