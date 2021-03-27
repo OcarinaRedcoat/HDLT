@@ -12,6 +12,7 @@ G = list()
 
 i = 0
 while i < n_epochs:
+    G.clear()
     u = 0
     while u < n_users:
         x = randint(0, grid_x)
@@ -19,5 +20,5 @@ while i < n_epochs:
         G.append([x,y])
         if (x, y) not in G:
             print("user"+str(u), i ,x, y)
-            u += 1    
+            u += 1
     i += 1
