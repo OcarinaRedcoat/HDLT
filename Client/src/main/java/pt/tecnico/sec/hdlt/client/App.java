@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.client;
 
 /**
  * Hello world!
