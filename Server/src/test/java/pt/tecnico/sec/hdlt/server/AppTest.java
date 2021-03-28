@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.server;
 
 import static org.junit.Assert.assertTrue;
 
