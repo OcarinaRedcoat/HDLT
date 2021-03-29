@@ -1,7 +1,9 @@
 package pt.tecnico.sec.hdlt.server;
 
+import com.mysql.cj.jdbc.AbandonedConnectionCleanupThread;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import pt.tecnico.sec.hdlt.server.service.LocationServerService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +29,7 @@ public class LocationServer {
                 System.err.println("*** shutting down gRPC server since JVM is shutting down");
                 try {
                     LocationServer.this.stop();
+                    AbandonedConnectionCleanupThread.checkedShutdown();
                 } catch (InterruptedException e) {
                     e.printStackTrace(System.err);
                 }

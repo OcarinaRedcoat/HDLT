@@ -14,7 +14,7 @@
   <name>Server</name>
 
   <properties>
-    <mainclass>pt.tecnico.sec.hdlt.server.GreeterServer</mainclass>
+    <mainclass>pt.tecnico.sec.hdlt.server.Main</mainclass>
   </properties>
 
   <dependencies>
@@ -23,6 +23,11 @@
       <artifactId>Communication</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>8.0.23</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -30,7 +35,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>1.6.0</version>
           <executions>
             <execution>
               <goals>
@@ -39,8 +44,6 @@
             </execution>
           </executions>
           <configuration>
-            <!-- to prevent deprecation warning: -->
-            <killAfter>-1</killAfter>
             <mainClass>${mainclass}</mainClass>
             <arguments>
               <!-- can be defined here with multiple argument tags,
