@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package pt.tecnico.sec.hdlt.communication;
+
+service LocationServer {
+  rpc SubmitLocationReport (SubmitLocationReportRequest) returns (SubmitLocationReportResponse) {}
+  rpc ObtainLocationReport (ObtainLocationReportRequest) returns (ObtainLocationReportResponse) {}
+  rpc ObtainUsersAtLocation (ObtainUsersAtLocationRequest) returns (ObtainUsersAtLocationResponse) {}
+}
+
+// ---------------------------------- SubmitLocationReport ----------------------------------
+
+message SubmitLocationReportRequest {
+  bytes encryptedSignedLocationReport = 1;
+}
+
+message LocationReport {
+  LocationInformation locationInformation = 1;
+  bytes locationInformationSignature = 2;
+  repeated SingedLocationProof locationProof = 3;
+}
+
+message LocationInformation {
+  string userId = 1; // UserId of the user that wants to prove its location
+  int32 epoch = 2;
+  Location location = 3;
+}
+
+message SingedLocationProof {
+    LocationProof locationProof = 1;
+    bytes signature = 2;
+}
+
+message LocationProof {
+  string witness = 1; // UserId of the user that received a location proof request
+  string prover = 2; // UserId of the user that wants to prove its location
+  int32 epoch = 3;
+  Location location = 4;
+}
+
+message Location {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message SubmitLocationReportResponse {}
+
+// ---------------------------------- ObtainLocationReport ----------------------------------
+
+message ObtainLocationReportRequest {
+  bytes encryptedSignedLocationQuery = 1;
+}
+
+message SignedLocationQuery {
+  LocationQuery locationQuery = 1;
+  bytes signature = 2;
+}
+
+message LocationQuery {
+  string userId = 1;
+  int32 epoch = 2;
+}
+
+message ObtainLocationReportResponse {
+  bytes encryptedLocationInformation = 1; // Encrypted bytes of message LocationInformation
+}
+
+// ---------------------------------- ObtainUsersAtLocation ----------------------------------
+
+message ObtainUsersAtLocationRequest {
+
+}
+
+message ObtainUsersAtLocationResponse {
+
+}
