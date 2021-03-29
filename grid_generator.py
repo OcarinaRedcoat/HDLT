@@ -15,8 +15,8 @@ while i < n_epochs:
     G.clear()
     u = 0
     while u < n_users:
-        x = randint(0, grid_x)
-        y = randint(0, grid_y)
+        x = randint(0, grid_x - 1)
+        y = randint(0, grid_y - 1)
 
         if [x, y] not in G:
             G.append([x,y])
