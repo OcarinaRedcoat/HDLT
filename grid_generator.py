@@ -1,25 +1,86 @@
 from random import *
+
 import sys
+import json
 
-# python gen.py grid_x grid_y n_epochs n_users > output.in
+#############################################################################
+### python gen.py grid_size distance_allowed n_epochs n_users ###
+#############################################################################
 
-grid_x = int(sys.argv[1])  # randint(1, 10)
-grid_y = int(sys.argv[2])  # randint(1, 10)
+class User:
+    def __init__(self, id, epoch, xPos, yPos):
+        self.id = id
+        self.epoch = epoch
+        self.xPos = xPos
+        self.yPos = yPos
+        self.closeBy = []
+
+    def close(self, grid):
+        if((abs(grid.xPos - self.xPos) <= distance_allowed) or (abs(grid.yPos - self.yPos) <= distance_allowed)):
+            return True
+        return False
+
+    def return_dict(self):
+        dict = {"userId": self.id, "epoch": self.epoch, "xPos": self.xPos, "yPos": self.yPos, "closeBy": self.closeBy}
+        return dict
+
+    def get_id(self):
+        return self.id
+
+    def add_closeBy(self, user):
+            for i in range(0,len(self.closeBy)):
+                if(self.closeBy[i] == user.get_id()):
+                    return
+            self.closeBy.append(user.get_id())
+
+class GridEpoch:
+    def __init__(self):
+        self.users = []
+
+    def add_user(self, user):
+        for i in self.users:
+            if(i.xPos == user.xPos and i.yPos == user.yPos):
+                return
+        self.users.append(user)
+
+    def output_dict(self):
+        dict = []
+        for i in self.users:
+            dict.append(i.return_dict())
+        return dict
+
+    def calculateDistances(self):
+        for i in self.users:
+            for j in self.users:
+                if(i.close(j) and i.epoch == j.epoch):
+                    i.add_closeBy(j)
+
+def store_json(grids):
+    output_file_name = 'grids.output.json'
+    with open(output_file_name, 'w') as fp:
+        json.dump(grids, fp)
+        print("Stored grids in file: " + output_file_name)
+
+
+grid_size = int(sys.argv[1])  # randint(1, 10)
+distance_allowed = int(sys.argv[2])  # randint(1, 10)
 n_epochs = int(sys.argv[3])  # randint(1, 10)
 n_users = int(sys.argv[4])  # randint(1, 10)
 
-G = list()
-
+epoch_list = GridEpoch()
 i = 0
 while i < n_epochs:
-    G.clear()
-    u = 0
-    while u < n_users:
-        x = randint(0, grid_x)
-        y = randint(0, grid_y)
 
-        if [x, y] not in G:
-            G.append([x,y])
-            print("user" + str(u) + ", " + str(i) + ", " + str(x) + ", " + str(y))
-            u += 1
+    uid = 0
+    while uid < n_users:
+        user = User(uid, i, randint(0, grid_size), randint(0, grid_size))
+        epoch_list.add_user(user)
+        uid += 1
     i += 1
+
+epoch_list.calculateDistances()
+output_dic =  epoch_list.output_dict()
+store_json(output_dic)
+
+
+
