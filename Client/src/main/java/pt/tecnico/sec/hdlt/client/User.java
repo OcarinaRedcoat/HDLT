@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.client;
 
 import java.io.*;
 import java.net.InetAddress;

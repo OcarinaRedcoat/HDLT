@@ -1,34 +1,20 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.client;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Scanner;
-import java.util.ArrayList;
 
 public class Grid {
 
-    //private ArrayList<Integer[][]> grid_list;
-    private User grid[][];
+    private HashMap<Integer, User[][]> gridMap;
 
-    //private ArrayList<Integer> grid;
+    private int number_epochs;
 
     private int dimension_X;
     private int dimension_Y;
 
     protected Grid(int dimension_X, int dimension_Y){
-        this.grid = new User[dimension_X][dimension_Y];
-
-        for (int i=0; i< dimension_X; i++){
-            //System.out.println(i);
-            for(int j=0; j< dimension_Y; j++){
-                //System.out.println(j);
-                grid[i][j]=null;
-            }
-        }
-        //grid_list = new ArrayList<>();
-
-
         this.dimension_X = dimension_X;
         this.dimension_Y = dimension_Y;
     }
@@ -39,14 +25,37 @@ public class Grid {
 
         HashMap<Integer, User> userMap= userParseFile(userFile);
 
+        this.gridMap = new HashMap<>();
+
+        User grid[][];
+        grid = new User[dimension_X][dimension_Y];
+
+        for (int i=0; i< dimension_X; i++){
+            for(int j=0; j< dimension_Y; j++){
+                grid[i][j]=null;
+            }
+        }
         int currentEpoch = 0;
         while (inFile.hasNext()) {
+
+
             String line = inFile.nextLine();
             String[] splitStr = line.split(", ");
 
-            if (Integer.parseInt(splitStr[1]) != currentEpoch){
+            if (Integer.parseInt(splitStr[1]) - 1 == currentEpoch + 1){
+                int qwer = Integer.parseInt(splitStr[1]);
 
+                System.out.println("splitStr[1]" + qwer  + " currentEpoch " + currentEpoch);
+                gridMap.put(currentEpoch, grid);
+                currentEpoch++;
+                // Clean grid again
+                for (int i=0; i< dimension_X; i++){
+                    for(int j=0; j< dimension_Y; j++){
+                        grid[i][j]=null;
+                    }
+                }
             }
+
             int user_id = Integer.parseInt(splitStr[0].substring(4,splitStr[0].length()));
 
             if (Integer.parseInt(splitStr[1]) == 0){
@@ -54,20 +63,27 @@ public class Grid {
             }
 
         }
+        gridMap.put(currentEpoch, grid); // insert last epoch
+        this.number_epochs = currentEpoch;
         inFile.close();
     }
 
-    protected void displayGrid(){
-        for (int i=0; i< this.dimension_X; i++){
-            for(int j=0; j< this.dimension_Y; j++){
-                if (grid[i][j] != null)
-                    System.out.print(grid[i][j].getId() + " ");
-                else
-                    System.out.print("null ");
+
+    protected void displayGrids(){
+        System.out.println("Number of epochs " + this.number_epochs );
+        for (int i=0; i <= this.number_epochs; i++){
+            System.out.println("Current epoch " + i);
+            User[][] current_grid = this.gridMap.get(i);
+            for (int j=0; j< dimension_X; j++){
+                for(int k=0; k< dimension_Y; k++){
+                    System.out.println("j " + j + " k " + k);
+                    System.out.print(current_grid[j][k].getId() + " ");
+                }
+                System.out.println();
             }
-            System.out.println();
         }
     }
+
 
     protected HashMap<Integer, User> userParseFile(String filename) throws FileNotFoundException {
         FileReader fr = new FileReader(filename);

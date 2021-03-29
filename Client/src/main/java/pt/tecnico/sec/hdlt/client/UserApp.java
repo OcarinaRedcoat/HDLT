@@ -1,7 +1,4 @@
-package pt.tecnico.sec.hdlt;
-
-import java.io.*;
-import java.util.Scanner;
+package pt.tecnico.sec.hdlt.client;
 
 /**
  * Hello world!
@@ -16,6 +13,6 @@ public class UserApp
         Grid grid = new Grid(15, 15); // change hard coded
         grid.parseFiles(grid_filename, user_filename);
 
-        grid.displayGrid();
+        grid.displayGrids();
     }
 }

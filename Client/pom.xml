@@ -8,7 +8,7 @@
 
   <name>Client</name>
 	<properties>
-		<mainclass>pt.tecnico.sec.hdlt.UserApp</mainclass>
+		<mainclass>pt.tecnico.sec.hdlt.client.UserApp</mainclass>
 		<filename>grid.in</filename>
         <usersfile>users.in</usersfile>
         <maven.compiler.source>1.8</maven.compiler.source>
