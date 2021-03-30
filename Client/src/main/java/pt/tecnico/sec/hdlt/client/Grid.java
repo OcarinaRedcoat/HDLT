@@ -1,86 +1,64 @@
 package pt.tecnico.sec.hdlt.client;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Scanner;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 
 public class Grid {
 
-    private HashMap<Integer, User[][]> gridMap;
+    private HashMap<Integer, ArrayList<User>> gridMap;
 
-    private int number_epochs;
-
-    private int dimension_X;
-    private int dimension_Y;
-
-    protected Grid(int dimension_X, int dimension_Y){
-        this.dimension_X = dimension_X;
-        this.dimension_Y = dimension_Y;
-    }
-
-    protected void parseFiles(String gridFile) throws FileNotFoundException {
-        FileReader fr = new FileReader(gridFile);
-        Scanner inFile = new Scanner(fr);
-
+    protected Grid(){
         this.gridMap = new HashMap<>();
-
-        User grid[][];
-        grid = new User[dimension_X][dimension_Y];
-
-        for (int i=0; i< dimension_X; i++){
-            for(int j=0; j< dimension_Y; j++){
-                grid[i][j]=null;
-            }
-        }
-        int currentEpoch = 0;
-        while (inFile.hasNext()) {
-
-
-            String line = inFile.nextLine();
-            String[] splitStr = line.split(", ");
-
-            if (Integer.parseInt(splitStr[1]) - 1 == currentEpoch + 1){
-                int qwer = Integer.parseInt(splitStr[1]);
-
-                System.out.println("splitStr[1]" + qwer  + " currentEpoch " + currentEpoch);
-                gridMap.put(currentEpoch, grid);
-                currentEpoch++;
-                // Clean grid again
-                for (int i=0; i< dimension_X; i++){
-                    for(int j=0; j< dimension_Y; j++){
-                        grid[i][j]=null;
-                    }
-                }
-            }
-
-            int user_id = Integer.parseInt(splitStr[0].substring(4,splitStr[0].length()));
-
-            if (Integer.parseInt(splitStr[1]) == 0){
-                User newUser = new User(user_id, "localhost", 10000+user_id);
-                grid[Integer.parseInt(splitStr[2])][Integer.parseInt(splitStr[3])] = newUser;
-            }
-
-        }
-        gridMap.put(currentEpoch, grid); // insert last epoch
-        this.number_epochs = currentEpoch;
-        inFile.close();
     }
 
+    protected void parseFiles(String gridFile) throws IOException, ParseException {
+        FileReader fr = new FileReader(gridFile);
 
-    protected void displayGrids(){
-        System.out.println("Number of epochs " + this.number_epochs );
-        for (int i=0; i <= this.number_epochs; i++){
-            System.out.println("Current epoch " + i);
-            User[][] current_grid = this.gridMap.get(i);
-            for (int j=0; j< dimension_X; j++){
-                for(int k=0; k< dimension_Y; k++){
-                    System.out.println("j " + j + " k " + k);
-                    System.out.print(current_grid[j][k].getId() + " ");
+        try {
+            Object obj = new JSONParser().parse(fr);
+            JSONArray arr = (JSONArray) obj;
+
+            ArrayList<User> arrayList = new ArrayList<>();
+            int current_epoch = 0;
+            for (Object object: arr) {
+                JSONObject aux = (JSONObject) object;
+
+                if (Integer.parseInt(aux.get("epoch").toString()) != current_epoch) {
+                    this.gridMap.put(current_epoch, arrayList);
+                    current_epoch++;
+                    arrayList.clear();
                 }
-                System.out.println();
+
+                int user_id = Integer.parseInt(aux.get("userId").toString());;;
+                int x_position = Integer.parseInt(aux.get("xPos").toString());;
+                int y_position = Integer.parseInt(aux.get("yPos").toString());
+                ArrayList<Long> closeBy = new ArrayList<>();
+                JSONArray closeByJSON = (JSONArray) aux.get("closeBy");
+
+                for (Object closeById: closeByJSON) {
+                    Long userId = (Long) closeById;
+                    closeBy.add(userId);
+                }
+
+                System.out.println(user_id + " " + x_position + " " + y_position + " " + closeBy.toString());
+
+                User new_user = new User(user_id, "localhost", 10000+user_id, x_position, y_position, closeBy);
+
+               arrayList.add(new_user);
             }
+            this.gridMap.put(current_epoch+1, arrayList);
+        } catch (ParseException e) {
+            e.printStackTrace();
         }
+
     }
 
 }

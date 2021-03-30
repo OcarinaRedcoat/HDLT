@@ -9,9 +9,8 @@ public class UserApp
     public static void main( String[] args ) throws Exception {
         String grid_filename = args[0];
 
-        Grid grid = new Grid(15, 15); // change hard coded
+        Grid grid = new Grid(); // change hard coded
         grid.parseFiles(grid_filename);
 
-        grid.displayGrids();
     }
 }
