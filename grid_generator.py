@@ -52,7 +52,7 @@ class GridEpoch:
     def calculateDistances(self):
         for i in self.users:
             for j in self.users:
-                if(i.close(j) and i.epoch == j.epoch):
+                if(i.close(j) and i.epoch == j.epoch and j!=i):
                     i.add_closeBy(j)
 
 def store_json(grids):
