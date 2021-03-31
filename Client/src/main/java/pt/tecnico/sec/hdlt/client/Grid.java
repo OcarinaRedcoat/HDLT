@@ -9,6 +9,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import pt.tecnico.sec.hdlt.client.user.User;
 
 
 public class Grid {
@@ -59,6 +60,29 @@ public class Grid {
             e.printStackTrace();
         }
 
+    }
+
+    /*
+    *
+    *
+    * NAO ESTA PROPRIAMENTE ELEGANTE ESTES PROXIMOS DOIS METODOS...
+    *
+    *
+    * */
+    protected User getMyUser(int userId, int epoch){
+        ArrayList<User> currentGrid = gridMap.get(epoch);
+
+        return currentGrid.get(userId);
+    }
+
+    protected ArrayList<User> usersClosedBy(ArrayList<Long> userIdList, int epoch){
+        ArrayList<User> currentGrid = gridMap.get(epoch);
+        ArrayList<User> ret = new ArrayList<>();
+        for (int i = 0; i < userIdList.size(); i++){
+           User close = currentGrid.get(userIdList.get(i).intValue());
+           ret.add(close);
+        }
+        return ret;
     }
 
 }

@@ -2,22 +2,49 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>pt.tecnico.sec.hdlt</groupId>
+    <parent>
+        <artifactId>HDLT</artifactId>
+        <groupId>pt.tecnico.sec.hdlt</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <groupId>pt.tecnico.sec.hdlt</groupId>
   <artifactId>Client</artifactId>
   <version>1.0-SNAPSHOT</version>
 
   <name>Client</name>
 	<properties>
-		<mainclass>pt.tecnico.sec.hdlt.client.UserApp</mainclass>
-		<filename>grid.in</filename>
-        <usersfile>users.in</usersfile>
+		<mainclass>pt.tecnico.sec.hdlt.client.Main</mainclass>
+		<filename>grid.json</filename>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
-
-  <dependencies>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>pt.tecnico.sec.hdlt</groupId>
+            <artifactId>Communication</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-api</artifactId>
+            <version>1.36.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>1.36.0</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
   <build>
       <resources>
@@ -58,8 +85,6 @@
                   <mainClass>${mainclass}</mainClass>
                   <arguments>
                       <argument>${filename}</argument>
-                      <argument>${usersfile}</argument>
-                      <!---<argument>${server.path}</argument>-->
                   </arguments>
               </configuration>
           </plugin>

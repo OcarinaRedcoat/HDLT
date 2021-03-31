@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package pt.tecnico.sec.hdlt.communication;
+
+service LocationServer {
+  rpc RequestLocationProof (LocationProofRequest) returns (LocationProofResponse) {}
+}
+
+// ---------------------------------- RequestLocationProof ----------------------------------
+
+message LocationProofRequest{
+  //bytes encryptedLocationProofRequest = 1;
+  string userId = 1;
+  int32 epoch = 2;
+  int32 requesterX = 3;
+  int32 requesterY = 4;
+}
+
+message SignedLocationProof{
+  LocationProof proof= 1;
+  bytes signature = 2;
+}
+
+message LocationProof{
+  int32 requesterX = 1;
+  int32 requesterY = 2;
+  int32 requestedX = 3;
+  int32 requestedY =4;
+  string requesterUserId = 5;
+  string requestedUserId = 6;
+  int32 epoch = 7;
+}
+
+message LocationProofResponse{
+  //bytes encryptedLocationProofResponse =1;
+  LocationProof proof = 1;
+}
+
+

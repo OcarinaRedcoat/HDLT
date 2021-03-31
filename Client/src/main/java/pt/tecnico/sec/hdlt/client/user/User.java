@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt.client;
+package pt.tecnico.sec.hdlt.client.user;
 
 import com.sun.jmx.remote.internal.ArrayQueue;
 
@@ -23,7 +23,7 @@ public class User {
         this.id = id;
     }
 
-    protected User(int id, String ip, int port, int xPos, int yPos, ArrayList<Long> closeBy){
+    public User(int id, String ip, int port, int xPos, int yPos, ArrayList<Long> closeBy){
         this.id = id;
         this.host = ip;
         this.port = port;
@@ -32,17 +32,17 @@ public class User {
         this.closeBy = closeBy;
     }
 
-    protected void setId(int id){ this.id = id; }
+    public void setId(int id){ this.id = id; }
 
-    protected void setIp(String ip){ this.host = ip; }
+    public void setIp(String ip){ this.host = ip; }
 
-    protected void setPort(int port){ this.port = port; }
+    public void setPort(int port){ this.port = port; }
 
-    protected int getId(){ return this.id; }
+    public int getId(){ return this.id; }
 
-    protected String getHost(){ return this.host; }
+    public String getHost(){ return this.host; }
 
-    protected int getPort(){ return this.port; }
+    public int getPort(){ return this.port; }
 
     public void setHost(String host) { this.host = host; }
 
