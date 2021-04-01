@@ -1,44 +1,40 @@
 package pt.tecnico.sec.hdlt.client.user;
 
 import com.sun.jmx.remote.internal.ArrayQueue;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 
 public class User {
 
-    private int id;
     private int port;
     private String host;
 
+    private long id;
+    private ArrayList<Position> positions;
 
-    private int x_position;
-    private int y_position;
-    private ArrayList<Long> closeBy;
-
-    protected User(int id){
-        this.id = id;
-    }
-
-    public User(int id, String ip, int port, int xPos, int yPos, ArrayList<Long> closeBy){
+    public User(long id, String ip, int port){
         this.id = id;
         this.host = ip;
         this.port = port;
-        this.x_position = xPos;
-        this.y_position = yPos;
-        this.closeBy = closeBy;
+        this.positions = new ArrayList<>();
     }
 
-    public void setId(int id){ this.id = id; }
+    public void setId(long id){ this.id = id; }
 
     public void setIp(String ip){ this.host = ip; }
 
     public void setPort(int port){ this.port = port; }
 
-    public int getId(){ return this.id; }
+    public long getId(){ return this.id; }
 
     public String getHost(){ return this.host; }
 
@@ -46,17 +42,24 @@ public class User {
 
     public void setHost(String host) { this.host = host; }
 
-    public int getX_position() { return x_position; }
+    public ArrayList<Position> getPositions() {
+        return positions;
+    }
 
-    public void setX_position(int x_position) { this.x_position = x_position; }
+    public void setPositions(ArrayList<Position> positions) {
+        this.positions = positions;
+    }
 
-    public int getY_position() { return y_position; }
+    public void addPosition(Position position){
+        this.positions.add(position);
+    }
 
-    public void setY_position(int y_position) { this.y_position = y_position; }
-
-    public ArrayList<Long> getCloseBy() { return closeBy; }
-
-    public void setCloseBy(ArrayList<Long> closeBy) { this.closeBy = closeBy; }
-
-
+    public Position getPositionWithEpoch(long epoch) throws InvalidParameterException {
+        for (Position pos : positions) {
+            if (pos.getEpoch() == epoch) {
+                return pos;
+            }
+        }
+        throw new InvalidParameterException(); //TODO fazer uma exception propria
+    }
 }

@@ -13,6 +13,7 @@
     <module>Communication</module>
     <module>Crypto</module>
     <module>Server</module>
+    <module>HAClient</module>
   </modules>
     
   <properties>

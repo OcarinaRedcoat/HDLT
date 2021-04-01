@@ -11,27 +11,23 @@ import java.util.logging.Logger;
 
 public class UserServer {
 
-    private int port;
-
-    private Server server;
-
-    private User myUser;
-
     private static final Logger logger = Logger.getLogger(UserServer.class.getName());
 
-    public UserServer(User myUser) {
-        this.port = myUser.getPort();
-        this.myUser = myUser;
+    private Server server;
+    private User user;
+
+    public UserServer(User user) throws IOException {
+        this.user = user;
+        start();
     }
 
     public void start() throws IOException {
         /* The port on which the server should run */
-        int port = this.port;
-        server = ServerBuilder.forPort(port)
-                .addService(new UserImpl(this.myUser))
+        server = ServerBuilder.forPort(this.user.getPort())
+                .addService(new UserImpl(this.user))
                 .build()
                 .start();
-        logger.info("Server started, listening on " + port);
+        logger.info("Server started, listening on " + this.user.getPort());
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

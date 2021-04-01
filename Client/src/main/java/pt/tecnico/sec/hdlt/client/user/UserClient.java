@@ -12,20 +12,32 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static pt.tecnico.sec.hdlt.client.utils.GeneralUtils.getCurrentEpoch;
+
 public class UserClient {
 
+    private static UserClient INSTANCE = null;
     private static final Logger logger = Logger.getLogger(UserClient.class.getName());
 
     private ArrayList<LocationServerGrpc.LocationServerBlockingStub> stubList;
+    private ArrayList<ManagedChannel> channels;
 
-    private ArrayList<Channel> channels;
-
-    public UserClient(User user, ArrayList<User> closeUsers){
+    private UserClient(){
         stubList = new ArrayList<>();
         channels = new ArrayList<>();
+    }
 
-        for (User usr: closeUsers) {
-            String target = usr.getHost() + ":" + usr.getPort();
+    public static UserClient getInstance(){
+        if (INSTANCE == null)
+            INSTANCE = new UserClient();
+
+        return INSTANCE;
+    }
+
+    private void createCloseUsersChannels(ArrayList<Long> closeUsers){
+        for (Long closeUserId: closeUsers) {
+            //TODO: não deixar estatico
+            String target = "localhost:" + (10000 + closeUserId);
             ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
                     .build();
@@ -35,20 +47,36 @@ public class UserClient {
         }
     }
 
-
-    public void requestLocationProof(User user, int epoch){
-        logger.info("Requesting Proof to user close by:");
-        LocationProofRequest request = LocationProofRequest.newBuilder().setUserId(String.valueOf(user.getId()))
-                .setEpoch(epoch).setRequesterX(user.getX_position()).setRequesterY(user.getY_position()).build();
-        ArrayList<LocationProofResponse> responses = new ArrayList<>();
-        try{
-            for (LocationServerGrpc.LocationServerBlockingStub stub : stubList) {
-                 LocationProofResponse response = stub.requestLocationProof(request);
-                 responses.add(response);
-            }
-        } catch ( StatusRuntimeException e) {
-        logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+    private void closeUserChannels(){
+        for (ManagedChannel channel : channels) {
+            channel.shutdownNow();
         }
+    }
+
+    public void requestLocationProof(User user, Long epoch){
+        createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
+
+        logger.info("Requesting Proof to user close by:");
+        LocationProofRequest request = LocationProofRequest
+                .newBuilder()
+                .setUserId(user.getId())
+                .setEpoch(epoch)
+                .setRequesterX(user.getPositionWithEpoch(epoch).getxPos())
+                .setRequesterY(user.getPositionWithEpoch(epoch).getyPos())
+                .build();
+        ArrayList<LocationProofResponse> responses = new ArrayList<>();
+        for (LocationServerGrpc.LocationServerBlockingStub stub : stubList) {
+            try{
+                LocationProofResponse response = stub.requestLocationProof(request);
+                responses.add(response);
+                closeUserChannels();
+            } catch ( StatusRuntimeException e) {
+                logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            }
+        }
+
+        //TODO: Fazer alguma coisa com os response (dar return maybe e depois enviar para o servidor)
+
     }
 
 }

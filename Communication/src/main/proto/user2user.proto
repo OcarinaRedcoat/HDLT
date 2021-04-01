@@ -11,10 +11,10 @@ service LocationServer {
 
 message LocationProofRequest{
   //bytes encryptedLocationProofRequest = 1;
-  string userId = 1;
-  int32 epoch = 2;
-  int32 requesterX = 3;
-  int32 requesterY = 4;
+  int64 userId = 1;
+  int64 epoch = 2;
+  int64 requesterX = 3;
+  int64 requesterY = 4;
 }
 
 message SignedLocationProof{
@@ -23,13 +23,13 @@ message SignedLocationProof{
 }
 
 message LocationProof{
-  int32 requesterX = 1;
-  int32 requesterY = 2;
-  int32 requestedX = 3;
-  int32 requestedY = 4;
-  string requesterUserId = 5;
-  string requestedUserId = 6;
-  int32 epoch = 7;
+  int64 requesterX = 1;
+  int64 requesterY = 2;
+  int64 requestedX = 3;
+  int64 requestedY = 4;
+  int64 requesterUserId = 5;
+  int64 requestedUserId = 6;
+  int64 epoch = 7;
 }
 
 message LocationProofResponse{
