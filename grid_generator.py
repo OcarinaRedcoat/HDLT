@@ -40,8 +40,9 @@ class GridEpoch:
     def add_user(self, user):
         for i in self.users:
             if(i.xPos == user.xPos and i.yPos == user.yPos):
-                return
+                return False
         self.users.append(user)
+        return True
 
     def output_dict(self):
         dict = []
@@ -69,12 +70,18 @@ n_users = int(sys.argv[4])  # randint(1, 10)
 
 epoch_list = GridEpoch()
 i = 0
+
+#TODO: remover isto. é so para comecar as epocas na grid mais á frente
+i += 2670
+n_epochs += 2670
+
 while i < n_epochs:
 
     uid = 0
     while uid < n_users:
         user = User(uid, i, randint(0, grid_size), randint(0, grid_size))
-        epoch_list.add_user(user)
+        if(not epoch_list.add_user(user)):
+            uid -= 1
         uid += 1
     i += 1
 

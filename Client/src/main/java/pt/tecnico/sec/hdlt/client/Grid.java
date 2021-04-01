@@ -2,6 +2,7 @@ package pt.tecnico.sec.hdlt.client;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -14,7 +15,7 @@ import pt.tecnico.sec.hdlt.client.user.User;
 
 public class Grid {
 
-    private HashMap<Integer, ArrayList<User>> gridMap;
+    private HashMap<Long, ArrayList<User>> gridMap;
 
     protected Grid(){
         this.gridMap = new HashMap<>();
@@ -28,7 +29,7 @@ public class Grid {
             JSONArray arr = (JSONArray) obj;
 
             ArrayList<User> arrayList = new ArrayList<>();
-            int current_epoch = 0;
+            long current_epoch = (long) ((JSONObject) arr.get(0)).get("epoch"); //TODO: comeca com o epoch do primeiro elemento pois o ficheiro esta ordenado
             for (Object object: arr) {
                 JSONObject aux = (JSONObject) object;
 
@@ -49,12 +50,13 @@ public class Grid {
                     closeBy.add(userId);
                 }
 
-                System.out.println(user_id + " " + x_position + " " + y_position + " " + closeBy.toString());
+
 
                 User new_user = new User(user_id, "localhost", 10000+user_id, x_position, y_position, closeBy);
 
                arrayList.add(new_user);
             }
+            System.out.println("Grid Initialized.");
             this.gridMap.put(current_epoch+1, arrayList);
         } catch (ParseException e) {
             e.printStackTrace();
@@ -69,8 +71,16 @@ public class Grid {
     *
     *
     * */
-    public User getMyUser(int userId, int epoch){
+    public User getMyUser(int userId, long epoch) throws InvalidParameterException {
         ArrayList<User> currentGrid = gridMap.get(epoch);
+
+        if(currentGrid == null){ //se a grid não tiver o epoch
+            throw new InvalidParameterException(); //TODO: fazer throws de jeito e tratar no main
+        }
+
+        if(currentGrid.size() < userId){ // se o uid não existir
+            throw new InvalidParameterException(); //TODO: fazer throws de jeito e tratar no main
+        }
 
         return currentGrid.get(userId);
     }

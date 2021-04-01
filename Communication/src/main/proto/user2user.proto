@@ -26,7 +26,7 @@ message LocationProof{
   int32 requesterX = 1;
   int32 requesterY = 2;
   int32 requestedX = 3;
-  int32 requestedY =4;
+  int32 requestedY = 4;
   string requesterUserId = 5;
   string requestedUserId = 6;
   int32 epoch = 7;
