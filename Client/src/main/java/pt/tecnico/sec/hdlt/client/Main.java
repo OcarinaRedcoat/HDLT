@@ -29,10 +29,14 @@ public class Main
         UserServer server = new UserServer(myUser);
 
         server.start();
+        server.blockUntilShutdown(); //??????? No git tem não sei se aqui faz sentido
 
         ArrayList<User> users_that_are_close = grid.usersClosedBy(myUser.getCloseBy(),0);
 
         UserClient client = new UserClient(myUser, users_that_are_close);
 
+        client.requestLocationProof(myUser, 0);
+
+        // Fazer o shutdown dos channels ......
     }
 }

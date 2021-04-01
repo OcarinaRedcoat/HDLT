@@ -69,13 +69,13 @@ public class Grid {
     *
     *
     * */
-    protected User getMyUser(int userId, int epoch){
+    public User getMyUser(int userId, int epoch){
         ArrayList<User> currentGrid = gridMap.get(epoch);
 
         return currentGrid.get(userId);
     }
 
-    protected ArrayList<User> usersClosedBy(ArrayList<Long> userIdList, int epoch){
+    public ArrayList<User> usersClosedBy(ArrayList<Long> userIdList, int epoch){
         ArrayList<User> currentGrid = gridMap.get(epoch);
         ArrayList<User> ret = new ArrayList<>();
         for (int i = 0; i < userIdList.size(); i++){

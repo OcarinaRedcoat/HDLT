@@ -28,7 +28,7 @@ public class UserServer {
         /* The port on which the server should run */
         int port = this.port;
         server = ServerBuilder.forPort(port)
-                .addService(new ProofImpl())
+                .addService(new UserImpl(this.myUser))
                 .build()
                 .start();
         logger.info("Server started, listening on " + port);
@@ -59,16 +59,5 @@ public class UserServer {
         }
     }
 
-    static class ProofImpl extends LocationServerGrpc.LocationServerImplBase{
-        @Override
-        public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
-           //Ir buscar location do user ......... but how
-            int requesterId = Integer.parseInt(req.getUserId());
-            int currentEpoch = req.getEpoch();
-            int requesterX = req.getRequesterX();
-            int requesterY = req.getRequesterY();
-
-        }
-    }
 
 }
