@@ -1,6 +1,5 @@
 package pt.tecnico.sec.hdlt.server;
 
-import com.mysql.cj.jdbc.AbandonedConnectionCleanupThread;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import pt.tecnico.sec.hdlt.server.service.LocationServerService;
@@ -18,9 +17,8 @@ public class LocationServer {
         /* The port on which the server should run */
         int port = 50051;
         this.server = ServerBuilder.forPort(port)
-                .addService(new LocationServerService())
-                .build()
-                .start();
+                .addService(new LocationServerService()).build().start();
+
         logger.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -29,7 +27,6 @@ public class LocationServer {
                 System.err.println("*** shutting down gRPC server since JVM is shutting down");
                 try {
                     LocationServer.this.stop();
-                    AbandonedConnectionCleanupThread.checkedShutdown();
                 } catch (InterruptedException e) {
                     e.printStackTrace(System.err);
                 }
@@ -57,8 +54,14 @@ public class LocationServer {
      * Main launches the server from the command line.
      */
     public static void main(String[] args) throws IOException, InterruptedException {
+
+        // TODO Load data from file if exits
+        // TODO Initiate writer and queue
+        // TODO Pass queue to the location server
+
         final LocationServer locationServer = new LocationServer();
         locationServer.start();
+
         locationServer.blockUntilShutdown();
     }
 }

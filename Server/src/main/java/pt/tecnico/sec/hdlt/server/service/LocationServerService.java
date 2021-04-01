@@ -1,6 +1,5 @@
 package pt.tecnico.sec.hdlt.server.service;
 
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.communication.*;
 
