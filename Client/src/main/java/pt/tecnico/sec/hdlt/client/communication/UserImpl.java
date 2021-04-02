@@ -1,7 +1,10 @@
-package pt.tecnico.sec.hdlt.client.user;
+package pt.tecnico.sec.hdlt.client.communication;
 
 import io.grpc.stub.StreamObserver;
 import org.json.simple.parser.ParseException;
+import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.client.user.Position;
+import pt.tecnico.sec.hdlt.client.user.User;
 import pt.tecnico.sec.hdlt.client.utils.FileUtils;
 import pt.tecnico.sec.hdlt.communication.LocationProof;
 import pt.tecnico.sec.hdlt.communication.LocationProofRequest;
@@ -20,10 +23,9 @@ class UserImpl extends LocationServerGrpc.LocationServerImplBase{
     @Override
     public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
         int requesterId = req.getUserId();
-        long currentEpoch = req.getEpoch(); //todo não sei se validamos aqui a epoch que recebemos ou so validamos no server
+        long currentEpoch = req.getEpoch(); //TODO não sei se validamos aqui a epoch que recebemos ou so validamos no server
         long requesterXPos = req.getRequesterX();
         long requesterYPos = req.getRequesterY();
-
 
         if(Client.getInstance().getUser().isCloseTo(requesterId, currentEpoch)) {
             try{

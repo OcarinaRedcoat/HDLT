@@ -1,9 +1,10 @@
-package pt.tecnico.sec.hdlt.client.user;
+package pt.tecnico.sec.hdlt.client.communication;
 
-import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.client.user.User;
 import pt.tecnico.sec.hdlt.communication.LocationProofRequest;
 import pt.tecnico.sec.hdlt.communication.LocationProofResponse;
 import pt.tecnico.sec.hdlt.communication.LocationServerGrpc;
@@ -11,8 +12,6 @@ import pt.tecnico.sec.hdlt.communication.LocationServerGrpc;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static pt.tecnico.sec.hdlt.client.utils.GeneralUtils.getCurrentEpoch;
 
 public class UserClient {
 
@@ -53,6 +52,7 @@ public class UserClient {
         }
     }
 
+    //TODO
     public void requestLocationProof(Long epoch){
         User user = Client.getInstance().getUser();
         createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
@@ -77,6 +77,16 @@ public class UserClient {
         }
 
         //TODO: Fazer alguma coisa com os response (dar return maybe e depois enviar para o servidor)
+
+    }
+
+    //TODO
+    public void submitLocationReport(int userId, Long ep/*, Report report*/){
+
+    }
+
+    //TODO
+    public void obtainLocationReport(int userId, Long ep){
 
     }
 

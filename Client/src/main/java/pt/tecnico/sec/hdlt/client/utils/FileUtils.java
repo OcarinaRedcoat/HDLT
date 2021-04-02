@@ -86,7 +86,7 @@ public class FileUtils {
 
     public User parseGridUser(int userId) throws IOException, ParseException, IndexOutOfBoundsException {
         if(this.gridFileLocation == null){
-            throw new IOException(); //TODO dizer que não foi definido a localização
+            throw new IOException(); //TODO dizer que não foi definido a localização, apenas acontece se o grid nao for properly initialized
         }
 
         FileReader fr = new FileReader(gridFileLocation);
@@ -94,7 +94,6 @@ public class FileUtils {
         Object obj = new JSONParser().parse(fr);
         JSONArray grid = (JSONArray) obj;
 
-        //TODO este cast para int nao devia de existir é só passar os ids do user para int em vez de long mas não me apetece agora
         JSONObject userJson = (JSONObject) grid.get(userId);
 
         User user = new User(
