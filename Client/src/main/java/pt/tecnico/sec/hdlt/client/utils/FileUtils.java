@@ -13,8 +13,33 @@ import java.util.ArrayList;
 
 public class FileUtils {
 
-    public static ArrayList<User> parseGridUsers(String gridFileLocation) throws IOException, ParseException {
+    private static FileUtils INSTANCE = null;
+
+    private String gridFileLocation;
+
+    public FileUtils() {
+        gridFileLocation = null;
+    }
+
+    public static FileUtils getInstance(){
+        if (INSTANCE == null)
+            INSTANCE = new FileUtils();
+
+        return INSTANCE;
+    }
+
+    public void setGridFileLocation(String gridFileLocation) throws IOException {
         FileReader fr = new FileReader(gridFileLocation);
+        fr.close();
+        this.gridFileLocation = gridFileLocation;
+    }
+
+    public ArrayList<User> parseGridUsers() throws IOException, ParseException {
+        if(this.gridFileLocation == null){
+            throw new IOException(); //TODO dizer que não foi definido a localização
+        }
+
+        FileReader fr = new FileReader(this.gridFileLocation);
 
         Object obj = new JSONParser().parse(fr);
         JSONArray grid = (JSONArray) obj;
@@ -25,7 +50,7 @@ public class FileUtils {
             JSONObject userJson = (JSONObject) userObject;
 
             User user = new User(
-                    Long.parseLong(userJson.get("userId").toString()),
+                    Integer.parseInt(userJson.get("userId").toString()),
                     userJson.get("ip").toString(),
                     Integer.parseInt(userJson.get("port").toString())
             );
@@ -53,19 +78,27 @@ public class FileUtils {
             user.setPositions(positions);
             users.add(user);
         }
+
+        fr.close();
+
         return users;
     }
 
-    public static User parseGridUser(String gridFileLocation, int userId) throws IOException, ParseException, IndexOutOfBoundsException {
+    public User parseGridUser(int userId) throws IOException, ParseException, IndexOutOfBoundsException {
+        if(this.gridFileLocation == null){
+            throw new IOException(); //TODO dizer que não foi definido a localização
+        }
+
         FileReader fr = new FileReader(gridFileLocation);
 
         Object obj = new JSONParser().parse(fr);
         JSONArray grid = (JSONArray) obj;
 
-        JSONObject userJson = (JSONObject) grid.get(userId);;
+        //TODO este cast para int nao devia de existir é só passar os ids do user para int em vez de long mas não me apetece agora
+        JSONObject userJson = (JSONObject) grid.get(userId);
 
         User user = new User(
-                Long.parseLong(userJson.get("userId").toString()),
+                Integer.parseInt(userJson.get("userId").toString()),
                 userJson.get("ip").toString(),
                 Integer.parseInt(userJson.get("port").toString())
         );
@@ -91,6 +124,9 @@ public class FileUtils {
             positions.add(position);
         }
         user.setPositions(positions);
+
+        fr.close();
+
         return user;
     }
 

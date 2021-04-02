@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.client;
 
 import org.json.simple.parser.ParseException;
+import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.client.user.User;
 import pt.tecnico.sec.hdlt.client.user.UserClient;
 import pt.tecnico.sec.hdlt.client.user.UserServer;
@@ -14,8 +15,8 @@ import java.util.Scanner;
 import java.util.TimeZone;
 
 import static pt.tecnico.sec.hdlt.client.utils.GeneralUtils.getCurrentEpoch;
-import static pt.tecnico.sec.hdlt.client.utils.IOUtils.readString;
 import static pt.tecnico.sec.hdlt.client.utils.IOUtils.readUser;
+import static pt.tecnico.sec.hdlt.client.utils.IOUtils.setGridFile;
 
 /**
  * Hello world!
@@ -24,30 +25,25 @@ import static pt.tecnico.sec.hdlt.client.utils.IOUtils.readUser;
 public class Main
 {
 
+    //TODO: G:\IST\2-Semestre\SEC\Projeto\HDLT\grids.output.json
     public static void main(String[] args) {
 
-        //TODO: Remover isto antes de entregar:  G:\IST\2-Semestre\SEC\Projeto\HDLT\grids.output.json
-        String fridFileLocation = readString("Specify the grid file location: ");
+        setGridFile();
 
-        User user = readUser(fridFileLocation);
-
+        readUser();
 
         //########################################################
         //#################### TODO start server ######################
         //########################################################
-        UserServer server = null;
         try {
-            server = new UserServer(user);
+            UserServer.getInstance().start();
         } catch (IOException e) {
             System.out.println("Could not start server.");
             System.exit(1);
         }
-        UserClient client = UserClient.getInstance();
-
-
 
         //########################################################
-        //################### TODO Request Inputs #####################
+        //################### TODO: não está a dar Request Inputs #####################
         //########################################################
         Scanner scanner = new Scanner(System.in);
         String command;
@@ -58,17 +54,16 @@ public class Main
                 case "exit":
                     break;
                 case "request proofs":
-
-                    client.requestLocationProof(user, getCurrentEpoch());
+                    UserClient.getInstance().requestLocationProof(getCurrentEpoch());
                     break;
                 case "current epoch":
-
+                    System.out.println("Current Epoch: " + getCurrentEpoch());
                     break;
                 case "help":
                     System.out.println("Available commands: help, request proofs, exit.");
                     break;
                 default:
-                    System.out.println("Invalid Command. Type \"Help\" for available commands.");
+                    System.out.println("Invalid Command. Type \"help\" for available commands.");
             }
         }while(!command.equals("exit"));
 
@@ -77,15 +72,11 @@ public class Main
         //################## server shutdown #####################
         //########################################################
         try {
-            server.blockUntilShutdown();
+            UserServer.getInstance().blockUntilShutdown();
+            UserServer.getInstance().stop();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-        //########################################################
-        //################## TODO client shutdown #####################
-        //########################################################
-
     }
 
 }

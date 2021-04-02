@@ -36,7 +36,7 @@ public class UserClient {
 
     private void createCloseUsersChannels(ArrayList<Long> closeUsers){
         for (Long closeUserId: closeUsers) {
-            //TODO: não deixar estatico
+            //TODO: mudar para nao estar estatico, não se se é preciso por cause de bluthoth
             String target = "localhost:" + (10000 + closeUserId);
             ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
@@ -47,13 +47,14 @@ public class UserClient {
         }
     }
 
-    private void closeUserChannels(){
+    public void closeUserChannels(){
         for (ManagedChannel channel : channels) {
             channel.shutdownNow();
         }
     }
 
-    public void requestLocationProof(User user, Long epoch){
+    public void requestLocationProof(Long epoch){
+        User user = Client.getInstance().getUser();
         createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
 
         logger.info("Requesting Proof to user close by:");

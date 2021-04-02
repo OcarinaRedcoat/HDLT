@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.client.user;
 
 import com.sun.jmx.remote.internal.ArrayQueue;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -18,23 +19,23 @@ public class User {
     private int port;
     private String host;
 
-    private long id;
+    private int id;
     private ArrayList<Position> positions;
 
-    public User(long id, String ip, int port){
+    public User(int id, String ip, int port){
         this.id = id;
         this.host = ip;
         this.port = port;
         this.positions = new ArrayList<>();
     }
 
-    public void setId(long id){ this.id = id; }
+    public void setId(int id){ this.id = id; }
 
     public void setIp(String ip){ this.host = ip; }
 
     public void setPort(int port){ this.port = port; }
 
-    public long getId(){ return this.id; }
+    public int getId(){ return this.id; }
 
     public String getHost(){ return this.host; }
 
@@ -61,5 +62,14 @@ public class User {
             }
         }
         throw new InvalidParameterException(); //TODO fazer uma exception propria
+    }
+
+    public Boolean isCloseTo(long closeId, long epoch){
+        for (Long id : this.getPositionWithEpoch(epoch).getCloseBy()) {
+            if(id == closeId){
+                return true;
+            }
+        }
+        return false;
     }
 }

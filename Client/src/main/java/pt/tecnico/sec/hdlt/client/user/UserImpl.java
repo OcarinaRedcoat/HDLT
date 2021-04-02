@@ -1,50 +1,54 @@
 package pt.tecnico.sec.hdlt.client.user;
 
 import io.grpc.stub.StreamObserver;
-import pt.tecnico.sec.hdlt.client.Grid;
+import org.json.simple.parser.ParseException;
+import pt.tecnico.sec.hdlt.client.utils.FileUtils;
 import pt.tecnico.sec.hdlt.communication.LocationProof;
 import pt.tecnico.sec.hdlt.communication.LocationProofRequest;
 import pt.tecnico.sec.hdlt.communication.LocationProofResponse;
 import pt.tecnico.sec.hdlt.communication.LocationServerGrpc;
 
+import java.io.IOException;
+
 class UserImpl extends LocationServerGrpc.LocationServerImplBase{
 
-    User myUser;
-    Grid currentGrid;
+    public UserImpl(){
 
-    public UserImpl(User myUser){
-        this.myUser = myUser;
-    }
-
-    public void setGird(Grid cGrid){
-        this.currentGrid = cGrid;
     }
 
     //TODO: FAZER AS EXCEPCOES!!!!!
     @Override
     public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
-        int requesterId = Integer.parseInt(req.getUserId());
-        int currentEpoch = req.getEpoch();
-        int requesterX = req.getRequesterX();
-        int requesterY = req.getRequesterY();
+        int requesterId = req.getUserId();
+        long currentEpoch = req.getEpoch(); //todo não sei se validamos aqui a epoch que recebemos ou so validamos no server
+        long requesterXPos = req.getRequesterX();
+        long requesterYPos = req.getRequesterY();
 
-        for (Long reqId: myUser.getCloseBy()) {
-            if (reqId == requesterId){
-                User usr = this.currentGrid.getMyUser(requesterId, currentEpoch);
-                if(usr.getX_position() == requesterX && usr.getY_position() == requesterY){
 
-                    LocationProof proof = LocationProof.newBuilder()
-                            .setRequesterX(requesterX).setRequesterY(requesterY).setRequestedX(usr.getX_position())
-                            .setRequesterY(usr.getY_position()).setRequesterUserId(String.valueOf(requesterId))
-                            .setRequestedUserId(String.valueOf(usr.getId())).setEpoch(currentEpoch).build();
+        if(Client.getInstance().getUser().isCloseTo(requesterId, currentEpoch)) {
+            try{
+                User user = FileUtils.getInstance().parseGridUser(requesterId);
+                Position position = user.getPositionWithEpoch(currentEpoch);
 
-                    LocationProofResponse response = LocationProofResponse.newBuilder().setProof(proof).build();
+                LocationProof proof = LocationProof
+                        .newBuilder()
+                        .setRequesterX(requesterXPos)
+                        .setRequesterY(requesterYPos)
+                        .setRequestedX(position.getxPos())
+                        .setRequesterY(position.getyPos())
+                        .setRequesterUserId(requesterId)
+                        .setRequestedUserId(user.getId())
+                        .setEpoch(currentEpoch)
+                        .build();
 
-                    responseObserver.onNext(response);
-                    responseObserver.onCompleted();
-                }
+                LocationProofResponse response = LocationProofResponse.newBuilder().setProof(proof).build();
+
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+            } catch (ParseException | IOException e) {
+                e.printStackTrace();
             }
         }
-
     }
+
 }
