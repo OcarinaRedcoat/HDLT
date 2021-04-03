@@ -1,10 +1,16 @@
 package pt.tecnico.sec.hdlt.server;
 
+import com.google.protobuf.util.JsonFormat;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import pt.tecnico.sec.hdlt.communication.LocationProof;
 import pt.tecnico.sec.hdlt.server.service.LocationServerService;
+import pt.tecnico.sec.hdlt.server.utils.ReadFile;
+import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -12,7 +18,7 @@ public class LocationServer {
 
     private static final Logger logger = Logger.getLogger(LocationServer.class.getName());
     private Server server;
-//
+
     private void start() throws IOException {
         /* The port on which the server should run */
         int port = 50051;
@@ -55,13 +61,16 @@ public class LocationServer {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        // TODO Load data from file if exits
-        // TODO Initiate writer and queue
-        // TODO Pass queue to the location server
+        Path filePath = Paths.get("Server" + 1 + ".txt");
+
+        ReadFile.readLocationReports(filePath);
+        WriteQueue<LocationProof> writeQueue = new WriteQueue<>(filePath);
 
         final LocationServer locationServer = new LocationServer();
         locationServer.start();
 
-        locationServer.blockUntilShutdown();
+
+        locationServer.stop();
+        writeQueue.terminate();
     }
 }

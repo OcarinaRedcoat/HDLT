@@ -9,6 +9,9 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
     public void submitLocationReport(SubmitLocationReportRequest request, StreamObserver<SubmitLocationReportResponse> responseObserver) {
         super.submitLocationReport(request, responseObserver);
 
+//        writeQueue.write(LocationProof.newBuilder().setWitness("Andre").setProver("Ze").setEpoch(1).build());
+//        writeQueue.write(LocationProof.newBuilder().setWitness("Manel").setProver("Ze").setEpoch(1).build());
+
 //        try {
 //
 //        } catch (Exception e) {
