@@ -56,7 +56,7 @@ public class IOUtils {
                     //UserClient.getInstance().submitLocationReport();
                     break;
                 case "obtain report":
-                    //UserClient.getInstance().obtainLocationReport();
+                    UserClient.getInstance().obtainLocationReport(getCurrentEpoch());
                     break;
                 case "current epoch":
                     System.out.println("Current Epoch: " + getCurrentEpoch());

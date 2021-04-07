@@ -17,6 +17,18 @@ message LocationProofRequest{
   int64 requesterY = 4;
 }
 
+message LocationReportRequest{
+  //bytes encryptedLocationProofRequest = 1;
+  int32 userId = 1;
+  int64 epoch = 2;
+}
+
+message LocationReportResponse{
+  //bytes encryptedLocationProofRequest = 1;
+  int32 userId = 1;
+  int64 epoch = 2;
+}
+
 message SignedLocationProof{
   LocationProof proof= 1;
   bytes signature = 2;
