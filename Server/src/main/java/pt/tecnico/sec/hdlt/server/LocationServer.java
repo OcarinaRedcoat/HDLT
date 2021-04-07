@@ -1,27 +1,30 @@
 package pt.tecnico.sec.hdlt.server;
 
+import com.google.protobuf.util.JsonFormat;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import pt.tecnico.sec.hdlt.communication.LocationProof;
+import pt.tecnico.sec.hdlt.server.service.LocationServerService;
+import pt.tecnico.sec.hdlt.server.utils.ReadFile;
+import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-/**
- * Hello world!
- *
- */
-public class GreeterServer {
-    private static final Logger logger = Logger.getLogger(GreeterServer.class.getName());
+public class LocationServer {
+
+    private static final Logger logger = Logger.getLogger(LocationServer.class.getName());
     private Server server;
 
     private void start() throws IOException {
         /* The port on which the server should run */
         int port = 50051;
-        server = ServerBuilder.forPort(port)
-                .addService(new GreeterImpl())
-                .build()
-                .start();
+        this.server = ServerBuilder.forPort(port)
+                .addService(new LocationServerService()).build().start();
+
         logger.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -29,7 +32,7 @@ public class GreeterServer {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
                 System.err.println("*** shutting down gRPC server since JVM is shutting down");
                 try {
-                    GreeterServer.this.stop();
+                    LocationServer.this.stop();
                 } catch (InterruptedException e) {
                     e.printStackTrace(System.err);
                 }
@@ -39,8 +42,8 @@ public class GreeterServer {
     }
 
     private void stop() throws InterruptedException {
-        if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+        if (this.server != null) {
+            this.server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
     }
 
@@ -48,8 +51,8 @@ public class GreeterServer {
      * Await termination on the main thread since the grpc library uses daemon threads.
      */
     private void blockUntilShutdown() throws InterruptedException {
-        if (server != null) {
-            server.awaitTermination();
+        if (this.server != null) {
+            this.server.awaitTermination();
         }
     }
 
@@ -57,8 +60,17 @@ public class GreeterServer {
      * Main launches the server from the command line.
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-        final GreeterServer server = new GreeterServer();
-        server.start();
-        server.blockUntilShutdown();
+
+        Path filePath = Paths.get("Server" + 1 + ".txt");
+
+        ReadFile.readLocationReports(filePath);
+        WriteQueue<LocationProof> writeQueue = new WriteQueue<>(filePath);
+
+        final LocationServer locationServer = new LocationServer();
+        locationServer.start();
+
+
+        locationServer.stop();
+        writeQueue.terminate();
     }
 }
