@@ -2,8 +2,19 @@ package pt.tecnico.sec.hdlt.server.service;
 
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.communication.*;
+import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LocationServerService extends LocationServerGrpc.LocationServerImplBase {
+
+    private WriteQueue<LocationReport> writeQueue;
+    private ConcurrentHashMap<String, LocationReport> locationReports;
+
+    public LocationServerService(WriteQueue<LocationReport> writeQueue, ConcurrentHashMap<String, LocationReport> locationReports) {
+        this.writeQueue = writeQueue;
+        this.locationReports = locationReports;
+    }
 
     @Override
     public void submitLocationReport(SubmitLocationReportRequest request, StreamObserver<SubmitLocationReportResponse> responseObserver) {

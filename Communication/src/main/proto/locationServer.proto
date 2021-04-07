@@ -12,7 +12,8 @@ service LocationServer {
 // ---------------------------------- SubmitLocationReport ----------------------------------
 
 message SubmitLocationReportRequest {
-  bytes encryptedSignedLocationReport = 1;
+  string userId = 1;
+  bytes encryptedSignedLocationReport = 2;
 }
 
 message LocationReport {

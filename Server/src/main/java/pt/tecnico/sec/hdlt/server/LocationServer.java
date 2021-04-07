@@ -1,9 +1,9 @@
 package pt.tecnico.sec.hdlt.server;
 
-import com.google.protobuf.util.JsonFormat;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import pt.tecnico.sec.hdlt.communication.LocationProof;
+import pt.tecnico.sec.hdlt.communication.LocationReport;
 import pt.tecnico.sec.hdlt.server.service.LocationServerService;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
@@ -11,6 +11,8 @@ import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -19,11 +21,11 @@ public class LocationServer {
     private static final Logger logger = Logger.getLogger(LocationServer.class.getName());
     private Server server;
 
-    private void start() throws IOException {
+    private void start(WriteQueue<LocationReport> writeQueue, ConcurrentHashMap<String, LocationReport> reportsMap) throws IOException {
         /* The port on which the server should run */
         int port = 50051;
         this.server = ServerBuilder.forPort(port)
-                .addService(new LocationServerService()).build().start();
+                .addService(new LocationServerService(writeQueue, reportsMap)).build().start();
 
         logger.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -60,17 +62,13 @@ public class LocationServer {
      * Main launches the server from the command line.
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-
         Path filePath = Paths.get("Server" + 1 + ".txt");
-
-        ReadFile.readLocationReports(filePath);
-        WriteQueue<LocationProof> writeQueue = new WriteQueue<>(filePath);
+        WriteQueue<LocationReport> writeQueue = new WriteQueue<>(filePath);
 
         final LocationServer locationServer = new LocationServer();
-        locationServer.start();
+        locationServer.start(writeQueue, ReadFile.createReportsMap(filePath));
 
 
-        locationServer.stop();
         writeQueue.terminate();
     }
 }
