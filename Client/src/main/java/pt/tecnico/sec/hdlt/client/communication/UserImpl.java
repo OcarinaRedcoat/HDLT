@@ -3,47 +3,47 @@ package pt.tecnico.sec.hdlt.client.communication;
 import io.grpc.stub.StreamObserver;
 import org.json.simple.parser.ParseException;
 import pt.tecnico.sec.hdlt.client.user.Client;
-import pt.tecnico.sec.hdlt.client.user.Position;
-import pt.tecnico.sec.hdlt.client.user.User;
-import pt.tecnico.sec.hdlt.client.utils.FileUtils;
 import pt.tecnico.sec.hdlt.communication.*;
 
 import java.io.IOException;
 
-class UserImpl extends LocationServerGrpc.LocationServerImplBase{
+class UserImpl extends ProofServerGrpc.ProofServerImplBase{
 
     //TODO: FAZER AS EXCEPCOES!!!!!
     @Override
-    public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
+    public void requestLocationProof(LocationProofBetweenClientsRequest req, StreamObserver<LocationProofBetweenClientsResponse> responseObserver){
         int requesterId = req.getUserId();
-        long currentEpoch = req.getEpoch();
+        long epoch = req.getEpoch();
         long requesterXPos = req.getRequesterX();
         long requesterYPos = req.getRequesterY();
 
-        if(Client.getInstance().getUser().isCloseTo(requesterId, currentEpoch)) {
-            try{
-                User user = FileUtils.getInstance().parseGridUser(requesterId);
-                Position position = user.getPositionWithEpoch(currentEpoch);
+        if(Client.getInstance().getUser().isCloseTo(requesterId, epoch)) {
+            LocationBetweenClientsProof proof = LocationBetweenClientsProof
+                    .newBuilder()
+                    .setRequesterUserId(requesterId)
+                    .setWitnessId(Client.getInstance().getUser().getId())
+                    .setEpoch(epoch)
+                    .setRequesterX(requesterXPos)
+                    .setRequesterY(requesterYPos)
+                    .build();
 
-                LocationProof proof = LocationProof
-                        .newBuilder()
-                        .setRequesterX(requesterXPos)
-                        .setRequesterY(requesterYPos)
-                        .setRequestedX(position.getxPos())
-                        .setRequesterY(position.getyPos())
-                        .setRequesterUserId(requesterId)
-                        .setRequestedUserId(user.getId())
-                        .setEpoch(currentEpoch)
-                        .build();
+            LocationProofBetweenClientsResponse response = LocationProofBetweenClientsResponse.newBuilder().setProof(proof).build();
 
-                LocationProofResponse response = LocationProofResponse.newBuilder().setProof(proof).build();
-
-                responseObserver.onNext(response);
-                responseObserver.onCompleted();
-            } catch (ParseException | IOException e) {
-                e.printStackTrace();
-            }
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } else {
+            //todo: trow error message to client
         }
     }
+
+//    @Override
+//    public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
+//
+//    }
+//
+//    @Override
+//    public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
+//
+//    }
 
 }

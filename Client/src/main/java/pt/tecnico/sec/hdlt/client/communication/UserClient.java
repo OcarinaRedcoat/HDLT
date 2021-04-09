@@ -16,7 +16,7 @@ public class UserClient {
     private static UserClient INSTANCE = null;
     private static final Logger logger = Logger.getLogger(UserClient.class.getName());
 
-    private ArrayList<LocationServerGrpc.LocationServerBlockingStub> userStubs;
+    private ArrayList<ProofServerGrpc.ProofServerBlockingStub> userStubs;
     private ArrayList<ManagedChannel> userChannels;
 
     private LocationServerGrpc.LocationServerBlockingStub serverStub;
@@ -46,7 +46,7 @@ public class UserClient {
                     .usePlaintext()
                     .build();
             userChannels.add(channel);
-            LocationServerGrpc.LocationServerBlockingStub blockingStub = LocationServerGrpc.newBlockingStub(channel);
+            ProofServerGrpc.ProofServerBlockingStub blockingStub = ProofServerGrpc.newBlockingStub(channel);
             userStubs.add(blockingStub);
         }
     }
@@ -59,22 +59,22 @@ public class UserClient {
         serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
     }
 
-    public ArrayList<LocationProofResponse> requestLocationProof(Long epoch){
+    public ArrayList<LocationProofBetweenClientsResponse> requestLocationProof(Long epoch){
         User user = Client.getInstance().getUser();
         createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
 
         logger.info("Requesting Proof to user close by:");
-        LocationProofRequest request = LocationProofRequest
+        LocationProofBetweenClientsRequest request = LocationProofBetweenClientsRequest
                 .newBuilder()
                 .setUserId(user.getId())
                 .setEpoch(epoch)
                 .setRequesterX(user.getPositionWithEpoch(epoch).getxPos())
                 .setRequesterY(user.getPositionWithEpoch(epoch).getyPos())
                 .build();
-        ArrayList<LocationProofResponse> responses = new ArrayList<>();
-        for (LocationServerGrpc.LocationServerBlockingStub stub : userStubs) {
+        ArrayList<LocationProofBetweenClientsResponse> responses = new ArrayList<>();
+        for (ProofServerGrpc.ProofServerBlockingStub stub : userStubs) {
             try{
-                LocationProofResponse response = stub.requestLocationProof(request);
+                LocationProofBetweenClientsResponse response = stub.requestLocationProof(request);
                 responses.add(response);
                 closeUserChannels();
             } catch ( StatusRuntimeException e) {
@@ -90,19 +90,19 @@ public class UserClient {
 
     }
 
-    public LocationReportResponse obtainLocationReport(Long epoch){
+    public SubmitLocationReportResponse obtainLocationReport(Long epoch){
         User user = Client.getInstance().getUser();
         createServerChannel("localhost", 11000);
 
         logger.info("Requesting Proof to user close by:");
-        LocationReportRequest request = LocationReportRequest
+        SubmitLocationReportRequest request = SubmitLocationReportRequest
                 .newBuilder()
                 .setUserId(user.getId())
                 .setEpoch(epoch)
                 .build();
-        LocationReportResponse response = null;
+        SubmitLocationReportResponse response = null;
         try{
-            response = serverStub.requestReportProof(request);
+            response = serverStub.submitLocationReport(request);
             closeServerChannel();
         } catch ( StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());

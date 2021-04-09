@@ -3,13 +3,13 @@ syntax = "proto3";
 option java_multiple_files = true;
 package pt.tecnico.sec.hdlt.communication;
 
-service LocationServer {
-  rpc RequestLocationProof (LocationProofRequest) returns (LocationProofResponse) {}
+service ProofServer {
+  rpc RequestLocationProof (LocationProofBetweenClientsRequest) returns (LocationProofBetweenClientsResponse) {}
 }
 
 // ---------------------------------- RequestLocationProof ----------------------------------
 
-message LocationProofRequest{
+message LocationProofBetweenClientsRequest{
   //bytes encryptedLocationProofRequest = 1;
   int32 userId = 1;
   int64 epoch = 2;
@@ -17,36 +17,24 @@ message LocationProofRequest{
   int64 requesterY = 4;
 }
 
-message LocationReportRequest{
-  //bytes encryptedLocationProofRequest = 1;
-  int32 userId = 1;
-  int64 epoch = 2;
+message LocationProofBetweenClientsResponse{
+  //bytes encryptedLocationProofResponse =1;
+  LocationBetweenClientsProof proof = 1;
 }
 
-message LocationReportResponse{
-  //bytes encryptedLocationProofRequest = 1;
-  int32 userId = 1;
-  int64 epoch = 2;
-}
-
-message SignedLocationProof{
-  LocationProof proof= 1;
+message SignedLocationBetweenClientsProof{
+  LocationBetweenClientsProof proof= 1;
   bytes signature = 2;
 }
 
-message LocationProof{
+message LocationBetweenClientsProof{
   int64 requesterX = 1;
   int64 requesterY = 2;
-  int64 requestedX = 3;
-  int64 requestedY = 4;
   int32 requesterUserId = 5;
-  int32 requestedUserId = 6;
+  int32 witnessId = 6;
   int64 epoch = 7;
 }
 
-message LocationProofResponse{
-  //bytes encryptedLocationProofResponse =1;
-  LocationProof proof = 1;
-}
+
 
 
