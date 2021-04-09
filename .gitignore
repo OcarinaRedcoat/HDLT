@@ -3,6 +3,7 @@ HDLT.iml
 /Communication/Communication.iml
 /Crypto/Crypto.iml
 /Server/Server.iml
+Server/src/main/java/pt/tecnico/sec/hdlt/server/db/database.properties
 /.idea/
 .DS_Store
 Client/.DS_Store
