@@ -86,7 +86,7 @@ public class UserClient {
     }
 
     //TODO
-    public void submitLocationReport(int userId, Long ep/*, Report report*/){
+    public void submitLocationReport(Long epoch){
 
     }
 

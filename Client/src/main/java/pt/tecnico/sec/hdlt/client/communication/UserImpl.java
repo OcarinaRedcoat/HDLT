@@ -36,14 +36,4 @@ class UserImpl extends ProofServerGrpc.ProofServerImplBase{
         }
     }
 
-//    @Override
-//    public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
-//
-//    }
-//
-//    @Override
-//    public void requestLocationProof(LocationProofRequest req, StreamObserver<LocationProofResponse> responseObserver){
-//
-//    }
-
 }
