@@ -7,41 +7,47 @@ import json
 ### python gen.py grid_size distance_allowed n_epochs n_users ###
 #############################################################################
 
-class User:
+class PositionShort:
     def __init__(self, id, epoch, xPos, yPos):
         self.id = id
         self.epoch = epoch
         self.xPos = xPos
         self.yPos = yPos
+
+class Position:
+    def __init__(self, epoch, xPos, yPos):
+        self.epoch = epoch
+        self.xPos = xPos
+        self.yPos = yPos
         self.closeBy = []
 
-    def close(self, grid):
-        if((abs(grid.xPos - self.xPos) <= distance_allowed) or (abs(grid.yPos - self.yPos) <= distance_allowed)):
-            return True
-        return False
+    def return_dict(self):
+        dict = {"epoch": self.epoch, "xPos": self.xPos, "yPos": self.yPos, "closeBy": self.closeBy}
+        return dict
+
+    def addCloseBy(self, uid):
+        self.closeBy.append(uid)
+
+class User:
+    def __init__(self, id):
+        self.id = id
+        self.ip = "localhost"
+        self.port = 10000 + id
+        self.positions = []
 
     def return_dict(self):
-        dict = {"userId": self.id, "epoch": self.epoch, "xPos": self.xPos, "yPos": self.yPos, "closeBy": self.closeBy}
+        positions = []
+        for i in self.positions:
+            positions.append(i.return_dict())
+        dict = {"userId": self.id, "ip": self.ip, "port": self.port, "positions": positions}
         return dict
 
     def get_id(self):
         return self.id
 
-    def add_closeBy(self, user):
-            for i in range(0,len(self.closeBy)):
-                if(self.closeBy[i] == user.get_id()):
-                    return
-            self.closeBy.append(user.get_id())
-
 class GridEpoch:
     def __init__(self):
         self.users = []
-
-    def add_user(self, user):
-        for i in self.users:
-            if(i.xPos == user.xPos and i.yPos == user.yPos):
-                return
-        self.users.append(user)
 
     def output_dict(self):
         dict = []
@@ -49,11 +55,8 @@ class GridEpoch:
             dict.append(i.return_dict())
         return dict
 
-    def calculateDistances(self):
-        for i in self.users:
-            for j in self.users:
-                if(i.close(j) and i.epoch == j.epoch):
-                    i.add_closeBy(j)
+    def addUser(self, user):
+        self.users.append(user)
 
 def store_json(grids):
     output_file_name = 'grids.output.json'
@@ -62,25 +65,63 @@ def store_json(grids):
         print("Stored grids in file: " + output_file_name)
 
 
+#TODO: remover isto. é so para comecar as epocas na grid mais á frente. Este numeros sao para epoch de 1 semana
+epoch_correction = 2670
+
 grid_size = int(sys.argv[1])  # randint(1, 10)
 distance_allowed = int(sys.argv[2])  # randint(1, 10)
-n_epochs = int(sys.argv[3])  # randint(1, 10)
+total_n_epochs = int(sys.argv[3]) + epoch_correction  # randint(1, 10)
 n_users = int(sys.argv[4])  # randint(1, 10)
 
+
 epoch_list = GridEpoch()
-i = 0
-while i < n_epochs:
+positionsSoFar = []
+uid = 0
 
-    uid = 0
-    while uid < n_users:
-        user = User(uid, i, randint(0, grid_size), randint(0, grid_size))
-        epoch_list.add_user(user)
-        uid += 1
-    i += 1
+while uid < n_users:
+    user = User(uid)
 
-epoch_list.calculateDistances()
-output_dic =  epoch_list.output_dict()
+    positions = []
+    current_epoch_n = epoch_correction
+    while current_epoch_n < total_n_epochs:
+        xPos = randint(0, grid_size)
+        yPos = randint(0, grid_size)
+
+        positionShort = PositionShort(user.id, current_epoch_n, xPos, yPos)
+        position = Position(current_epoch_n, xPos, yPos)
+
+        next = False
+        for pos in positionsSoFar:
+            if(pos.epoch != current_epoch_n):
+                continue
+            if(pos.xPos == xPos and pos.yPos == yPos):
+                next = True
+                break
+        if(next):
+            current_epoch_n -= 1
+            continue
+
+        positionsSoFar.append(positionShort)
+        positions.append(position)
+
+        current_epoch_n += 1
+
+    user.positions = positions
+    epoch_list.addUser(user)
+    uid += 1
+
+
+for user in epoch_list.users:
+    for position in user.positions:
+        for positionShort in positionsSoFar:
+            if(user.id == positionShort.id):
+                continue
+            if(position.epoch == positionShort.epoch):
+                if((abs(position.xPos - positionShort.xPos) <= distance_allowed) or (abs(position.yPos - positionShort.yPos) <= distance_allowed)):
+                    position.addCloseBy(positionShort.id)
+
+
+
+
+output_dic = epoch_list.output_dict()
 store_json(output_dic)
-
-
-

@@ -5,4 +5,15 @@ HDLT.iml
 /Server/Server.iml
 Server/src/main/java/pt/tecnico/sec/hdlt/server/db/database.properties
 /.idea/
+.DS_Store
+Client/.DS_Store
+Client/grid.in
+Client/src/.DS_Store
+Client/src/main/.DS_Store
+Client/src/main/java/.DS_Store
+Client/src/main/java/pt/.DS_Store
+Client/src/main/java/pt/tecnico/.DS_Store
+Client/src/main/java/pt/tecnico/sec/.DS_Store
+Client/src/main/java/pt/tecnico/sec/hdlt/.DS_Store
+Client/users.in
 /*/target/

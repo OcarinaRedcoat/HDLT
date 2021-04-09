@@ -12,7 +12,9 @@ service LocationServer {
 // ---------------------------------- SubmitLocationReport ----------------------------------
 
 message SubmitLocationReportRequest {
-  bytes encryptedSignedLocationReport = 1;
+  //bytes encryptedSignedLocationReport = 1;
+  int32 userId = 1;
+  int64 epoch = 2;
 }
 
 message LocationReport {
@@ -22,8 +24,8 @@ message LocationReport {
 }
 
 message LocationInformation {
-  string userId = 1; // UserId of the user that wants to prove its location
-  int32 epoch = 2;
+  int32 userId = 1; // UserId of the user that wants to prove its location
+  int64 epoch = 2;
   Position position = 3;
 }
 
@@ -33,15 +35,15 @@ message SingedLocationProof {
 }
 
 message LocationProof {
-  string witness = 1; // UserId of the user that received a location proof request
-  string prover = 2; // UserId of the user that wants to prove its location
-  int32 epoch = 3;
+  int32 witnessId = 1; // UserId of the user that received a location proof request
+  int32 proverId = 2; // UserId of the user that wants to prove its location
+  int64 epoch = 3;
   Position position = 4;
 }
 
 message Position {
-  int32 x = 1;
-  int32 y = 2;
+  int64 x = 1;
+  int64 y = 2;
 }
 
 message SubmitLocationReportResponse {}
@@ -58,8 +60,8 @@ message SignedLocationQuery {
 }
 
 message LocationQuery {
-  string userId = 1;
-  int32 epoch = 2;
+  int32 userId = 1;
+  int64 epoch = 2;
 }
 
 message ObtainLocationReportResponse {
