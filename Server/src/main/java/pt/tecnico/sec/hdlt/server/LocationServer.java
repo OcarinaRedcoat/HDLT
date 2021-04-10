@@ -2,17 +2,12 @@ package pt.tecnico.sec.hdlt.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import pt.tecnico.sec.hdlt.communication.LocationProof;
-import pt.tecnico.sec.hdlt.communication.LocationReport;
+import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 import pt.tecnico.sec.hdlt.server.service.LocationServerService;
-import pt.tecnico.sec.hdlt.server.utils.ReadFile;
-import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -21,11 +16,11 @@ public class LocationServer {
     private static final Logger logger = Logger.getLogger(LocationServer.class.getName());
     private Server server;
 
-    private void start(WriteQueue<LocationReport> writeQueue, ConcurrentHashMap<String, LocationReport> reportsMap) throws IOException {
+    private void start(LocationBL locationBL) throws IOException {
         /* The port on which the server should run */
         int port = 50051;
         this.server = ServerBuilder.forPort(port)
-                .addService(new LocationServerService(writeQueue, reportsMap)).build().start();
+                .addService(new LocationServerService(locationBL)).build().start();
 
         logger.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -63,12 +58,11 @@ public class LocationServer {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
         Path filePath = Paths.get("Server" + 1 + ".txt");
-        WriteQueue<LocationReport> writeQueue = new WriteQueue<>(filePath);
+        LocationBL locationBL = new LocationBL(filePath);
 
         final LocationServer locationServer = new LocationServer();
-        locationServer.start(writeQueue, ReadFile.createReportsMap(filePath));
+        locationServer.start(locationBL);
 
-
-        writeQueue.terminate();
+        locationBL.terminateWriteQueue();
     }
 }

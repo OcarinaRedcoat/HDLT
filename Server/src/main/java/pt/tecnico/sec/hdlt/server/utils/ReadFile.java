@@ -2,22 +2,22 @@ package pt.tecnico.sec.hdlt.server.utils;
 
 import com.google.protobuf.util.JsonFormat;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
+import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ReadFile {
 
-    public static ConcurrentHashMap<String, LocationReport> createReportsMap(Path path) {
-        ConcurrentHashMap<String, LocationReport> locationReports = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<LocationReportKey, LocationReport> createReportsMap(Path path) {
+        ConcurrentHashMap<LocationReportKey, LocationReport> locationReports = new ConcurrentHashMap<>();
 
         for (LocationReport report : readLocationReports(path)) {
-            locationReports.put(report.getLocationInformation().getUserId(), report);
+            locationReports.put(new LocationReportKey(report.getLocationInformation().getUserId(), report.getLocationInformation().getEpoch()), report);
         }
 
         return locationReports;
