@@ -17,13 +17,8 @@ public class CryptographicOperations {
     private static final String SIGN_ALGORITHM = "SHA256withRSA";
     private static final String HASH_ALGORITHM = "SHA-256";
 
-    public static SecretKey generateSecretKey(){
-        KeyGenerator keyGenerator = null;
-        try {
-            keyGenerator = KeyGenerator.getInstance(SYMMETRIC_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+    public static SecretKey generateSecretKey() throws NoSuchAlgorithmException {
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(SYMMETRIC_ALGORITHM);
         SecureRandom secureRandom = new SecureRandom();
         keyGenerator.init(SYMMETRIC_KEY_SIZE, secureRandom);
         return keyGenerator.generateKey();
@@ -79,7 +74,6 @@ public class CryptographicOperations {
         Signature signature = Signature.getInstance(SIGN_ALGORITHM);
         signature.initSign(privateKey);
         signature.update(data);
-
         return signature.sign();
     }
 
@@ -89,7 +83,6 @@ public class CryptographicOperations {
         Signature sig = Signature.getInstance(SIGN_ALGORITHM);
         sig.initVerify(publicKey);
         sig.update(message);
-
         return sig.verify(signature);
     }
 
@@ -100,18 +93,6 @@ public class CryptographicOperations {
 
     public static boolean verifyMessageDigest(String data, String digest) throws NoSuchAlgorithmException {
         String computedDigest = createMessageDigest(data);
-
         return computedDigest.equals(digest);
-    }
-
-    public static byte[] Hash(String digestAlg, byte[] data) throws Exception {
-        System.out.println("Digesting with " + digestAlg + "...");
-        MessageDigest messageDigest = MessageDigest.getInstance(digestAlg);
-        messageDigest.update(data);
-        byte[] digestBytes = messageDigest.digest();
-        System.out.println("Result digest size: " + digestBytes.length + " bytes");
-        String digestB64dString = Base64.getEncoder().encodeToString(digestBytes);
-        System.out.println("Digest result, encoded as base 64 string: " + digestB64dString);
-        return digestBytes;
     }
 }

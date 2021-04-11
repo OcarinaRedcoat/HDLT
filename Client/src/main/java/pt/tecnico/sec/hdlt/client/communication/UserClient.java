@@ -6,6 +6,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.sec.hdlt.User;
+import pt.tecnico.sec.hdlt.client.bll.ClientBL;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
@@ -20,7 +21,6 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static pt.tecnico.sec.hdlt.FileUtils.*;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
 
 public class UserClient {
@@ -86,141 +86,69 @@ public class UserClient {
     }
 
     public LocationReport requestLocationProofs(Long epoch){
-        User user = Client.getInstance().getUser();
-        createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
-
         logger.info("Requesting Proof to user close by:");
-        Position position = Position
-                .newBuilder()
-                .setX(user.getPositionWithEpoch(epoch).getxPos())
-                .setY(user.getPositionWithEpoch(epoch).getyPos())
-                .build();
-
-        LocationInformation request = LocationInformation
-                .newBuilder()
-                .setUserId(user.getId())
-                .setEpoch(epoch)
-                .setPosition(position)
-                .build();
-
-        byte[] signature = new byte[0];
-        try {
-            signature = sign(request.toByteArray(), Client.getInstance().getPrivKey());
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-            e.printStackTrace();
-        }
-
-        LocationReport.Builder reportBuilder = LocationReport
-                .newBuilder()
-                .setLocationInformationSignature(ByteString.copyFrom(signature))
-                .setLocationInformation(request);
-
-        for (ClientServerGrpc.ClientServerBlockingStub stub : userStubs) {
-            try{
-                SignedLocationProof response = stub.requestLocationProof(request);
-                reportBuilder.addLocationProof(response);
-                closeUserChannels();
-            } catch ( StatusRuntimeException e) {
-                logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-            }
-        }
-
-        return reportBuilder.build();
-    }
-
-    public void submitLocationReport(LocationReport report){
-        User user = Client.getInstance().getUser();
-        createServerChannel("localhost", 50051); //TODO
-
-        logger.info("Submitting Report:");
-        SecretKey key = generateSecretKey();
-        byte[] encryptedMessage = new byte[0];
-        try {
-            encryptedMessage = symmetricEncrypt(report.toByteArray(), key);
-        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException |
-                NoSuchAlgorithmException | NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-
-        SubmitLocationReportRequest request = SubmitLocationReportRequest
-                .newBuilder()
-                .setUserId(user.getId())
-                .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
-                .build();
-        SubmitLocationReportResponse response = null;
-        try{
-            response = serverStub.submitLocationReport(request);
-            //TODO: do something with response?
-            closeServerChannel();
-        } catch ( StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-        }
-    }
-
-    public LocationReport obtainLocationReport(Long epoch){
-        User user = Client.getInstance().getUser();
-        createServerChannel("localhost", 50051); //TODO
-
-        logger.info("Requesting report:");
-
-        LocationQuery locationQuery = LocationQuery
-                .newBuilder()
-                .setUserId(user.getId())
-                .setEpoch(epoch)
-                .build();
-
-        byte[] signature = new byte[0];
-        try {
-            signature = sign(locationQuery.toByteArray(), Client.getInstance().getPrivKey());
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-            e.printStackTrace();
-        }
-
-        SignedLocationQuery signedLocationQuery = SignedLocationQuery
-                .newBuilder()
-                .setLocationQuery(locationQuery)
-                .setSignature(ByteString.copyFrom(signature))
-                .build();
-
-        SecretKey key = generateSecretKey();
-        byte[] encryptedMessage = new byte[0];
-        try {
-            encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key);
-        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException |
-                NoSuchAlgorithmException | NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-
-        ObtainLocationReportRequest request = ObtainLocationReportRequest
-                .newBuilder()
-                .setEncryptedSignedLocationQuery(ByteString.copyFrom(encryptedMessage))
-                .build();
-
-        ObtainLocationReportResponse response = null;
-        try{
-            response = serverStub.obtainLocationReport(request);
-            closeServerChannel();
-        } catch ( StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-        }
-
-        byte[] decryptedMessage = new byte[0];
-        try {
-            decryptedMessage = symmetricDecrypt(response.getEncryptedLocationReport().toByteArray(), key);
-        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException |
-                NoSuchAlgorithmException | NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-
-        //TODO: verify server signature
+        createCloseUsersChannels(Client.getInstance().getUser().getPositionWithEpoch(epoch).getCloseBy());
 
         LocationReport report = null;
         try {
-            report = LocationReport.parseFrom(decryptedMessage);
+            report = ClientBL.requestLocationProofs(epoch, userStubs);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        }
+
+        closeUserChannels();
+        return report;
+    }
+
+    public void submitLocationReport(LocationReport report){
+        logger.info("Submitting Report:");
+        createServerChannel("localhost", 50051); //TODO
+
+        try {
+            ClientBL.submitLocationReport(report, serverStub);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+
+        closeServerChannel();
+    }
+
+    public LocationReport obtainLocationReport(Long epoch){
+        logger.info("Requesting report:");
+        createServerChannel("localhost", 50051); //TODO
+
+        LocationReport report = null;
+        try {
+            report = ClientBL.obtainLocationReport(epoch, serverStub);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
 
+        closeServerChannel();
         return report;
     }
 
