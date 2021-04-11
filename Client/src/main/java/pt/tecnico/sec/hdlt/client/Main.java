@@ -5,16 +5,11 @@ import pt.tecnico.sec.hdlt.client.communication.UserServer;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
-import java.util.ArrayList;
 import java.util.Scanner;
 
 import static pt.tecnico.sec.hdlt.GeneralUtils.getCurrentEpoch;
 import static pt.tecnico.sec.hdlt.IOUtils.*;
 
-/**
- * Hello world!
- *
- */
 public class Main
 {
     //TODO: G:\IST\2-Semestre\SEC\Projeto\HDLT\grids.output.json

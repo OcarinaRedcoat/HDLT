@@ -91,6 +91,7 @@ public class UserClient {
             }
         }
 
+
         return reportBuilder//TODO: .setLocationInformationSignature()
                 .build();
     }
