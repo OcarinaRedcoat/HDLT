@@ -138,4 +138,24 @@ public class FileUtils {
         return keyFacPriv.generatePrivate(privSpec);
     }
 
+    public static PrivateKey getUserPrivateKey(int userId){
+        PrivateKey key = null;
+        try {
+            key = readPrivateKey("keys/priv_client_" + userId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return key;
+    }
+
+    public static PublicKey getUserPublicKey(int userId){
+        PublicKey key = null;
+        try {
+            key = readPublicKey("keys/pub_client_" + userId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return key;
+    }
+
 }

@@ -1,5 +1,6 @@
 package pt.tecnico.sec.hdlt.client.communication;
 
+import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -7,9 +8,15 @@ import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static pt.tecnico.sec.hdlt.FileUtils.*;
+import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.sign;
 
 public class UserClient {
 
@@ -77,8 +84,16 @@ public class UserClient {
                 .setPosition(position)
                 .build();
 
+        byte[] signature = new byte[0];
+        try {
+            signature = sign(request.toByteArray(), Client.getInstance().getPrivKey());
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            e.printStackTrace();
+        }
+
         LocationReport.Builder reportBuilder = LocationReport
                 .newBuilder()
+                .setLocationInformationSignature(ByteString.copyFrom(signature))
                 .setLocationInformation(request);
 
         for (ClientServerGrpc.ClientServerBlockingStub stub : userStubs) {
@@ -91,9 +106,7 @@ public class UserClient {
             }
         }
 
-
-        return reportBuilder//TODO: .setLocationInformationSignature()
-                .build();
+        return reportBuilder.build();
     }
 
     public void submitLocationReport(LocationReport report){
@@ -128,10 +141,17 @@ public class UserClient {
                 .setEpoch(epoch)
                 .build();
 
+        byte[] signature = new byte[0];
+        try {
+            signature = sign(locationQuery.toByteArray(), Client.getInstance().getPrivKey());
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            e.printStackTrace();
+        }
+
         SignedLocationQuery signedLocationQuery = SignedLocationQuery
                 .newBuilder()
                 .setLocationQuery(locationQuery)
-                //TODO: .setSignature()
+                .setSignature(ByteString.copyFrom(signature))
                 .build();
 
         ObtainLocationReportRequest request = ObtainLocationReportRequest
