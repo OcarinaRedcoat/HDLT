@@ -98,7 +98,7 @@ public class UserClient {
         SubmitLocationReportRequest request = SubmitLocationReportRequest
                 .newBuilder()
                 .setUserId(user.getId())
-                .setEpoch(epoch)
+//                .setEpoch(epoch)
                 .build();
         SubmitLocationReportResponse response = null;
         try{
