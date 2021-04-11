@@ -14,9 +14,11 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -120,6 +122,10 @@ public class UserClient {
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             closeServerChannel();
         }
@@ -132,6 +138,8 @@ public class UserClient {
         LocationReport report = null;
         try {
             report = ClientBL.obtainLocationReport(epoch, serverStub);
+            //TODO: print report
+            System.out.println("I got the report Report!");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
@@ -145,6 +153,10 @@ public class UserClient {
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
         } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         } finally {
             closeServerChannel();

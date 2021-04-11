@@ -12,13 +12,16 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecrypt;
 
@@ -64,16 +67,19 @@ public class ClientBL {
 
     public static void submitLocationReport(LocationReport report, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
-            IllegalBlockSizeException {
+            IllegalBlockSizeException, IOException, InvalidKeySpecException {
 
         SecretKey key = generateSecretKey();
+
         //TODO IV
         byte[] encryptedMessage = symmetricEncrypt(report.toByteArray(), key);
+        byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
 
-        //TODO: enviar chave symmetrica encrypted com server public
+        //TODO IV
         SubmitLocationReportRequest request = SubmitLocationReportRequest
                 .newBuilder()
                 .setUserId(Client.getInstance().getUser().getId())
+                .setKey(ByteString.copyFrom(encryptedKey))
                 .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
                 .build();
 
@@ -83,7 +89,7 @@ public class ClientBL {
 
     public static LocationReport obtainLocationReport(Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
-            BadPaddingException, IllegalBlockSizeException, InvalidProtocolBufferException {
+            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException {
 
         LocationQuery locationQuery = LocationQuery
                 .newBuilder()
@@ -100,21 +106,31 @@ public class ClientBL {
                 .build();
 
         SecretKey key = generateSecretKey();
+
         //TODO IV
         byte[] encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key);
+        byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
 
-        //TODO: enviar chave symmetrica encrypted com server public
+        //TODO: IV
         ObtainLocationReportRequest request = ObtainLocationReportRequest
                 .newBuilder()
+                .setKey(ByteString.copyFrom(encryptedKey))
                 .setEncryptedSignedLocationQuery(ByteString.copyFrom(encryptedMessage))
                 .build();
 
         ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
-        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedLocationReport().toByteArray(), key);
+        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key);
 
-        //TODO: verify server signature
+        SignedLocationReport signedLocationReport = SignedLocationReport.parseFrom(decryptedMessage);
 
-        LocationReport report = LocationReport.parseFrom(decryptedMessage);
+        LocationReport report = signedLocationReport.getLocationReport();
+
+        if(!verifySignature(getServerPublicKey(1), report.toByteArray(),
+                signedLocationReport.getSignedLocationReport().toByteArray())){
+            //TODO: exception
+            throw new InvalidKeyException();
+        }
+
         return report;
     }
 

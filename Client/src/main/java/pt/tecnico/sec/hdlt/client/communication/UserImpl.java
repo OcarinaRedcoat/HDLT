@@ -39,7 +39,7 @@ class UserImpl extends ClientServerGrpc.ClientServerImplBase{
                     .setPosition(position)
                     .build();
 
-            //TOOD: tirar isto daqui para ser mais bonito?
+            //TODO: tirar isto daqui para ser mais bonito?
             byte[] signature = new byte[0];
             try {
                 signature = sign(proof.toByteArray(), Client.getInstance().getPrivKey());

@@ -10,7 +10,6 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -118,10 +117,12 @@ public class FileUtils {
         byte[] content = new byte[fis.available()];
         fis.read(content);
         fis.close();
-        return content
+        return content;
     }
 
-    public static PublicKey readPublicKey(String publicKeyPath) throws Exception {
+    public static PublicKey readPublicKey(String publicKeyPath) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException {
+
         System.out.println("Reading public key from file: " + publicKeyPath);
         byte[] pubEncoded = readFile(publicKeyPath);
         X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubEncoded);
@@ -129,7 +130,9 @@ public class FileUtils {
         return keyFacPub.generatePublic(pubSpec);
     }
 
-    public static PrivateKey readPrivateKey(String privateKeyPath) throws Exception {
+    public static PrivateKey readPrivateKey(String privateKeyPath) throws IOException, NoSuchAlgorithmException,
+            InvalidKeySpecException {
+
         System.out.println("Reading private key from file: " + privateKeyPath);
         byte[] privEncoded = readFile(privateKeyPath);
         PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(privEncoded);
@@ -140,7 +143,7 @@ public class FileUtils {
     public static PrivateKey getUserPrivateKey(int userId){
         PrivateKey key = null;
         try {
-            key = readPrivateKey("keys/priv_client_" + userId);
+            key = readPrivateKey("keys/priv_client_" + userId + ".key");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -150,11 +153,17 @@ public class FileUtils {
     public static PublicKey getUserPublicKey(int userId){
         PublicKey key = null;
         try {
-            key = readPublicKey("keys/pub_client_" + userId);
+            key = readPublicKey("keys/pub_client_" + userId + ".key");
         } catch (Exception e) {
             e.printStackTrace();
         }
         return key;
+    }
+
+    public static PublicKey getServerPublicKey(int serverId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException {
+
+        return readPublicKey("keys/pub_server_" + serverId + ".key");
     }
 
 }
