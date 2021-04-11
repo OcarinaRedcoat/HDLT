@@ -52,7 +52,6 @@ public class UserClient {
         userStubs = new ArrayList<>();
         userChannels = new ArrayList<>();
         for (Long closeUserId: closeUsers) {
-            //TODO: mudar para nao estar estatico, não se se é preciso por cause de bluetooth
             String target = "localhost:" + (10000 + closeUserId);
             ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
@@ -98,15 +97,16 @@ public class UserClient {
             e.printStackTrace();
         } catch (SignatureException e) {
             e.printStackTrace();
+        } finally {
+            closeUserChannels();
         }
 
-        closeUserChannels();
         return report;
     }
 
     public void submitLocationReport(LocationReport report){
         logger.info("Submitting Report:");
-        createServerChannel("localhost", 50051); //TODO
+        createServerChannel("localhost", 50051);
 
         try {
             ClientBL.submitLocationReport(report, serverStub);
@@ -120,14 +120,14 @@ public class UserClient {
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
+        } finally {
+            closeServerChannel();
         }
-
-        closeServerChannel();
     }
 
     public LocationReport obtainLocationReport(Long epoch){
         logger.info("Requesting report:");
-        createServerChannel("localhost", 50051); //TODO
+        createServerChannel("localhost", 50051);
 
         LocationReport report = null;
         try {
@@ -146,9 +146,10 @@ public class UserClient {
             e.printStackTrace();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
+        } finally {
+            closeServerChannel();
         }
 
-        closeServerChannel();
         return report;
     }
 

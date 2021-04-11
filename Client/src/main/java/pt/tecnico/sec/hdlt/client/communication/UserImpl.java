@@ -24,6 +24,7 @@ class UserImpl extends ClientServerGrpc.ClientServerImplBase{
         long requesterYPos = req.getPosition().getY();
 
         if(Client.getInstance().getUser().isCloseTo(requesterId, epoch)) {
+
             Position position = Position
                     .newBuilder()
                     .setX(requesterXPos)
@@ -38,6 +39,7 @@ class UserImpl extends ClientServerGrpc.ClientServerImplBase{
                     .setPosition(position)
                     .build();
 
+            //TOOD: tirar isto daqui para ser mais bonito?
             byte[] signature = new byte[0];
             try {
                 signature = sign(proof.toByteArray(), Client.getInstance().getPrivKey());
@@ -49,11 +51,11 @@ class UserImpl extends ClientServerGrpc.ClientServerImplBase{
                     .setLocationProof(proof)
                     .setSignature(ByteString.copyFrom(signature))
                     .build();
+
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } else {
-            //TODO fazer mais bonito
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("You are not close to me bitch!").asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("You are not close to me.").asRuntimeException());
         }
     }
 
