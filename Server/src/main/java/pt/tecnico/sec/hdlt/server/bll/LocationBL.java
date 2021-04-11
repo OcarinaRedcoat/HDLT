@@ -1,15 +1,13 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import pt.tecnico.sec.hdlt.communication.LocationInformation;
-import pt.tecnico.sec.hdlt.communication.LocationProof;
-import pt.tecnico.sec.hdlt.communication.LocationReport;
-import pt.tecnico.sec.hdlt.communication.SignedLocationProof;
+import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import java.nio.file.Path;
+import java.security.InvalidParameterException;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,40 +21,68 @@ public class LocationBL {
         this.locationReports = ReadFile.createReportsMap(filePath);
     }
 
-    public void submitLocationReport(byte[] encryptedSignedLocationReport) throws InterruptedException, InvalidProtocolBufferException {
-        byte[] reportBytes = getDecryptedLocationReport(encryptedSignedLocationReport);
+    public void submitLocationReport(byte[] encryptedSignedLocationReport, int userId) throws InterruptedException, InvalidProtocolBufferException {
+        // TODO decrypt symmetric key
+
+        byte[] reportBytes = decryptedLocationReport(encryptedSignedLocationReport);
 
         LocationReport locationReport = LocationReport.parseFrom(reportBytes);
 
+        if (verifySignature(locationReport.getLocationInformationSignature().toByteArray())) {
+            throw new InvalidParameterException("Invalid location information signature");
+        }
+
         LocationInformation information = locationReport.getLocationInformation();
+
+        // TODO verify epoch
+        if (information.getUserId() != userId) {
+            throw new InvalidParameterException("Invalid user Id");
+        }
+
         HashSet<Integer> witnessIds = new HashSet<>();
 
         if (locationReport.getLocationProofList().size() < 5) {
-            // TODO throw exception due to invalid number of proofs
+            throw new InvalidParameterException("Invalid number of proofs");
         }
 
         for (SignedLocationProof sProof : locationReport.getLocationProofList()) {
             LocationProof lProof = sProof.getLocationProof();
 
             if (witnessIds.contains(lProof.getWitnessId())) {
-                // TODO throw exception because there are 2 proofs from the same witness
+                throw new InvalidParameterException("Repeated location proof");
             }
 
             witnessIds.add(lProof.getWitnessId());
 
-            // TODO verify signature
+            if (verifySignature(sProof.getSignature().toByteArray())) {
+                throw new InvalidParameterException("Invalid location proof signature");
+            }
 
             if (verifyLocationProof(information, lProof)) {
-                // TODO throw exception due to invalid signature
+                throw new InvalidParameterException("Invalid location proof");
             }
         }
 
-        this.locationReports.put(new LocationReportKey(information.getUserId(), information.getEpoch()), locationReport);
-        this.writeQueue.write(locationReport);
+        LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
+        if (!this.locationReports.contains(key)) {
+            this.locationReports.put(key, locationReport);
+            this.writeQueue.write(locationReport);
+        }
     }
 
-    private byte[] getDecryptedLocationReport(byte[] encryptedSignedLocationReport) {
+    public ObtainLocationReportResponse obtainLocationReport(byte[] encryptedSignedLocationQuery) {
+//        return ObtainLocationReportResponse.newBuilder().setEncryptedSignedLocationReport().build();
+        return null;
+    }
+
+    private byte[] decryptedLocationReport(byte[] encryptedSignedLocationReport) {
+        // TODO decrypt
         return new byte[1];
+    }
+
+    private boolean verifySignature(byte[] signature) {
+        // TODO verify signature
+        return true;
     }
 
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {
