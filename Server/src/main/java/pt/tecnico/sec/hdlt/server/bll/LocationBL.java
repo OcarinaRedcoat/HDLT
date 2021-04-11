@@ -1,10 +1,7 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import pt.tecnico.sec.hdlt.communication.LocationInformation;
-import pt.tecnico.sec.hdlt.communication.LocationProof;
-import pt.tecnico.sec.hdlt.communication.LocationReport;
-import pt.tecnico.sec.hdlt.communication.SignedLocationProof;
+import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
@@ -25,6 +22,8 @@ public class LocationBL {
     }
 
     public void submitLocationReport(byte[] encryptedSignedLocationReport, int userId) throws InterruptedException, InvalidProtocolBufferException {
+        // TODO decrypt symmetric key
+
         byte[] reportBytes = decryptedLocationReport(encryptedSignedLocationReport);
 
         LocationReport locationReport = LocationReport.parseFrom(reportBytes);
@@ -35,6 +34,7 @@ public class LocationBL {
 
         LocationInformation information = locationReport.getLocationInformation();
 
+        // TODO verify epoch
         if (information.getUserId() != userId) {
             throw new InvalidParameterException("Invalid user Id");
         }
@@ -63,8 +63,16 @@ public class LocationBL {
             }
         }
 
-        this.locationReports.put(new LocationReportKey(information.getUserId(), information.getEpoch()), locationReport);
-        this.writeQueue.write(locationReport);
+        LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
+        if (!this.locationReports.contains(key)) {
+            this.locationReports.put(key, locationReport);
+            this.writeQueue.write(locationReport);
+        }
+    }
+
+    public ObtainLocationReportResponse obtainLocationReport(byte[] encryptedSignedLocationQuery) {
+//        return ObtainLocationReportResponse.newBuilder().setEncryptedSignedLocationReport().build();
+        return null;
     }
 
     private byte[] decryptedLocationReport(byte[] encryptedSignedLocationReport) {

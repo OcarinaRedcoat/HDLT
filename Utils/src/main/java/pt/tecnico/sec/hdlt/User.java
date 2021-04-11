@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt.client.user;
+package pt.tecnico.sec.hdlt;
 
 import com.sun.jmx.remote.internal.ArrayQueue;
 import com.sun.org.apache.xpath.internal.operations.Bool;

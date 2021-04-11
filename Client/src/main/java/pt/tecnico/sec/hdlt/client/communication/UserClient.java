@@ -3,8 +3,8 @@ package pt.tecnico.sec.hdlt.client.communication;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.user.Client;
-import pt.tecnico.sec.hdlt.client.user.User;
 import pt.tecnico.sec.hdlt.communication.*;
 
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ public class UserClient {
     private static UserClient INSTANCE = null;
     private static final Logger logger = Logger.getLogger(UserClient.class.getName());
 
-    private ArrayList<ProofServerGrpc.ProofServerBlockingStub> userStubs;
+    private ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs;
     private ArrayList<ManagedChannel> userChannels;
 
     private LocationServerGrpc.LocationServerBlockingStub serverStub;
@@ -46,7 +46,7 @@ public class UserClient {
                     .usePlaintext()
                     .build();
             userChannels.add(channel);
-            ProofServerGrpc.ProofServerBlockingStub blockingStub = ProofServerGrpc.newBlockingStub(channel);
+            ClientServerGrpc.ClientServerBlockingStub blockingStub = ClientServerGrpc.newBlockingStub(channel);
             userStubs.add(blockingStub);
         }
     }
@@ -59,54 +59,96 @@ public class UserClient {
         serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
     }
 
-    public ArrayList<LocationProofBetweenClientsResponse> requestLocationProof(Long epoch){
+    public LocationReport requestLocationProofs(Long epoch){
         User user = Client.getInstance().getUser();
         createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
 
         logger.info("Requesting Proof to user close by:");
-        LocationProofBetweenClientsRequest request = LocationProofBetweenClientsRequest
+        Position position = Position
+                .newBuilder()
+                .setX(user.getPositionWithEpoch(epoch).getxPos())
+                .setY(user.getPositionWithEpoch(epoch).getyPos())
+                .build();
+
+        LocationInformation request = LocationInformation
                 .newBuilder()
                 .setUserId(user.getId())
                 .setEpoch(epoch)
-                .setRequesterX(user.getPositionWithEpoch(epoch).getxPos())
-                .setRequesterY(user.getPositionWithEpoch(epoch).getyPos())
+                .setPosition(position)
                 .build();
-        ArrayList<LocationProofBetweenClientsResponse> responses = new ArrayList<>();
-        for (ProofServerGrpc.ProofServerBlockingStub stub : userStubs) {
+
+        LocationReport.Builder reportBuilder = LocationReport
+                .newBuilder()
+                .setLocationInformation(request);
+
+        for (ClientServerGrpc.ClientServerBlockingStub stub : userStubs) {
             try{
-                LocationProofBetweenClientsResponse response = stub.requestLocationProof(request);
-                responses.add(response);
+                SignedLocationProof response = stub.requestLocationProof(request);
+                reportBuilder.addLocationProof(response);
                 closeUserChannels();
             } catch ( StatusRuntimeException e) {
                 logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
             }
         }
 
-        return responses;
+
+        return reportBuilder//TODO: .setLocationInformationSignature()
+                .build();
     }
 
-    //TODO
-    public void submitLocationReport(Long epoch){
-
-    }
-
-    public SubmitLocationReportResponse obtainLocationReport(Long epoch){
+    public void submitLocationReport(LocationReport report){
         User user = Client.getInstance().getUser();
-        createServerChannel("localhost", 11000);
+        createServerChannel("localhost", 50051); //TODO
 
-        logger.info("Requesting Proof to user close by:");
+        logger.info("Submitting Report:");
         SubmitLocationReportRequest request = SubmitLocationReportRequest
                 .newBuilder()
                 .setUserId(user.getId())
-//                .setEpoch(epoch)
+                //TODO: .setEncryptedSignedLocationReport(report)
                 .build();
         SubmitLocationReportResponse response = null;
         try{
             response = serverStub.submitLocationReport(request);
+            //TODO: do something with response?
             closeServerChannel();
         } catch ( StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
         }
+    }
+
+    public ObtainLocationReportResponse obtainLocationReport(Long epoch){
+        User user = Client.getInstance().getUser();
+        createServerChannel("localhost", 50051); //TODO
+
+        logger.info("Requesting report:");
+
+        LocationQuery locationQuery = LocationQuery
+                .newBuilder()
+                .setUserId(user.getId())
+                .setEpoch(epoch)
+                .build();
+
+        SignedLocationQuery signedLocationQuery = SignedLocationQuery
+                .newBuilder()
+                .setLocationQuery(locationQuery)
+                //TODO: .setSignature()
+                .build();
+
+        ObtainLocationReportRequest request = ObtainLocationReportRequest
+                .newBuilder()
+                //TODO: .setEncryptedSignedLocationQuery()
+                .build();
+
+        ObtainLocationReportResponse response = null;
+        try{
+            response = serverStub.obtainLocationReport(request);
+            closeServerChannel();
+        } catch ( StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+        }
+
+        //TODO: decrypt InformationLocation
+        //response.getEncryptedLocationInformation()
 
         return response;
     }
