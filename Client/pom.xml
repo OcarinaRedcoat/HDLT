@@ -73,7 +73,7 @@
           <plugin>
               <groupId>org.codehaus.mojo</groupId>
               <artifactId>exec-maven-plugin</artifactId>
-              <!--<version>${version.exec-maven-plugin}</version>-->
+              <version>1.6.0</version>
               <executions>
                   <execution>
                       <goals>
@@ -88,27 +88,27 @@
                   </arguments>
               </configuration>
           </plugin>
-          <plugin>
-              <groupId>org.codehaus.mojo</groupId>
-              <artifactId>appassembler-maven-plugin</artifactId>
-              <!--<version>${version.appassembler-maven-plugin}</version>-->
-              <executions>
-                  <execution>
-                      <phase>install</phase>
-                      <goals>
-                          <goal>assemble</goal>
-                      </goals>
-                  </execution>
-              </executions>
-              <configuration>
-                  <programs>
-                      <program>
-                          <mainClass>${mainclass}</mainClass>
-                          <id>${project.artifactId}</id>
-                      </program>
-                  </programs>
-              </configuration>
-          </plugin>
+<!--          <plugin>-->
+<!--              <groupId>org.codehaus.mojo</groupId>-->
+<!--              <artifactId>appassembler-maven-plugin</artifactId>-->
+<!--              &lt;!&ndash;<version>${version.appassembler-maven-plugin}</version>&ndash;&gt;-->
+<!--              <executions>-->
+<!--                  <execution>-->
+<!--                      <phase>install</phase>-->
+<!--                      <goals>-->
+<!--                          <goal>assemble</goal>-->
+<!--                      </goals>-->
+<!--                  </execution>-->
+<!--              </executions>-->
+<!--              <configuration>-->
+<!--                  <programs>-->
+<!--                      <program>-->
+<!--                          <mainClass>${mainclass}</mainClass>-->
+<!--                          <id>${project.artifactId}</id>-->
+<!--                      </program>-->
+<!--                  </programs>-->
+<!--              </configuration>-->
+<!--          </plugin>-->
       </plugins>
   </build>
 </project>

@@ -1,23 +1,29 @@
 package pt.tecnico.sec.hdlt.server.service;
 
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.communication.*;
+import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 
 public class LocationServerService extends LocationServerGrpc.LocationServerImplBase {
 
+    private LocationBL locationBL;
+
+    public LocationServerService(LocationBL locationBL) {
+        this.locationBL = locationBL;
+    }
+    // https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+
     @Override
     public void submitLocationReport(SubmitLocationReportRequest request, StreamObserver<SubmitLocationReportResponse> responseObserver) {
-        super.submitLocationReport(request, responseObserver);
+        try {
+            this.locationBL.submitLocationReport(request.getEncryptedSignedLocationReport().toByteArray());
 
-//        writeQueue.write(LocationProof.newBuilder().setWitness("Andre").setProver("Ze").setEpoch(1).build());
-//        writeQueue.write(LocationProof.newBuilder().setWitness("Manel").setProver("Ze").setEpoch(1).build());
-
-//        try {
-//
-//        } catch (Exception e) {
-//            responseObserver.onError(Status.DATA_LOSS.withDescription(e.getMessage()).asRuntimeException());
-//            // https://grpc.github.io/grpc/core/md_doc_statuscodes.html
-//        }
+            responseObserver.onNext(SubmitLocationReportResponse.newBuilder().build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        }
     }
 
     @Override

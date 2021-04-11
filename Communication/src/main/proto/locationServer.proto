@@ -12,15 +12,15 @@ service LocationServer {
 // ---------------------------------- SubmitLocationReport ----------------------------------
 
 message SubmitLocationReportRequest {
-  //bytes encryptedSignedLocationReport = 1;
-  int32 userId = 1;
-  int64 epoch = 2;
+  bytes encryptedSignedLocationReport = 1;
+  int32 userId = 2;
+//  int64 epoch = 2;
 }
 
 message LocationReport {
   LocationInformation locationInformation = 1;
   bytes locationInformationSignature = 2;
-  repeated SingedLocationProof locationProof = 3;
+  repeated SignedLocationProof locationProof = 3;
 }
 
 message LocationInformation {
@@ -29,7 +29,7 @@ message LocationInformation {
   Position position = 3;
 }
 
-message SingedLocationProof {
+message SignedLocationProof {
     LocationProof locationProof = 1;
     bytes signature = 2;
 }
