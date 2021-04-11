@@ -91,4 +91,15 @@ public class CryptographicOperations {
 
         return computedDigest.equals(digest);
     }
+
+    public static byte[] Hash(String digestAlg, byte[] data) throws Exception {
+        System.out.println("Digesting with " + digestAlg + "...");
+        MessageDigest messageDigest = MessageDigest.getInstance(digestAlg);
+        messageDigest.update(data);
+        byte[] digestBytes = messageDigest.digest();
+        System.out.println("Result digest size: " + digestBytes.length + " bytes");
+        String digestB64dString = Base64.getEncoder().encodeToString(digestBytes);
+        System.out.println("Digest result, encoded as base 64 string: " + digestB64dString);
+        return digestBytes;
+    }
 }
