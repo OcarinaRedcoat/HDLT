@@ -114,45 +114,28 @@ public class FileUtils {
         return user;
     }
 
-    public static PrivateKey readPrivateKey(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        File f = new File(filename);
-        FileInputStream fis = new FileInputStream(f);
-        DataInputStream dis = new DataInputStream(fis);
-        byte[] keyBytes = new byte[(int) f.length()];
-        dis.readFully(keyBytes);
-        dis.close();
-
-        String temp = new String(keyBytes);
-        String privKeyPEM = temp.replace("-----BEGIN PRIVATE KEY-----", "");
-        privKeyPEM = privKeyPEM.replace("-----END PRIVATE KEY-----", "");
-
-        BASE64Decoder b64=new BASE64Decoder();
-        byte[] decoded = b64.decodeBuffer(privKeyPEM);
-
-        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decoded);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        return kf.generatePrivate(spec);
+    private static byte[] readFile(String path) throws IOException {
+        FileInputStream fis = new FileInputStream(path);
+        byte[] content = new byte[fis.available()];
+        fis.read(content);
+        fis.close();
+        return content;
     }
 
-    public PublicKey readPublicKey(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        File f = new File(filename);
-        FileInputStream fis = new FileInputStream(f);
-        DataInputStream dis = new DataInputStream(fis);
-        byte[] keyBytes = new byte[(int) f.length()];
-        dis.readFully(keyBytes);
-        dis.close();
+    public static PublicKey readPublicKey(String publicKeyPath) throws Exception {
+        System.out.println("Reading public key from file: " + publicKeyPath);
+        byte[] pubEncoded = readFile(publicKeyPath);
+        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubEncoded);
+        KeyFactory keyFacPub = KeyFactory.getInstance("RSA");
+        return keyFacPub.generatePublic(pubSpec);
+    }
 
-        String temp = new String(keyBytes);
-        String publicKeyPEM = temp.replace("-----BEGIN PUBLIC KEY-----\n", "");
-        publicKeyPEM = publicKeyPEM.replace("-----END PUBLIC KEY-----", "");
-
-
-        BASE64Decoder b64=new BASE64Decoder();
-        byte[] decoded = b64.decodeBuffer(publicKeyPEM);
-
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(decoded);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        return kf.generatePublic(spec);
+    public static PrivateKey readPrivateKey(String privateKeyPath) throws Exception {
+        System.out.println("Reading private key from file: " + privateKeyPath);
+        byte[] privEncoded = readFile(privateKeyPath);
+        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(privEncoded);
+        KeyFactory keyFacPriv = KeyFactory.getInstance("RSA");
+        return keyFacPriv.generatePrivate(privSpec);
     }
 
 }
