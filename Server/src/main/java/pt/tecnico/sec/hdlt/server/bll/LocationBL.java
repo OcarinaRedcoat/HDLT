@@ -2,6 +2,7 @@ package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import pt.tecnico.sec.hdlt.communication.*;
+import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
@@ -21,23 +22,19 @@ public class LocationBL {
         this.locationReports = ReadFile.createReportsMap(filePath);
     }
 
-    public void submitLocationReport(byte[] encryptedSignedLocationReport, int userId) throws InterruptedException, InvalidProtocolBufferException {
+    public void submitLocationReport(byte[] encryptedSignedLocationReport) throws InterruptedException, InvalidProtocolBufferException {
         // TODO decrypt symmetric key
 
         byte[] reportBytes = decryptedLocationReport(encryptedSignedLocationReport);
-
         LocationReport locationReport = LocationReport.parseFrom(reportBytes);
 
-        if (verifySignature(locationReport.getLocationInformationSignature().toByteArray())) {
+        if (!verifySignature(locationReport.getLocationInformationSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid location information signature");
         }
 
         LocationInformation information = locationReport.getLocationInformation();
 
         // TODO verify epoch
-        if (information.getUserId() != userId) {
-            throw new InvalidParameterException("Invalid user Id");
-        }
 
         HashSet<Integer> witnessIds = new HashSet<>();
 
@@ -70,9 +67,31 @@ public class LocationBL {
         }
     }
 
-    public ObtainLocationReportResponse obtainLocationReport(byte[] encryptedSignedLocationQuery) {
-//        return ObtainLocationReportResponse.newBuilder().setEncryptedSignedLocationReport().build();
-        return null;
+    public ObtainLocationReportResponse obtainLocationReport(byte[] encryptedSignedLocationQuery) throws InvalidProtocolBufferException, NoSuchFieldException {
+        // TODO decrypt symmetric key
+
+        byte[] reportBytes = decryptedLocationReport(encryptedSignedLocationQuery);
+        SignedLocationQuery sLocationQuery = SignedLocationQuery.parseFrom(reportBytes);
+        LocationQuery locationQuery = sLocationQuery.getLocationQuery();
+
+        // TODO verify signature
+        if (!verifySignature(sLocationQuery.getSignature().toByteArray())) {
+            throw new InvalidParameterException("Invalid location query signature");
+        }
+
+        LocationReportKey key = new LocationReportKey(locationQuery.getUserId(), locationQuery.getEpoch());
+        if (!this.locationReports.contains(key)) {
+            throw new NoSuchFieldException("No report found for user: " + locationQuery.getUserId() + "at epoch: " + locationQuery.getEpoch());
+        }
+
+        LocationReport report = this.locationReports.get(key);
+        SignedLocationReport signedReport = SignedLocationReport.newBuilder()
+                .setLocationReport(report)
+//                .setSignedLocationReport()
+//                .setIv()
+                .build();
+
+        return ObtainLocationReportResponse.newBuilder()/*.setEncryptedSignedLocationReport()*/.build();
     }
 
     private byte[] decryptedLocationReport(byte[] encryptedSignedLocationReport) {
