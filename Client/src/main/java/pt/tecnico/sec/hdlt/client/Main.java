@@ -3,7 +3,7 @@ package pt.tecnico.sec.hdlt.client;
 import pt.tecnico.sec.hdlt.client.communication.UserClient;
 import pt.tecnico.sec.hdlt.client.communication.UserServer;
 import pt.tecnico.sec.hdlt.client.user.Client;
-import pt.tecnico.sec.hdlt.communication.LocationProofBetweenClientsResponse;
+import pt.tecnico.sec.hdlt.communication.LocationReport;
 
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -31,8 +31,8 @@ public class Main
                 case "exit":
                     break;
                 case "submit report":
-                    ArrayList<LocationProofBetweenClientsResponse> proofs = UserClient.getInstance().requestLocationProofs(getCurrentEpoch());
-                    //UserClient.getInstance().submitLocationReport();
+                    LocationReport report = UserClient.getInstance().requestLocationProofs(getCurrentEpoch());
+                    UserClient.getInstance().submitLocationReport(report);
                     break;
                 case "obtain report":
                     UserClient.getInstance().obtainLocationReport(getCurrentEpoch());
