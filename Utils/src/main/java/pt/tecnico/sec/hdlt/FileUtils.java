@@ -4,7 +4,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import sun.misc.BASE64Decoder;
 
 import java.io.*;
 import java.security.KeyFactory;
@@ -119,7 +118,7 @@ public class FileUtils {
         byte[] content = new byte[fis.available()];
         fis.read(content);
         fis.close();
-        return content;
+        return content
     }
 
     public static PublicKey readPublicKey(String publicKeyPath) throws Exception {

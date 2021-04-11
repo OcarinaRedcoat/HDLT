@@ -3,11 +3,13 @@ package pt.tecnico.sec.hdlt.server;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
+import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.service.LocationServerService;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
