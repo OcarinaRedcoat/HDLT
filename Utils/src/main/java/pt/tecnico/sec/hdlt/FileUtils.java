@@ -1,11 +1,9 @@
-package pt.tecnico.sec.hdlt.client.utils;
+package pt.tecnico.sec.hdlt;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import pt.tecnico.sec.hdlt.client.user.Position;
-import pt.tecnico.sec.hdlt.client.user.User;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,33 +11,12 @@ import java.util.ArrayList;
 
 public class FileUtils {
 
-    private static FileUtils INSTANCE = null;
-
-    private String gridFileLocation;
-
-    public FileUtils() {
-        gridFileLocation = null;
-    }
-
-    public static FileUtils getInstance(){
-        if (INSTANCE == null)
-            INSTANCE = new FileUtils();
-
-        return INSTANCE;
-    }
-
-    public void setGridFileLocation(String gridFileLocation) throws IOException {
-        FileReader fr = new FileReader(gridFileLocation);
-        fr.close();
-        this.gridFileLocation = gridFileLocation;
-    }
-
-    public ArrayList<User> parseGridUsers() throws IOException, ParseException {
-        if(this.gridFileLocation == null){
+    public static ArrayList<User> parseGridUsers(String gridFileLocation) throws IOException, ParseException {
+        if(gridFileLocation == null){
             throw new IOException(); //TODO dizer que não foi definido a localização
         }
 
-        FileReader fr = new FileReader(this.gridFileLocation);
+        FileReader fr = new FileReader(gridFileLocation);
 
         Object obj = new JSONParser().parse(fr);
         JSONArray grid = (JSONArray) obj;
@@ -84,8 +61,8 @@ public class FileUtils {
         return users;
     }
 
-    public User parseGridUser(int userId) throws IOException, ParseException, IndexOutOfBoundsException {
-        if(this.gridFileLocation == null){
+    public static User parseGridUser(String gridFileLocation, int userId) throws IOException, ParseException, IndexOutOfBoundsException {
+        if(gridFileLocation == null){
             throw new IOException(); //TODO dizer que não foi definido a localização, apenas acontece se o grid nao for properly initialized
         }
 

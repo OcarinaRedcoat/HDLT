@@ -14,7 +14,7 @@ service LocationServer {
 message SubmitLocationReportRequest {
   bytes encryptedSignedLocationReport = 1;
   int32 userId = 2;
-//  int64 epoch = 2;
+//  int64 epoch = 3;
 }
 
 message LocationReport {

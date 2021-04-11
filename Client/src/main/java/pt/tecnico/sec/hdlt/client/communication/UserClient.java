@@ -3,8 +3,8 @@ package pt.tecnico.sec.hdlt.client.communication;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.user.Client;
-import pt.tecnico.sec.hdlt.client.user.User;
 import pt.tecnico.sec.hdlt.communication.*;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class UserClient {
         serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
     }
 
-    public ArrayList<LocationProofBetweenClientsResponse> requestLocationProof(Long epoch){
+    public ArrayList<LocationProofBetweenClientsResponse> requestLocationProofs(Long epoch){
         User user = Client.getInstance().getUser();
         createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
 
@@ -85,7 +85,6 @@ public class UserClient {
         return responses;
     }
 
-    //TODO
     public void submitLocationReport(Long epoch){
 
     }
