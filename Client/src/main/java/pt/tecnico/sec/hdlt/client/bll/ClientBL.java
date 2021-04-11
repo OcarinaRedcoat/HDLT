@@ -67,6 +67,7 @@ public class ClientBL {
             IllegalBlockSizeException {
 
         SecretKey key = generateSecretKey();
+        //TODO IV
         byte[] encryptedMessage = symmetricEncrypt(report.toByteArray(), key);
 
         //TODO: enviar chave symmetrica encrypted com server public
@@ -99,6 +100,7 @@ public class ClientBL {
                 .build();
 
         SecretKey key = generateSecretKey();
+        //TODO IV
         byte[] encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key);
 
         //TODO: enviar chave symmetrica encrypted com server public
