@@ -22,6 +22,9 @@ public class Main
 
         Scanner scanner = new Scanner(System.in);
         String command;
+        long epoch;
+        LocationReport report;
+
         System.out.println("Client Initialized. Type \"help\" at any point for the list of available commands.");
         do{
             command = scanner.nextLine();
@@ -29,11 +32,13 @@ public class Main
                 case "exit":
                     break;
                 case "submit report":
-                    LocationReport report = UserClient.getInstance().requestLocationProofs(getCurrentEpoch());
+                    epoch = Integer.parseInt(readString("Specify the epoch (we are not using the current epoch for the purpose of testing): "));
+                    report = UserClient.getInstance().requestLocationProofs(epoch);
                     UserClient.getInstance().submitLocationReport(report);
                     break;
                 case "obtain report":
-                    UserClient.getInstance().obtainLocationReport(getCurrentEpoch());
+                    epoch = Integer.parseInt(readString("Specify the epoch: "));
+                    UserClient.getInstance().obtainLocationReport(epoch);
                     break;
                 case "current epoch":
                     System.out.println("Current Epoch: " + getCurrentEpoch());
