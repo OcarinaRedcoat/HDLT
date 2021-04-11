@@ -17,6 +17,18 @@ public class CryptographicOperations {
     private static final String SIGN_ALGORITHM = "SHA256withRSA";
     private static final String HASH_ALGORITHM = "SHA-256";
 
+    public static SecretKey generateSecretKey(){
+        KeyGenerator keyGenerator = null;
+        try {
+            keyGenerator = KeyGenerator.getInstance(SYMMETRIC_ALGORITHM);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        SecureRandom secureRandom = new SecureRandom();
+        keyGenerator.init(SYMMETRIC_KEY_SIZE, secureRandom);
+        return keyGenerator.generateKey();
+    }
+
     public static SecretKey convertToSymmetricKey(byte[] key) {
         return new SecretKeySpec(key, SYMMETRIC_ALGORITHM);
     }

@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.client.communication;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -8,6 +9,10 @@ import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
@@ -16,7 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static pt.tecnico.sec.hdlt.FileUtils.*;
-import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.sign;
+import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
 
 public class UserClient {
 
@@ -64,6 +69,20 @@ public class UserClient {
                     .usePlaintext()
                     .build();
         serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
+    }
+
+    public void closeUserChannels(){
+        for (ManagedChannel channel : userChannels) {
+            channel.shutdownNow();
+        }
+        userChannels = new ArrayList<>();
+        userStubs = new ArrayList<>();
+    }
+
+    public void closeServerChannel(){
+        serverChannel.shutdownNow();
+        serverChannel = null;
+        serverStub = null;
     }
 
     public LocationReport requestLocationProofs(Long epoch){
@@ -114,10 +133,19 @@ public class UserClient {
         createServerChannel("localhost", 50051); //TODO
 
         logger.info("Submitting Report:");
+        SecretKey key = generateSecretKey();
+        byte[] encryptedMessage = new byte[0];
+        try {
+            encryptedMessage = symmetricEncrypt(report.toByteArray(), key);
+        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException |
+                NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
+        }
+
         SubmitLocationReportRequest request = SubmitLocationReportRequest
                 .newBuilder()
                 .setUserId(user.getId())
-                //TODO: .setEncryptedSignedLocationReport(report)
+                .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
                 .build();
         SubmitLocationReportResponse response = null;
         try{
@@ -129,7 +157,7 @@ public class UserClient {
         }
     }
 
-    public ObtainLocationReportResponse obtainLocationReport(Long epoch){
+    public LocationReport obtainLocationReport(Long epoch){
         User user = Client.getInstance().getUser();
         createServerChannel("localhost", 50051); //TODO
 
@@ -154,9 +182,18 @@ public class UserClient {
                 .setSignature(ByteString.copyFrom(signature))
                 .build();
 
+        SecretKey key = generateSecretKey();
+        byte[] encryptedMessage = new byte[0];
+        try {
+            encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key);
+        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException |
+                NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
+        }
+
         ObtainLocationReportRequest request = ObtainLocationReportRequest
                 .newBuilder()
-                //TODO: .setEncryptedSignedLocationQuery()
+                .setEncryptedSignedLocationQuery(ByteString.copyFrom(encryptedMessage))
                 .build();
 
         ObtainLocationReportResponse response = null;
@@ -167,24 +204,24 @@ public class UserClient {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
         }
 
-        //TODO: decrypt InformationLocation
-        //response.getEncryptedLocationInformation()
-
-        return response;
-    }
-
-    public void closeUserChannels(){
-        for (ManagedChannel channel : userChannels) {
-            channel.shutdownNow();
+        byte[] decryptedMessage = new byte[0];
+        try {
+            decryptedMessage = symmetricDecrypt(response.getEncryptedLocationReport().toByteArray(), key);
+        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException |
+                NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
         }
-        userChannels = new ArrayList<>();
-        userStubs = new ArrayList<>();
-    }
 
-    public void closeServerChannel(){
-        serverChannel.shutdownNow();
-        serverChannel = null;
-        serverStub = null;
+        //TODO: verify server signature
+
+        LocationReport report = null;
+        try {
+            report = LocationReport.parseFrom(decryptedMessage);
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+
+        return report;
     }
 
 }
