@@ -1,7 +1,7 @@
 HDLT.iml
 /Client/Client.iml
 /Communication/Communication.iml
-/Crypto/Crypto.iml
+/Utils/Utils.iml
 /Server/Server.iml
 Server/src/main/java/pt/tecnico/sec/hdlt/server/db/database.properties
 /.idea/
