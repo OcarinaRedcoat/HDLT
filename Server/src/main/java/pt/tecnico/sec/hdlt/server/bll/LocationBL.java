@@ -10,12 +10,13 @@ import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocationBL {
 
-    private WriteQueue<LocationReport> writeQueue;
-    private ConcurrentHashMap<LocationReportKey, LocationReport> locationReports;
+    private final WriteQueue<LocationReport> writeQueue;
+    private final ConcurrentHashMap<LocationReportKey, LocationReport> locationReports;
 
     public LocationBL(Path filePath) {
         this.writeQueue = new WriteQueue<>(filePath);
@@ -24,16 +25,24 @@ public class LocationBL {
 
     public void submitLocationReport(byte[] encryptedSignedLocationReport) throws InterruptedException, InvalidProtocolBufferException {
         byte[] reportBytes = getDecryptedLocationReport(encryptedSignedLocationReport);
+
         LocationReport locationReport = LocationReport.parseFrom(reportBytes);
 
         LocationInformation information = locationReport.getLocationInformation();
+        HashSet<Integer> witnessIds = new HashSet<>();
 
-        // TODO verify number of proofs
+        if (locationReport.getLocationProofList().size() < 5) {
+            // TODO throw exception due to invalid number of proofs
+        }
 
         for (SignedLocationProof sProof : locationReport.getLocationProofList()) {
             LocationProof lProof = sProof.getLocationProof();
 
-            // TODO verify that there are no 2 proofs from the same witness
+            if (witnessIds.contains(lProof.getWitnessId())) {
+                // TODO throw exception because there are 2 proofs from the same witness
+            }
+
+            witnessIds.add(lProof.getWitnessId());
 
             // TODO verify signature
 

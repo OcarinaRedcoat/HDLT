@@ -11,7 +11,7 @@
   <modules>
     <module>Client</module>
     <module>Communication</module>
-    <module>Crypto</module>
+    <module>Utils</module>
     <module>Server</module>
     <module>HAClient</module>
   </modules>
