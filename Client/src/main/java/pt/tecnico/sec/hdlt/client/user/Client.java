@@ -1,5 +1,7 @@
 package pt.tecnico.sec.hdlt.client.user;
 
+import pt.tecnico.sec.hdlt.User;
+
 public class Client {
 
     private static Client INSTANCE = null;

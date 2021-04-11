@@ -1,38 +1,41 @@
 package pt.tecnico.sec.hdlt.client.communication;
 
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.json.simple.parser.ParseException;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
-import java.io.IOException;
 
-class UserImpl extends ProofServerGrpc.ProofServerImplBase{
+class UserImpl extends ClientServerGrpc.ClientServerImplBase{
 
-    //TODO: FAZER AS EXCEPCOES!!!!!
     @Override
-    public void requestLocationProof(LocationProofBetweenClientsRequest req, StreamObserver<LocationProofBetweenClientsResponse> responseObserver){
+    public void requestLocationProof(LocationInformation req, StreamObserver<SignedLocationProof> responseObserver){
         int requesterId = req.getUserId();
         long epoch = req.getEpoch();
-        long requesterXPos = req.getRequesterX();
-        long requesterYPos = req.getRequesterY();
+        long requesterXPos = req.getPosition().getX();
+        long requesterYPos = req.getPosition().getY();
 
         if(Client.getInstance().getUser().isCloseTo(requesterId, epoch)) {
-            LocationBetweenClientsProof proof = LocationBetweenClientsProof
+            Position position = Position
                     .newBuilder()
-                    .setRequesterUserId(requesterId)
-                    .setWitnessId(Client.getInstance().getUser().getId())
-                    .setEpoch(epoch)
-                    .setRequesterX(requesterXPos)
-                    .setRequesterY(requesterYPos)
+                    .setX(requesterXPos)
+                    .setY(requesterYPos)
                     .build();
 
-            LocationProofBetweenClientsResponse response = LocationProofBetweenClientsResponse.newBuilder().setProof(proof).build();
+            LocationProof proof = LocationProof
+                    .newBuilder()
+                    .setProverId(requesterId)
+                    .setWitnessId(Client.getInstance().getUser().getId())
+                    .setEpoch(epoch)
+                    .setPosition(position)
+                    .build();
 
+            SignedLocationProof response = SignedLocationProof.newBuilder().setLocationProof(proof).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } else {
-            //todo: trow error message to client
+            //TODO fazer mais bonito
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("You are not close to me bitch!").asRuntimeException());
         }
     }
 

@@ -9,12 +9,16 @@ service LocationServer {
   rpc ObtainUsersAtLocation (ObtainUsersAtLocationRequest) returns (ObtainUsersAtLocationResponse) {}
 }
 
+service ClientServer {
+  rpc RequestLocationProof (LocationInformation) returns (SignedLocationProof) {}
+}
+
 // ---------------------------------- SubmitLocationReport ----------------------------------
 
 message SubmitLocationReportRequest {
   bytes encryptedSignedLocationReport = 1;
   int32 userId = 2;
-//  int64 epoch = 2;
+//  int64 epoch = 3;
 }
 
 message LocationReport {
@@ -65,7 +69,7 @@ message LocationQuery {
 }
 
 message ObtainLocationReportResponse {
-  bytes encryptedLocationInformation = 1; // Encrypted bytes of message LocationInformation
+  bytes encryptedLocationReport = 1; // Encrypted bytes of message LocationInformation
 }
 
 // ---------------------------------- ObtainUsersAtLocation ----------------------------------

@@ -22,14 +22,6 @@ public class UserServer {
         return INSTANCE;
     }
 
-    public Server getServer() {
-        return server;
-    }
-
-    public void setServer(Server server) {
-        this.server = server;
-    }
-
     public UserServer() {
         server = null;
     }
