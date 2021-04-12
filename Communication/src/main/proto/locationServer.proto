@@ -59,7 +59,7 @@ message SubmitLocationReportResponse {}
 message ObtainLocationReportRequest {
   bytes encryptedSignedLocationQuery = 1;
   bytes key = 2;
-  bytes iv = 4;
+  bytes iv = 3;
 }
 
 message SignedLocationQuery {

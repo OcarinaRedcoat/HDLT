@@ -65,12 +65,7 @@ def store_json(grids):
         print("Stored grids in file: " + output_file_name)
 
 
-#TODO: remover isto. é so para comecar as epocas na grid mais á frente. Este numeros sao para epoch de 1 semana
 epoch_correction = 2670
-
-if(len(sys.argv) != 4):
-    print("python gen.py grid_size distance_allowed n_epochs n_users")
-    sys.exit()
 
 grid_size = int(sys.argv[1])  # randint(1, 10)
 distance_allowed = int(sys.argv[2])  # randint(1, 10)

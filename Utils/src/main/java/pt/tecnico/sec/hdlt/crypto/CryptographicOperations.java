@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.crypto;
 
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -9,13 +10,27 @@ import java.util.Base64;
 
 public class CryptographicOperations {
 
-    // TODO Use IV in symmetric encrypt
-    private static final String SYMMETRIC_ALGORITHM = "AES";
+    private static final String SYMMETRIC_ALGORITHM = "AES/CBC/PKCS5Padding";
     private static final int SYMMETRIC_KEY_SIZE = 256;
+    private static final int SYMMETRIC_BLOCK_SIZE = 128; //Block size for iv, for AES it is 128
     private static final String ASYMMETRIC_ALGORITHM = "RSA";
     private static final int ASYMMETRIC_KEY_SIZE = 2048;
     private static final String SIGN_ALGORITHM = "SHA256withRSA";
     private static final String HASH_ALGORITHM = "SHA-256";
+
+    public static SecretKey generateSecretKey() throws NoSuchAlgorithmException {
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(SYMMETRIC_ALGORITHM);
+        SecureRandom secureRandom = new SecureRandom();
+        keyGenerator.init(SYMMETRIC_KEY_SIZE, secureRandom);
+        return keyGenerator.generateKey();
+    }
+
+    public static IvParameterSpec generateIv() throws NoSuchAlgorithmException {
+        SecureRandom randomSecureRandom = new SecureRandom();
+        byte[] iv = new byte[SYMMETRIC_BLOCK_SIZE];
+        randomSecureRandom.nextBytes(iv);
+        return new IvParameterSpec(iv);
+    }
 
     public static SecretKey convertToSymmetricKey(byte[] key) {
         return new SecretKeySpec(key, SYMMETRIC_ALGORITHM);
@@ -33,18 +48,26 @@ public class CryptographicOperations {
         return cipher.doFinal(data);
     }
 
-    public static byte[] symmetricEncrypt(byte[] data, Key key)
-            throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException,
-            NoSuchPaddingException {
+    private static byte[] transform(int mode, String transformation, byte[] data, Key key, IvParameterSpec iv) throws NoSuchPaddingException,
+            NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException {
 
-        return transform(Cipher.ENCRYPT_MODE, SYMMETRIC_ALGORITHM, data, key);
+        Cipher cipher = Cipher.getInstance(transformation);
+        cipher.init(mode, key, iv);
+        return cipher.doFinal(data);
     }
 
-    public static byte[] symmetricDecrypt(byte[] data, Key key)
+    public static byte[] symmetricEncrypt(byte[] data, Key key, IvParameterSpec iv)
             throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException,
-            NoSuchPaddingException {
+            NoSuchPaddingException, InvalidAlgorithmParameterException {
 
-        return transform(Cipher.DECRYPT_MODE, SYMMETRIC_ALGORITHM, data, key);
+        return transform(Cipher.ENCRYPT_MODE, SYMMETRIC_ALGORITHM, data, key, iv);
+    }
+
+    public static byte[] symmetricDecrypt(byte[] data, Key key, IvParameterSpec iv)
+            throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException,
+            NoSuchPaddingException, InvalidAlgorithmParameterException {
+
+        return transform(Cipher.DECRYPT_MODE, SYMMETRIC_ALGORITHM, data, key, iv);
     }
 
     public static byte[] asymmetricEncrypt(byte[] data, Key key)
@@ -67,7 +90,6 @@ public class CryptographicOperations {
         Signature signature = Signature.getInstance(SIGN_ALGORITHM);
         signature.initSign(privateKey);
         signature.update(data);
-
         return signature.sign();
     }
 
@@ -77,7 +99,6 @@ public class CryptographicOperations {
         Signature sig = Signature.getInstance(SIGN_ALGORITHM);
         sig.initVerify(publicKey);
         sig.update(message);
-
         return sig.verify(signature);
     }
 
@@ -88,18 +109,6 @@ public class CryptographicOperations {
 
     public static boolean verifyMessageDigest(String data, String digest) throws NoSuchAlgorithmException {
         String computedDigest = createMessageDigest(data);
-
         return computedDigest.equals(digest);
-    }
-
-    public static byte[] Hash(String digestAlg, byte[] data) throws Exception {
-        System.out.println("Digesting with " + digestAlg + "...");
-        MessageDigest messageDigest = MessageDigest.getInstance(digestAlg);
-        messageDigest.update(data);
-        byte[] digestBytes = messageDigest.digest();
-        System.out.println("Result digest size: " + digestBytes.length + " bytes");
-        String digestB64dString = Base64.getEncoder().encodeToString(digestBytes);
-        System.out.println("Digest result, encoded as base 64 string: " + digestB64dString);
-        return digestBytes;
     }
 }
