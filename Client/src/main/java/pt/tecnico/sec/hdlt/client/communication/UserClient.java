@@ -1,12 +1,22 @@
 package pt.tecnico.sec.hdlt.client.communication;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import pt.tecnico.sec.hdlt.User;
+import pt.tecnico.sec.hdlt.client.bll.ClientBL;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +50,6 @@ public class UserClient {
         userStubs = new ArrayList<>();
         userChannels = new ArrayList<>();
         for (Long closeUserId: closeUsers) {
-            //TODO: mudar para nao estar estatico, não se se é preciso por cause de bluetooth
             String target = "localhost:" + (10000 + closeUserId);
             ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
@@ -59,100 +68,6 @@ public class UserClient {
         serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
     }
 
-    public LocationReport requestLocationProofs(Long epoch){
-        User user = Client.getInstance().getUser();
-        createCloseUsersChannels(user.getPositionWithEpoch(epoch).getCloseBy());
-
-        logger.info("Requesting Proof to user close by:");
-        Position position = Position
-                .newBuilder()
-                .setX(user.getPositionWithEpoch(epoch).getxPos())
-                .setY(user.getPositionWithEpoch(epoch).getyPos())
-                .build();
-
-        LocationInformation request = LocationInformation
-                .newBuilder()
-                .setUserId(user.getId())
-                .setEpoch(epoch)
-                .setPosition(position)
-                .build();
-
-        LocationReport.Builder reportBuilder = LocationReport
-                .newBuilder()
-                .setLocationInformation(request);
-
-        for (ClientServerGrpc.ClientServerBlockingStub stub : userStubs) {
-            try{
-                SignedLocationProof response = stub.requestLocationProof(request);
-                reportBuilder.addLocationProof(response);
-                closeUserChannels();
-            } catch ( StatusRuntimeException e) {
-                logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-            }
-        }
-
-
-        return reportBuilder//TODO: .setLocationInformationSignature()
-                .build();
-    }
-
-    public void submitLocationReport(LocationReport report){
-        User user = Client.getInstance().getUser();
-        createServerChannel("localhost", 50051); //TODO
-
-        logger.info("Submitting Report:");
-        SubmitLocationReportRequest request = SubmitLocationReportRequest
-                .newBuilder()
-                .setUserId(user.getId())
-                //TODO: .setEncryptedSignedLocationReport(report)
-                .build();
-        SubmitLocationReportResponse response = null;
-        try{
-            response = serverStub.submitLocationReport(request);
-            //TODO: do something with response?
-            closeServerChannel();
-        } catch ( StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-        }
-    }
-
-    public ObtainLocationReportResponse obtainLocationReport(Long epoch){
-        User user = Client.getInstance().getUser();
-        createServerChannel("localhost", 50051); //TODO
-
-        logger.info("Requesting report:");
-
-        LocationQuery locationQuery = LocationQuery
-                .newBuilder()
-                .setUserId(user.getId())
-                .setEpoch(epoch)
-                .build();
-
-        SignedLocationQuery signedLocationQuery = SignedLocationQuery
-                .newBuilder()
-                .setLocationQuery(locationQuery)
-                //TODO: .setSignature()
-                .build();
-
-        ObtainLocationReportRequest request = ObtainLocationReportRequest
-                .newBuilder()
-                //TODO: .setEncryptedSignedLocationQuery()
-                .build();
-
-        ObtainLocationReportResponse response = null;
-        try{
-            response = serverStub.obtainLocationReport(request);
-            closeServerChannel();
-        } catch ( StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-        }
-
-        //TODO: decrypt InformationLocation
-        //response.getEncryptedLocationInformation()
-
-        return response;
-    }
-
     public void closeUserChannels(){
         for (ManagedChannel channel : userChannels) {
             channel.shutdownNow();
@@ -165,6 +80,95 @@ public class UserClient {
         serverChannel.shutdownNow();
         serverChannel = null;
         serverStub = null;
+    }
+
+    public LocationReport requestLocationProofs(Long epoch){
+        logger.info("Requesting Proof to user close by:");
+        createCloseUsersChannels(Client.getInstance().getUser().getPositionWithEpoch(epoch).getCloseBy());
+
+        LocationReport report = null;
+        try {
+            report = ClientBL.requestLocationProofs(epoch, userStubs);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+        } finally {
+            closeUserChannels();
+        }
+
+        return report;
+    }
+
+    public void submitLocationReport(LocationReport report){
+        logger.info("Submitting Report:");
+        createServerChannel("localhost", 50051);
+
+        try {
+            ClientBL.submitLocationReport(report, serverStub);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+        } finally {
+            closeServerChannel();
+        }
+    }
+
+    public LocationReport obtainLocationReport(Long epoch){
+        logger.info("Requesting report:");
+        createServerChannel("localhost", 50051);
+
+        LocationReport report = null;
+        try {
+            report = ClientBL.obtainLocationReport(epoch, serverStub);
+            //TODO: print report
+            System.out.println("I got the report Report!");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+        } finally {
+            closeServerChannel();
+        }
+
+        return report;
     }
 
 }

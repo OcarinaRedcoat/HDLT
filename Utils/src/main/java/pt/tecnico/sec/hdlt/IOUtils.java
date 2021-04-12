@@ -28,7 +28,7 @@ public class IOUtils {
         return readString("Specify the grid file location: ");
     }
 
-    private static String readString(String askMessage){
+    public static String readString(String askMessage){
         Scanner scanner = new Scanner(System.in);
         if(!askMessage.equals("")){
             System.out.println(askMessage);
