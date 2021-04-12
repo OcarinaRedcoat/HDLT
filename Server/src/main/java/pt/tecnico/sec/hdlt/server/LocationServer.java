@@ -2,6 +2,8 @@ package pt.tecnico.sec.hdlt.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.Status;
+import pt.tecnico.sec.hdlt.FileUtils;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.service.LocationServerService;
@@ -9,6 +11,9 @@ import pt.tecnico.sec.hdlt.server.service.LocationServerService;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -60,11 +65,15 @@ public class LocationServer {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        LocationBL locationBL = new LocationBL(1);
+        try {
+            LocationBL locationBL = new LocationBL(1);
 
-        final LocationServer locationServer = new LocationServer();
-        locationServer.start(locationBL);
+            final LocationServer locationServer = new LocationServer();
+            locationServer.start(locationBL);
 
-        locationBL.terminateWriteQueue();
+            locationBL.terminateWriteQueue();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
     }
 }

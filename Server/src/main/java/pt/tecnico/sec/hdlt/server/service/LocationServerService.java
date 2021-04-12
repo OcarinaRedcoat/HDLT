@@ -19,7 +19,7 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
     @Override
     public void submitLocationReport(SubmitLocationReportRequest request, StreamObserver<SubmitLocationReportResponse> responseObserver) {
         try {
-            this.locationBL.submitLocationReport(request.getEncryptedSignedLocationReport().toByteArray());
+            this.locationBL.submitLocationReport(request);
 
             responseObserver.onNext(SubmitLocationReportResponse.newBuilder().build());
             responseObserver.onCompleted();
@@ -33,7 +33,7 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
     @Override
     public void obtainLocationReport(ObtainLocationReportRequest request, StreamObserver<ObtainLocationReportResponse> responseObserver) {
         try {
-            responseObserver.onNext(this.locationBL.obtainLocationReport(request.getEncryptedSignedLocationQuery().toByteArray()));
+            responseObserver.onNext(this.locationBL.obtainLocationReport(request));
             responseObserver.onCompleted();
         } catch (NoSuchFieldException e) {
             responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
