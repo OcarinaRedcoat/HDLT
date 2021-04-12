@@ -25,7 +25,7 @@ public class CryptographicOperations {
         return keyGenerator.generateKey();
     }
 
-    public static IvParameterSpec generateIv() throws NoSuchAlgorithmException {
+    public static IvParameterSpec generateIv() {
         SecureRandom randomSecureRandom = new SecureRandom();
         byte[] iv = new byte[SYMMETRIC_BLOCK_SIZE];
         randomSecureRandom.nextBytes(iv);
