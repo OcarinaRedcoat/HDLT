@@ -59,8 +59,8 @@ public class LocationServer {
      * Main launches the server from the command line.
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-        Path filePath = Paths.get("Server" + 1 + ".txt");
-        LocationBL locationBL = new LocationBL(filePath);
+
+        LocationBL locationBL = new LocationBL(1);
 
         final LocationServer locationServer = new LocationServer();
         locationServer.start(locationBL);

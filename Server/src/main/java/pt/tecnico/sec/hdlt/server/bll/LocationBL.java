@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import pt.tecnico.sec.hdlt.FileUtils;
 import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
@@ -8,7 +9,10 @@ import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidParameterException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,10 +20,15 @@ public class LocationBL {
 
     private final WriteQueue<LocationReport> writeQueue;
     private final ConcurrentHashMap<LocationReportKey, LocationReport> locationReports;
+//    private final PublicKey publicKey;
+//    private final PrivateKey privateKey;
 
-    public LocationBL(Path filePath) {
+    public LocationBL(int serverId) {
+        Path filePath = Paths.get("Server" + serverId + ".txt");
         this.writeQueue = new WriteQueue<>(filePath);
         this.locationReports = ReadFile.createReportsMap(filePath);
+//        this.publicKey = FileUtils.readPublicKey();
+//        this.privateKey = FileUtils.readPrivateKey();
     }
 
     public void submitLocationReport(byte[] encryptedSignedLocationReport) throws InterruptedException, InvalidProtocolBufferException {
