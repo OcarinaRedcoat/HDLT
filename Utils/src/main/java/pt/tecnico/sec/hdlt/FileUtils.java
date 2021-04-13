@@ -4,8 +4,11 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -14,6 +17,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 
 public class FileUtils {
 
@@ -143,7 +147,7 @@ public class FileUtils {
     public static PrivateKey getUserPrivateKey(int userId){
         PrivateKey key = null;
         try {
-            key = readPrivateKey("keys/priv_client_" + userId + ".key");
+            key = readPrivateKey("../keys/priv_client_" + userId + ".der");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -153,7 +157,7 @@ public class FileUtils {
     public static PublicKey getUserPublicKey(int userId){
         PublicKey key = null;
         try {
-            key = readPublicKey("keys/pub_client_" + userId + ".key");
+            key = readPublicKey("../keys/pub_client_" + userId + ".der");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -163,7 +167,7 @@ public class FileUtils {
     public static PublicKey getServerPublicKey(int serverId) throws NoSuchAlgorithmException, IOException,
             InvalidKeySpecException {
 
-        return readPublicKey("keys/pub_server_" + serverId + ".key");
+        return readPublicKey("keys/pub_server_" + serverId + ".der");
     }
 
     public static PrivateKey getServerPrivateKey(int serverId) throws NoSuchAlgorithmException, IOException,

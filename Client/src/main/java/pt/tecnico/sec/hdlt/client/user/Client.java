@@ -5,8 +5,7 @@ import pt.tecnico.sec.hdlt.User;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static pt.tecnico.sec.hdlt.FileUtils.getUserPrivateKey;
-import static pt.tecnico.sec.hdlt.FileUtils.getUserPublicKey;
+import static pt.tecnico.sec.hdlt.FileUtils.*;
 
 public class Client {
 
@@ -33,8 +32,8 @@ public class Client {
 
     public void initializeUser(User user) {
         this.user = user;
-        this.privKey = getUserPrivateKey(this.user.getId());
         this.pubKey = getUserPublicKey(this.user.getId());
+        this.privKey = getUserPrivateKey(this.user.getId());
     }
 
     public PrivateKey getPrivKey() {
