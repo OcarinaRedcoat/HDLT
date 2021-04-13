@@ -163,7 +163,30 @@ public class FileUtils {
     public static PublicKey getServerPublicKey(int serverId) throws NoSuchAlgorithmException, IOException,
             InvalidKeySpecException {
 
-        return readPublicKey("keys/pub_server_" + serverId + ".key");
+        PublicKey key = null;
+        try {
+            key = readPublicKey("keys/pub_server_" + serverId + ".key");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return key;
     }
 
+    public static PublicKey getHAPublicKey(int haId)throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException {
+
+        return readPublicKey("keys/pub_ha_" + haId + ".key");
+    }
+
+    public static PrivateKey getHAPrivateKey(int haId)throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException {
+
+        PrivateKey key = null;
+        try {
+            key = readPrivateKey("keys/priv_ha_" + haId + ".key");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return key;
+    }
 }

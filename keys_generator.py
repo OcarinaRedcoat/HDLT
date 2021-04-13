@@ -26,6 +26,7 @@ def generate_and_write_keys(name_key):
 n_users = int(sys.argv[1])  # number of keys
 print("Started generating keys.")
 generate_and_write_keys("server_1")
+generate_and_write_keys("ha_1")
 id = 0
 while id < n_users:
     generate_and_write_keys("client_" + str(id))
