@@ -1,4 +1,4 @@
--package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

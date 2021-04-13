@@ -1,5 +1,7 @@
 package pt.tecnico.sec.hdlt;
 
+import java.util.Scanner;
+
 /**
  * Hello world!
  *

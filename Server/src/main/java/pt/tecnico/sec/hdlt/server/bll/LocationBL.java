@@ -2,7 +2,6 @@ package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.ByteString;
 import pt.tecnico.sec.hdlt.FileUtils;
-import pt.tecnico.sec.hdlt.GeneralUtils;
 import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
@@ -49,14 +48,13 @@ public class LocationBL {
         LocationReport report = LocationReport.parseFrom(reportBytes);
         LocationInformation information = report.getLocationInformation();
 
-        if (!verifySignature(information.getUserId(), report.getLocationInformation().toByteArray(),
-                report.getLocationInformationSignature().toByteArray())) {
-            throw new InvalidParameterException("Invalid location information signature");
-        }
+        //TODO if (!verifySignature(information.getUserId(), report.getLocationInformation().toByteArray(), report.getLocationInformationSignature().toByteArray())) {
+            //throw new InvalidParameterException("Invalid location information signature");
+        //}
 
-        if (GeneralUtils.getCurrentEpoch() == information.getEpoch()) {
-            throw new InvalidParameterException("Invalid epoch");
-        }
+        //TODO if (GeneralUtils.getCurrentEpoch() == information.getEpoch()) {
+            //throw new InvalidParameterException("Invalid epoch");
+        //}
 
         HashSet<Integer> witnessIds = new HashSet<>();
 
@@ -118,7 +116,7 @@ public class LocationBL {
         SignedLocationReport signedReport = SignedLocationReport.newBuilder()
                 .setLocationReport(report)
                 .setSignedLocationReport(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
-                .setIv(ByteString.copyFrom(iv.getIV()))
+                //TODO .setIv(ByteString.copyFrom(iv.getIV()))
                 .build();
 
         return ObtainLocationReportResponse.newBuilder()
