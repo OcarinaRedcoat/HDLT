@@ -107,4 +107,14 @@ public class FileUtils {
 
         return readPrivateKey("../keys/priv_server_" + serverId + ".der");
     }
+
+    public static PrivateKey getHAPrivateKey(int haId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException{
+        return readPrivateKey("keys/priv_ha_" + haId + ".der");
+    }
+
+    public static PublicKey getHAPublicKey(int haId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException{
+        return readPublicKey("keys/pub_ha_" + haId + ".der");
+    }
 }
