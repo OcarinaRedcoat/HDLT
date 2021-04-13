@@ -8,18 +8,13 @@ import java.util.Scanner;
 
 public class IOUtils {
 
-    public static User readUser(String gridFileLocation){
-        Scanner scanner = new Scanner(System.in);
-        User user;
-        System.out.println("Specify the client ID: ");
+    public static User readUser(){
         do {
             try{
-                int user_id = Integer.parseInt(scanner.nextLine());
-                user = FileUtils.parseGridUser(gridFileLocation, user_id);
-
-                return user;
-            } catch (ParseException | IOException | IndexOutOfBoundsException | NumberFormatException | NoSuchElementException | IllegalStateException e) {
-                System.out.println("Invalid Client ID. Try again: ");
+                return FileUtils.parseGridUser(readGridFileLocation(), readUserId());
+            } catch (ParseException | IOException | IndexOutOfBoundsException | NumberFormatException |
+                    NoSuchElementException | IllegalStateException e) {
+                System.out.println("Invalid Client ID or Grid file type or location. Try again: ");
             }
         } while(true);
     }
@@ -28,11 +23,27 @@ public class IOUtils {
         return readString("Specify the grid file location: ");
     }
 
+    public static int readUserId(){
+        return readInteger("Specify the client ID: ");
+    }
+
+    public static long readEpoch(){
+        return readLong("Specify the epoch (we are asking for the current epoch for the purpose of testing): ");
+    }
+
     public static String readString(String askMessage){
         Scanner scanner = new Scanner(System.in);
-        if(!askMessage.equals("")){
+        if(askMessage != null){
             System.out.println(askMessage);
         }
         return scanner.nextLine();
+    }
+
+    public static int readInteger(String askMessage){
+        return Integer.parseInt(readString(askMessage));
+    }
+
+    public static long readLong(String askMessage){
+        return Long.parseLong(readString(askMessage));
     }
 }

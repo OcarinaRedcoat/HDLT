@@ -49,10 +49,10 @@ public class LocationBL {
         LocationReport report = LocationReport.parseFrom(reportBytes);
         LocationInformation information = report.getLocationInformation();
 
-        if (!verifySignature(information.getUserId(), report.getLocationInformation().toByteArray(),
+       /* if (!verifySignature(information.getUserId(), report.getLocationInformation().toByteArray(),
                 report.getLocationInformationSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid location information signature");
-        }
+        }*/
 
         if (GeneralUtils.getCurrentEpoch() == information.getEpoch()) {
             throw new InvalidParameterException("Invalid epoch");

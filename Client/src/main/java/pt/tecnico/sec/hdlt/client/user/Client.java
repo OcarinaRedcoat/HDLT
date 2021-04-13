@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.client.user;
 
 import pt.tecnico.sec.hdlt.FileUtils;
+import pt.tecnico.sec.hdlt.FileUtils.*;
 import pt.tecnico.sec.hdlt.User;
 
 import java.io.IOException;
@@ -33,13 +34,14 @@ public class Client {
         return user;
     }
 
-    public void initializeUser(User user) throws  NoSuchAlgorithmException{
-        try {
-            this.user = user;
+    public void initializeUser(User user) {
+        this.user = user;
+        try{
             this.pubKey = FileUtils.getUserPublicKey(this.user.getId());
             this.privKey = FileUtils.getUserPrivateKey(this.user.getId());
-        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e){
-            System.out.println(e.getMessage());
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e) {
+            System.err.println("There was a problem reading the user private and public RSA keys. Make sure they exist and are in the correct format.");
+            System.exit(1);
         }
     }
 
