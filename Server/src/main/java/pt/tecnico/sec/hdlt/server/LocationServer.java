@@ -70,6 +70,7 @@ public class LocationServer {
 
             final LocationServer locationServer = new LocationServer();
             locationServer.start(locationBL);
+            locationServer.blockUntilShutdown();
 
             locationBL.terminateWriteQueue();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
