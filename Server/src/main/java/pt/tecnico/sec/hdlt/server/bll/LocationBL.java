@@ -52,10 +52,6 @@ public class LocationBL {
             //throw new InvalidParameterException("Invalid location information signature");
         //}
 
-        //TODO if (GeneralUtils.getCurrentEpoch() == information.getEpoch()) {
-            //throw new InvalidParameterException("Invalid epoch");
-        //}
-
         HashSet<Integer> witnessIds = new HashSet<>();
 
         if (report.getLocationProofList().size() < 5) {
