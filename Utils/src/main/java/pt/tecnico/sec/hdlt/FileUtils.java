@@ -4,11 +4,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -17,14 +14,11 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
 
 public class FileUtils {
 
     public static User parseGridUser(String gridFileLocation, int userId) throws IOException, ParseException, IndexOutOfBoundsException {
-        //TODO: falta ver se o ficheiro é mesmo json e mandar exceptions se isso ocurrer acho eu
         FileReader fr = new FileReader(gridFileLocation);
-
         Object obj = new JSONParser().parse(fr);
         JSONArray grid = (JSONArray) obj;
 
@@ -56,10 +50,9 @@ public class FileUtils {
             position.setCloseBy(closeByUsers);
             positions.add(position);
         }
-        user.setPositions(positions);
-
         fr.close();
 
+        user.setPositions(positions);
         return user;
     }
 

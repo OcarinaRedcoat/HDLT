@@ -34,7 +34,6 @@ public class Client {
     }
 
     public void initializeUser(User user) {
-
         this.user = user;
         try{
             this.pubKey = getUserPublicKey(this.user.getId());

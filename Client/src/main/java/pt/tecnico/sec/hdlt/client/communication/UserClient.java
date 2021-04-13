@@ -12,16 +12,16 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class UserClient {
+
+    private static final int serverPort = 50051;
+    private static final String serverAddress = "localhost";
 
     private static UserClient INSTANCE = null;
     private static final Logger logger = Logger.getLogger(UserClient.class.getName());
@@ -106,7 +106,7 @@ public class UserClient {
 
     public void submitLocationReport(LocationReport report){
         logger.info("Submitting Report:");
-        createServerChannel("localhost", 50051);
+        createServerChannel(serverAddress, serverPort);
 
         try {
             ClientBL.submitLocationReport(report, serverStub);
@@ -128,6 +128,8 @@ public class UserClient {
             e.printStackTrace();
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+        } catch (SignatureException e) {
+            e.printStackTrace();
         } finally {
             closeServerChannel();
         }
@@ -135,13 +137,12 @@ public class UserClient {
 
     public LocationReport obtainLocationReport(Long epoch){
         logger.info("Requesting report:");
-        createServerChannel("localhost", 50051);
+        createServerChannel(serverAddress, serverPort);
 
         LocationReport report = null;
         try {
             report = ClientBL.obtainLocationReport(epoch, serverStub);
-            //TODO: print report
-            System.out.println("I got the report Report!");
+            System.out.println("I got the report Report you wanted!");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
@@ -161,6 +162,8 @@ public class UserClient {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (InvalidParameterException e) {
             e.printStackTrace();
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());

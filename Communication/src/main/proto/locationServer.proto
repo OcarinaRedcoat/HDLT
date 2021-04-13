@@ -24,7 +24,6 @@ message SubmitLocationReportRequest {
 
 message LocationReport {
   LocationInformation locationInformation = 1;
-  bytes locationInformationSignature = 2;
   repeated SignedLocationProof locationProof = 3;
 }
 
@@ -36,7 +35,7 @@ message LocationInformation {
 
 message SignedLocationProof {
     LocationProof locationProof = 1;
-    bytes signature = 2;
+    bytes signature = 3;
 }
 
 message LocationProof {
@@ -78,7 +77,6 @@ message ObtainLocationReportResponse {
 message SignedLocationReport {
     LocationReport locationReport = 1;
     bytes signedLocationReport = 2;
-    bytes iv = 3;
 }
 
 // ---------------------------------- ObtainUsersAtLocation ----------------------------------

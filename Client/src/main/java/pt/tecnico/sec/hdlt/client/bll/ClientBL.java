@@ -11,12 +11,10 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
@@ -26,7 +24,6 @@ public class ClientBL {
 
     public static LocationReport requestLocationProofs(Long epoch, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        //TODO: should i verify the digital signatures?
         User user = Client.getInstance().getUser();
 
         Position position = Position
@@ -42,16 +39,17 @@ public class ClientBL {
                 .setPosition(position)
                 .build();
 
-        byte[] signature = sign(request.toByteArray(), Client.getInstance().getPrivKey());
-
         LocationReport.Builder reportBuilder = LocationReport
                 .newBuilder()
-                .setLocationInformationSignature(ByteString.copyFrom(signature))
                 .setLocationInformation(request);
 
         for (ClientServerGrpc.ClientServerBlockingStub stub : userStubs) {
-            SignedLocationProof response = stub.requestLocationProof(request);
-            reportBuilder.addLocationProof(response);
+            try {
+                SignedLocationProof response = stub.requestLocationProof(request);
+                reportBuilder.addLocationProof(response);
+            } catch (Exception e){
+                System.err.println("Someone did not witness!");
+            }
         }
 
         return reportBuilder.build();
@@ -59,17 +57,24 @@ public class ClientBL {
 
     public static void submitLocationReport(LocationReport report, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
-            IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException {
+            IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException,
+            SignatureException {
+
+        byte[] signature = sign(report.toByteArray(), Client.getInstance().getPrivKey());
+
+        SignedLocationReport signedLocationReport = SignedLocationReport
+                .newBuilder()
+                .setLocationReport(report)
+                .setSignedLocationReport(ByteString.copyFrom(signature))
+                .build();
 
         SecretKey key = generateSecretKey();
-
         IvParameterSpec iv = generateIv();
-        byte[] encryptedMessage = symmetricEncrypt(report.toByteArray(), key, iv);
+        byte[] encryptedMessage = symmetricEncrypt(signedLocationReport.toByteArray(), key, iv);
         byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
 
         SubmitLocationReportRequest request = SubmitLocationReportRequest
                 .newBuilder()
-//                .setUserId(Client.getInstance().getUser().getId())
                 .setKey(ByteString.copyFrom(encryptedKey))
                 .setIv(ByteString.copyFrom(iv.getIV()))
                 .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
@@ -81,7 +86,8 @@ public class ClientBL {
 
     public static LocationReport obtainLocationReport(Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
-            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException {
+            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
+            InvalidAlgorithmParameterException {
 
         LocationQuery locationQuery = LocationQuery
                 .newBuilder()
@@ -119,8 +125,8 @@ public class ClientBL {
 
         if(!verifySignature(getServerPublicKey(1), report.toByteArray(),
                 signedLocationReport.getSignedLocationReport().toByteArray())){
-            //TODO: exception
-            throw new InvalidKeyException();
+
+            throw new InvalidParameterException("Invalid location report server signature");
         }
 
         return report;

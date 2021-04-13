@@ -10,6 +10,7 @@ import pt.tecnico.sec.hdlt.communication.Position;
 import pt.tecnico.sec.hdlt.communication.SignedLocationProof;
 
 import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 
@@ -17,8 +18,8 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.sign;
 
 public class ServerBL {
 
-    public static void requestLocationProof(LocationInformation req, StreamObserver<SignedLocationProof> responseObserver)
-            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    public static SignedLocationProof requestLocationProof(LocationInformation req, StreamObserver<SignedLocationProof> responseObserver)
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidParameterException {
         int requesterId = req.getUserId();
         long epoch = req.getEpoch();
         long requesterXPos = req.getPosition().getX();
@@ -42,15 +43,12 @@ public class ServerBL {
 
             byte[] signature = sign(proof.toByteArray(), Client.getInstance().getPrivKey());
 
-            SignedLocationProof response = SignedLocationProof.newBuilder()
+            return SignedLocationProof.newBuilder()
                     .setLocationProof(proof)
                     .setSignature(ByteString.copyFrom(signature))
                     .build();
-
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
         } else {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("You are not close to me.").asRuntimeException());
+            throw new InvalidParameterException("Invalid requester Id, i am not close to him.");
         }
     }
 

@@ -89,17 +89,6 @@ while uid < n_users:
         positionShort = PositionShort(user.id, current_epoch_n, xPos, yPos)
         position = Position(current_epoch_n, xPos, yPos)
 
-        next = False
-        for pos in positionsSoFar:
-            if(pos.epoch != current_epoch_n):
-                continue
-            if(pos.xPos == xPos and pos.yPos == yPos):
-                next = True
-                break
-        if(next):
-            current_epoch_n -= 1
-            continue
-
         positionsSoFar.append(positionShort)
         positions.append(position)
 
