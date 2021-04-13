@@ -86,12 +86,29 @@ message SignedLocationReport {
     bytes signedLocationReport = 2;
 }
 
-// ---------------------------------- ObtainUsersAtLocation ----------------------------------
+// ---------------------------------- ObtainUsersAtLocationRequest ----------------------------------
+message  ObtainUsersAtLocationRequest {
+  bytes encryptedSignedLocationQuery = 1;
+  bytes key = 2;
+  bytes iv = 3;
+}
 
-message ObtainUsersAtLocationRequest {
+message SignedUsersAtLocationQuery {
+  UsersAtLocationQuery usersAtlocationQuery = 1;
+  bytes signature = 2;
+}
 
+message UsersAtLocationQuery {
+  Position pos = 1;
+  int64 epoch = 2;
 }
 
 message ObtainUsersAtLocationResponse {
+  bytes encryptedSignedLocationReport = 1; // Encrypted bytes of message LocationInformation
+  bytes iv = 2;
+}
 
+message ListSignedLocationReport {
+  repeated LocationReport locationReport = 1;
+  bytes signedLocationReport = 2;
 }

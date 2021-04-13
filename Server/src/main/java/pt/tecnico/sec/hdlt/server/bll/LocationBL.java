@@ -49,10 +49,10 @@ public class LocationBL {
         LocationReport report = LocationReport.parseFrom(reportBytes);
         LocationInformation information = report.getLocationInformation();
 
-        if (!verifySignature(information.getUserId(), report.getLocationInformation().toByteArray(),
+       /* if (!verifySignature(information.getUserId(), report.getLocationInformation().toByteArray(),
                 report.getLocationInformationSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid location information signature");
-        }
+        }*/
 
         if (GeneralUtils.getCurrentEpoch() == information.getEpoch()) {
             throw new InvalidParameterException("Invalid epoch");
@@ -118,8 +118,8 @@ public class LocationBL {
         SignedLocationReport signedReport = SignedLocationReport.newBuilder()
                 .setLocationReport(report)
                 .setSignedLocationReport(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
-                .setIv(ByteString.copyFrom(iv.getIV()))
                 .build();
+                //.setIv(ByteString.copyFrom(iv.getIV()))
 
         return ObtainLocationReportResponse.newBuilder()
                 .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptResponse(signedReport.toByteArray(), secretKey, iv)))
