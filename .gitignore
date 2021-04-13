@@ -1,4 +1,9 @@
 HDLT.iml
+/Client/Client.iml
+/Communication/Communication.iml
+/Utils/Utils.iml
+/Server/Server.iml
+/HAClient/HAClient.iml
 Server/src/main/java/pt/tecnico/sec/hdlt/server/db/database.properties
 /.idea/
 .DS_Store
