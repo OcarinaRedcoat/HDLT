@@ -10,22 +10,26 @@ service LocationServer {
 }
 
 service ClientServer {
-  rpc RequestLocationProof (LocationInformation) returns (SignedLocationProof) {}
+  rpc RequestLocationProof (LocationInformationRequest) returns (SignedLocationProof) {}
 }
 
 // ---------------------------------- SubmitLocationReport ----------------------------------
 
 message SubmitLocationReportRequest {
   bytes encryptedSignedLocationReport = 1;
-  bytes key = 3;
-  bytes iv = 4;
+  bytes key = 2;
+  bytes iv = 3;
 //  int64 epoch = 3;
 }
 
 message LocationReport {
   LocationInformation locationInformation = 1;
-  bytes locationInformationSignature = 2;
-  repeated SignedLocationProof locationProof = 3;
+  repeated SignedLocationProof locationProof = 2;
+}
+
+message LocationInformationRequest {
+    LocationInformation locationInformation = 1;
+    bytes signature = 2;
 }
 
 message LocationInformation {
@@ -74,6 +78,7 @@ message LocationQuery {
 
 message ObtainLocationReportResponse {
   bytes encryptedSignedLocationReport = 1; // Encrypted bytes of message LocationInformation
+  bytes iv = 2;
 }
 
 message SignedLocationReport {

@@ -1,16 +1,5 @@
 package pt.tecnico.sec.hdlt;
 
-import com.sun.jmx.remote.internal.ArrayQueue;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
-import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 
@@ -61,7 +50,7 @@ public class User {
                 return pos;
             }
         }
-        throw new InvalidParameterException(); //TODO fazer uma exception propria
+        throw new InvalidParameterException("Invalid Epoch");
     }
 
     public Boolean isCloseTo(long closeId, long epoch){
