@@ -28,7 +28,7 @@ public class HAClient {
     private LocationServerGrpc.LocationServerBlockingStub serverStub;
     private ManagedChannel serverChannel;
 
-    private HAClient(String host, int port) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    private HAClient(String host, int port) {
         try {
             createServerChannel(host, port);
             HA.getInstance().initializeHA();
@@ -51,7 +51,7 @@ public class HAClient {
         serverChannel.shutdownNow();
     }
 
-    public static HAClient getInstance() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    public static HAClient getInstance() {
         if (INSTANCE == null)
             INSTANCE = new HAClient("localhost", 50051);
         return INSTANCE;
