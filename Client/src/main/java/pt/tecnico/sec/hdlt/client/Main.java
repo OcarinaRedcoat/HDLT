@@ -26,7 +26,7 @@ public class Main
             command = readString(null);
             switch (command){
                 case "help":
-                    System.out.println("Available commands: \"help\", \"submit report\", \"current epoch\", \"obtain report\", \"exit\".");
+                    System.out.println("Available commands: \"help\", \"submit report\"(it will also request witnesses automatically), \"current epoch\", \"obtain report\", \"exit\".");
                     break;
                 case "submit report":
                     epoch = readEpoch();

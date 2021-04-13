@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.client.bll;
 
 import com.google.protobuf.ByteString;
+import io.grpc.StatusRuntimeException;
 import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
@@ -17,13 +18,14 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 
 import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
+import static pt.tecnico.sec.hdlt.FileUtils.getUserPublicKey;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecrypt;
 
 public class ClientBL {
 
     public static LocationReport requestLocationProofs(Long epoch, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
-            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException {
         User user = Client.getInstance().getUser();
 
         Position position = Position
@@ -32,22 +34,38 @@ public class ClientBL {
                 .setY(user.getPositionWithEpoch(epoch).getyPos())
                 .build();
 
-        LocationInformation request = LocationInformation
+        LocationInformation locationInformation = LocationInformation
                 .newBuilder()
                 .setUserId(user.getId())
                 .setEpoch(epoch)
                 .setPosition(position)
                 .build();
 
+        byte[] signature = sign(locationInformation.toByteArray(), Client.getInstance().getPrivKey());
+
+        LocationInformationRequest request = LocationInformationRequest
+                .newBuilder()
+                .setLocationInformation(locationInformation)
+                .setSignature(ByteString.copyFrom(signature))
+                .build();
+
         LocationReport.Builder reportBuilder = LocationReport
                 .newBuilder()
-                .setLocationInformation(request);
+                .setLocationInformation(locationInformation);
 
         for (ClientServerGrpc.ClientServerBlockingStub stub : userStubs) {
             try {
                 SignedLocationProof response = stub.requestLocationProof(request);
-                reportBuilder.addLocationProof(response);
-            } catch (Exception e){
+
+                LocationProof locationProof = response.getLocationProof();
+                if(verifySignature(getUserPublicKey(locationProof.getWitnessId()), locationProof.toByteArray(),
+                        response.getSignature().toByteArray())){
+
+                    reportBuilder.addLocationProof(response);
+                } else {
+                    System.err.println("Someone messed with this proof, the signature does not match!");
+                }
+            } catch (StatusRuntimeException e){
                 System.err.println("Someone did not witness!");
             }
         }
@@ -80,8 +98,7 @@ public class ClientBL {
                 .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
                 .build();
 
-        //TODO: do something with response? e tratar aqui ou no outro?
-        SubmitLocationReportResponse response = serverStub.submitLocationReport(request);
+        serverStub.submitLocationReport(request);
     }
 
     public static LocationReport obtainLocationReport(Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
@@ -117,7 +134,9 @@ public class ClientBL {
                 .build();
 
         ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
-        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key, iv);
+
+        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key,
+                new IvParameterSpec(response.getIv().toByteArray()));
 
         SignedLocationReport signedLocationReport = SignedLocationReport.parseFrom(decryptedMessage);
 

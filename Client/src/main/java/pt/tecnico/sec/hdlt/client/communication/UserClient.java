@@ -3,6 +3,7 @@ package pt.tecnico.sec.hdlt.client.communication;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.sec.hdlt.client.bll.ClientBL;
 import pt.tecnico.sec.hdlt.client.user.Client;
@@ -89,6 +90,7 @@ public class UserClient {
         LocationReport report = null;
         try {
             report = ClientBL.requestLocationProofs(epoch, userStubs);
+            System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
@@ -97,6 +99,10 @@ public class UserClient {
             e.printStackTrace();
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             closeUserChannels();
         }
@@ -110,6 +116,7 @@ public class UserClient {
 
         try {
             ClientBL.submitLocationReport(report, serverStub);
+            System.out.println("Submitted report successfully");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {

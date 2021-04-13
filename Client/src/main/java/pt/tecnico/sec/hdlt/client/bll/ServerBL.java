@@ -4,29 +4,40 @@ import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.client.user.Client;
-import pt.tecnico.sec.hdlt.communication.LocationInformation;
-import pt.tecnico.sec.hdlt.communication.LocationProof;
-import pt.tecnico.sec.hdlt.communication.Position;
-import pt.tecnico.sec.hdlt.communication.SignedLocationProof;
+import pt.tecnico.sec.hdlt.communication.*;
 
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 
+import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
+import static pt.tecnico.sec.hdlt.FileUtils.getUserPublicKey;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.sign;
+import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.verifySignature;
 
 public class ServerBL {
 
-    public static SignedLocationProof requestLocationProof(LocationInformation req, StreamObserver<SignedLocationProof> responseObserver)
-            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidParameterException {
-        int requesterId = req.getUserId();
-        long epoch = req.getEpoch();
-        long requesterXPos = req.getPosition().getX();
-        long requesterYPos = req.getPosition().getY();
+    public static SignedLocationProof requestLocationProof(LocationInformationRequest req, StreamObserver<SignedLocationProof> responseObserver)
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidParameterException, IOException,
+            InvalidKeySpecException {
+
+        LocationInformation locationInformation = req.getLocationInformation();
+        int requesterId = locationInformation.getUserId();
+
+        if(!verifySignature(getUserPublicKey(requesterId), locationInformation.toByteArray(),
+                req.getSignature().toByteArray())){
+
+            throw new InvalidParameterException("Invalid location report client signature");
+        }
+
+        long epoch = locationInformation.getEpoch();
+        long requesterXPos = locationInformation.getPosition().getX();
+        long requesterYPos = locationInformation.getPosition().getY();
 
         if(Client.getInstance().getUser().isCloseTo(requesterId, epoch)) {
-
             Position position = Position
                     .newBuilder()
                     .setX(requesterXPos)
