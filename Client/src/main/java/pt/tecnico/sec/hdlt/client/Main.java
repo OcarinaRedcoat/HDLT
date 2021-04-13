@@ -5,11 +5,8 @@ import pt.tecnico.sec.hdlt.client.communication.UserServer;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
-import java.security.PrivateKey;
 import java.util.Scanner;
 
-import static pt.tecnico.sec.hdlt.FileUtils.getUserPrivateKey;
-import static pt.tecnico.sec.hdlt.FileUtils.readPrivateKey;
 import static pt.tecnico.sec.hdlt.GeneralUtils.getCurrentEpoch;
 import static pt.tecnico.sec.hdlt.IOUtils.*;
 
@@ -29,7 +26,8 @@ public class Main
         do{
             command = scanner.nextLine();
             switch (command){
-                case "exit":
+                case "help":
+                    System.out.println("Available commands: \"help\", \"submit report\", \"current epoch\", \"obtain report\", \"exit\".");
                     break;
                 case "submit report":
                     epoch = Integer.parseInt(readString("Specify the epoch (we are not using the current epoch for the purpose of testing): "));
@@ -43,8 +41,7 @@ public class Main
                 case "current epoch":
                     System.out.println("Current Epoch: " + getCurrentEpoch());
                     break;
-                case "help":
-                    System.out.println("Available commands: \"help\", \"submit report\", \"current epoch\", \"obtain report\", \"exit\".");
+                case "exit":
                     break;
                 default:
                     System.out.println("Invalid Command. Type \"help\" for available commands.");

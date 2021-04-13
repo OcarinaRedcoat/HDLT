@@ -1,10 +1,7 @@
 package pt.tecnico.sec.hdlt.client.bll;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import io.grpc.StatusRuntimeException;
 import pt.tecnico.sec.hdlt.User;
-import pt.tecnico.sec.hdlt.client.communication.UserClient;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
@@ -20,8 +17,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
