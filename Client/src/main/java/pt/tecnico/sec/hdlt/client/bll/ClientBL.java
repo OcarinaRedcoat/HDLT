@@ -26,6 +26,7 @@ public class ClientBL {
 
     public static LocationReport requestLocationProofs(Long epoch, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        //TODO: should i verify the digital signatures?
         User user = Client.getInstance().getUser();
 
         Position position = Position

@@ -14,28 +14,27 @@ public class Main
 {
     //TODO: G:\IST\2-Semestre\SEC\Projeto\HDLT\grids.output.json
     public static void main(String[] args) {
-        Client.getInstance().initializeUser(readUser(readGridFileLocation()));
+        Client.getInstance().initializeUser(readUser());
         UserServer.getInstance().start();
 
-        Scanner scanner = new Scanner(System.in);
         String command;
         long epoch;
         LocationReport report;
 
         System.out.println("Client Initialized. Type \"help\" at any point for the list of available commands.");
         do{
-            command = scanner.nextLine();
+            command = readString(null);
             switch (command){
                 case "help":
                     System.out.println("Available commands: \"help\", \"submit report\", \"current epoch\", \"obtain report\", \"exit\".");
                     break;
                 case "submit report":
-                    epoch = Integer.parseInt(readString("Specify the epoch (we are not using the current epoch for the purpose of testing): "));
+                    epoch = readEpoch();
                     report = UserClient.getInstance().requestLocationProofs(epoch);
                     UserClient.getInstance().submitLocationReport(report);
                     break;
                 case "obtain report":
-                    epoch = Integer.parseInt(readString("Specify the epoch: "));
+                    epoch = readEpoch();
                     UserClient.getInstance().obtainLocationReport(epoch);
                     break;
                 case "current epoch":

@@ -21,61 +21,8 @@ import java.util.Base64;
 
 public class FileUtils {
 
-    public static ArrayList<User> parseGridUsers(String gridFileLocation) throws IOException, ParseException {
-        if(gridFileLocation == null){
-            throw new IOException(); //TODO dizer que não foi definido a localização
-        }
-
-        FileReader fr = new FileReader(gridFileLocation);
-
-        Object obj = new JSONParser().parse(fr);
-        JSONArray grid = (JSONArray) obj;
-
-        ArrayList<User> users = new ArrayList<>();
-
-        for (Object userObject: grid) {
-            JSONObject userJson = (JSONObject) userObject;
-
-            User user = new User(
-                    Integer.parseInt(userJson.get("userId").toString()),
-                    userJson.get("ip").toString(),
-                    Integer.parseInt(userJson.get("port").toString())
-            );
-
-            JSONArray positionsJson = (JSONArray) userJson.get("positions");
-            ArrayList<Position> positions = new ArrayList<>();
-            for (Object positionObject: positionsJson) {
-                JSONObject positionJson = (JSONObject) positionObject;
-
-                Position position = new Position(
-                        Long.parseLong(positionJson.get("epoch").toString()),
-                        Long.parseLong(positionJson.get("xPos").toString()),
-                        Long.parseLong(positionJson.get("yPos").toString())
-                );
-
-                JSONArray closeByUsersJson = (JSONArray) positionJson.get("closeBy");
-                ArrayList<Long> closeByUsers = new ArrayList<>();
-                for (Object closeById: closeByUsersJson) {
-                    closeByUsers.add((Long) closeById);
-                }
-
-                position.setCloseBy(closeByUsers);
-                positions.add(position);
-            }
-            user.setPositions(positions);
-            users.add(user);
-        }
-
-        fr.close();
-
-        return users;
-    }
-
     public static User parseGridUser(String gridFileLocation, int userId) throws IOException, ParseException, IndexOutOfBoundsException {
-        if(gridFileLocation == null){
-            throw new IOException(); //TODO dizer que não foi definido a localização, apenas acontece se o grid nao for properly initialized
-        }
-
+        //TODO: falta ver se o ficheiro é mesmo json e mandar exceptions se isso ocurrer acho eu
         FileReader fr = new FileReader(gridFileLocation);
 
         Object obj = new JSONParser().parse(fr);
@@ -144,28 +91,20 @@ public class FileUtils {
         return keyFacPriv.generatePrivate(privSpec);
     }
 
-    public static PrivateKey getUserPrivateKey(int userId){
-        PrivateKey key = null;
-        try {
-            key = readPrivateKey("../keys/priv_client_" + userId + ".der");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return key;
+    public static PrivateKey getUserPrivateKey(int userId)
+            throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+
+        return readPrivateKey("../keys/priv_client_" + userId + ".der");
     }
 
-    public static PublicKey getUserPublicKey(int userId){
-        PublicKey key = null;
-        try {
-            key = readPublicKey("../keys/pub_client_" + userId + ".der");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return key;
+    public static PublicKey getUserPublicKey(int userId)
+            throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+
+        return readPublicKey("../keys/pub_client_" + userId + ".der");
     }
 
-    public static PublicKey getServerPublicKey(int serverId) throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException {
+    public static PublicKey getServerPublicKey(int serverId)
+            throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
 
         return readPublicKey("keys/pub_server_" + serverId + ".der");
     }

@@ -61,7 +61,7 @@ public class User {
                 return pos;
             }
         }
-        throw new InvalidParameterException(); //TODO fazer uma exception propria
+        throw new InvalidParameterException(); //TODO fazer uma exception propria, no position for given epoch
     }
 
     public Boolean isCloseTo(long closeId, long epoch){
