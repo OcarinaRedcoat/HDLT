@@ -144,56 +144,19 @@ public class FileUtils {
         return keyFacPriv.generatePrivate(privSpec);
     }
 
-    public static PrivateKey getUserPrivateKey(int userId){
-        PrivateKey key = null;
-        try {
-            key = readPrivateKey("../keys/priv_client_" + userId + ".der");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return key;
+    public static PrivateKey getUserPrivateKey(int userId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException{
+        return readPrivateKey("keys/priv_client_" + userId + ".der");
     }
 
-    public static PublicKey getUserPublicKey(int userId){
-        PublicKey key = null;
-        try {
-            key = readPublicKey("../keys/pub_client_" + userId + ".der");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return key;
+    public static PublicKey getUserPublicKey(int userId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException{
+        return readPublicKey("keys/pub_client_" + userId + ".der");
     }
 
     public static PublicKey getServerPublicKey(int serverId) throws NoSuchAlgorithmException, IOException,
             InvalidKeySpecException {
 
-<<<<<<< HEAD
-        PublicKey key = null;
-        try {
-            key = readPublicKey("keys/pub_server_" + serverId + ".key");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return key;
-    }
-
-    public static PublicKey getHAPublicKey(int haId)throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException {
-
-        return readPublicKey("keys/pub_ha_" + haId + ".key");
-    }
-
-    public static PrivateKey getHAPrivateKey(int haId)throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException {
-
-        PrivateKey key = null;
-        try {
-            key = readPrivateKey("keys/priv_ha_" + haId + ".key");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return key;
-=======
         return readPublicKey("keys/pub_server_" + serverId + ".der");
     }
 
@@ -201,6 +164,15 @@ public class FileUtils {
             InvalidKeySpecException {
 
         return readPrivateKey("keys/priv_server_" + serverId + ".key");
->>>>>>> origin/main
+    }
+
+    public static PrivateKey getHAPrivateKey(int haId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException{
+        return readPrivateKey("keys/priv_ha_" + haId + ".der");
+    }
+
+    public static PublicKey getHAPublicKey(int haId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException{
+        return readPublicKey("keys/pub_ha_" + haId + ".der");
     }
 }

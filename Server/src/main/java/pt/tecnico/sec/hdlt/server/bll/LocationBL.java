@@ -118,8 +118,8 @@ public class LocationBL {
         SignedLocationReport signedReport = SignedLocationReport.newBuilder()
                 .setLocationReport(report)
                 .setSignedLocationReport(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
-                .setIv(ByteString.copyFrom(iv.getIV()))
                 .build();
+                //.setIv(ByteString.copyFrom(iv.getIV()))
 
         return ObtainLocationReportResponse.newBuilder()
                 .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptResponse(signedReport.toByteArray(), secretKey, iv)))

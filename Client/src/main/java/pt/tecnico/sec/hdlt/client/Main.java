@@ -5,6 +5,7 @@ import pt.tecnico.sec.hdlt.client.communication.UserServer;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 
 import static pt.tecnico.sec.hdlt.GeneralUtils.getCurrentEpoch;
@@ -13,7 +14,7 @@ import static pt.tecnico.sec.hdlt.IOUtils.*;
 public class Main
 {
     //TODO: G:\IST\2-Semestre\SEC\Projeto\HDLT\grids.output.json
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchAlgorithmException {
         Client.getInstance().initializeUser(readUser(readGridFileLocation()));
         UserServer.getInstance().start();
 

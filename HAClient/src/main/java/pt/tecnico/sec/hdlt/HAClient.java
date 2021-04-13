@@ -9,7 +9,9 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
@@ -56,25 +58,20 @@ public class HAClient {
     }
 
 
-    /* Params: userId, ep .....
-     * Specification: returns the position of the userId at the epoch ep, The HA can
-     *   obtain the location information of any user
-     * TODO fazer um novo rpc proto pois tenho que dizer que sou o HA e quem quero
-     * */
     public static LocationReport obtainLocationReport(int userId, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
-            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException {
+            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException {
 
-        HALocationQuery locationQuery = HALocationQuery
+        LocationQuery locationQuery = LocationQuery
                 .newBuilder()
                 .setUserId(userId)
                 .setEpoch(epoch)
-                .setHaId(HA.getInstance().getHAId())
+                .setIsHA(true)
                 .build();
-        //TODO make a signature for HA
+
         byte[] signature = sign(locationQuery.toByteArray(), HA.getInstance().getPrivateKey());
 
-        HASignedLocationQuery signedLocationQuery = HASignedLocationQuery
+        SignedLocationQuery signedLocationQuery = SignedLocationQuery
                 .newBuilder()
                 .setLocationQuery(locationQuery)
                 .setSignature(ByteString.copyFrom(signature))
@@ -82,20 +79,19 @@ public class HAClient {
 
         SecretKey key = generateSecretKey();
 
-        //TODO IV
-        byte[] encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key);
+        IvParameterSpec iv = generateIv();
+        byte[] encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key, iv);
         byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
 
-        //TODO: IV
-        HAObtainLocationReportRequest request = HAObtainLocationReportRequest
+        ObtainLocationReportRequest request = ObtainLocationReportRequest
                 .newBuilder()
                 .setKey(ByteString.copyFrom(encryptedKey))
+                .setIv(ByteString.copyFrom(iv.getIV()))
                 .setEncryptedSignedLocationQuery(ByteString.copyFrom(encryptedMessage))
                 .build();
 
-        HAObtainLocationReportResponse response = serverStub.hAObtainLocationReport(request);
-
-        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key);
+        ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
+        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key, iv);
 
         SignedLocationReport signedLocationReport = SignedLocationReport.parseFrom(decryptedMessage);
 
