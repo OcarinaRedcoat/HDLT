@@ -25,8 +25,10 @@ public class App
                 case "exit":
                     break;
                 case "obtain location report": // arg
+
                     epoch = readLong("Specify the epoch (we are not using the current epoch for the purpose of testing): ");
                     userId = readInteger("Specify the id of the user that you want the location report: ");
+
                     //report = UserClient.getInstance().requestLocationProofs(epoch);
                     //UserClient.getInstance().submitLocationReport(report);
                     //HAClient.getInstance().obtainLocationReport();
@@ -46,3 +48,4 @@ public class App
         HAClient.getInstance().serverShutdown();
     }
 }
+

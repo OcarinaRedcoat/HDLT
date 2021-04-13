@@ -46,6 +46,13 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
 
     @Override
     public void obtainUsersAtLocation(ObtainUsersAtLocationRequest request, StreamObserver<ObtainUsersAtLocationResponse> responseObserver) {
-        super.obtainUsersAtLocation(request, responseObserver);
+        try {
+            responseObserver.onNext(this.locationBL.obtainUsersAtLocation(request));
+            responseObserver.onCompleted();
+        } catch (InvalidParameterException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        }
     }
 }
