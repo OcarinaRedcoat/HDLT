@@ -10,7 +10,8 @@ import java.util.Base64;
 
 public class CryptographicOperations {
 
-    private static final String SYMMETRIC_ALGORITHM = "AES/CBC/PKCS5Padding";
+    private static final String SYMMETRIC_ALGORITHM_WITH_PADDING = "AES/CBC/PKCS5Padding";
+    private static final String SYMMETRIC_ALGORITHM = "AES";
     private static final int SYMMETRIC_KEY_SIZE = 256;
     private static final int SYMMETRIC_BLOCK_SIZE = 128; //Block size for iv, for AES it is 128
     private static final String ASYMMETRIC_ALGORITHM = "RSA";
@@ -27,7 +28,7 @@ public class CryptographicOperations {
 
     public static IvParameterSpec generateIv() {
         SecureRandom randomSecureRandom = new SecureRandom();
-        byte[] iv = new byte[SYMMETRIC_BLOCK_SIZE];
+        byte[] iv = new byte[SYMMETRIC_BLOCK_SIZE / 8];
         randomSecureRandom.nextBytes(iv);
         return new IvParameterSpec(iv);
     }
@@ -60,14 +61,14 @@ public class CryptographicOperations {
             throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException,
             NoSuchPaddingException, InvalidAlgorithmParameterException {
 
-        return transform(Cipher.ENCRYPT_MODE, SYMMETRIC_ALGORITHM, data, key, iv);
+        return transform(Cipher.ENCRYPT_MODE, SYMMETRIC_ALGORITHM_WITH_PADDING, data, key, iv);
     }
 
     public static byte[] symmetricDecrypt(byte[] data, Key key, IvParameterSpec iv)
             throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException,
             NoSuchPaddingException, InvalidAlgorithmParameterException {
 
-        return transform(Cipher.DECRYPT_MODE, SYMMETRIC_ALGORITHM, data, key, iv);
+        return transform(Cipher.DECRYPT_MODE, SYMMETRIC_ALGORITHM_WITH_PADDING, data, key, iv);
     }
 
     public static byte[] asymmetricEncrypt(byte[] data, Key key)
