@@ -69,7 +69,7 @@ public class ClientBL {
 
         SubmitLocationReportRequest request = SubmitLocationReportRequest
                 .newBuilder()
-                .setUserId(Client.getInstance().getUser().getId())
+//                .setUserId(Client.getInstance().getUser().getId())
                 .setKey(ByteString.copyFrom(encryptedKey))
                 .setIv(ByteString.copyFrom(iv.getIV()))
                 .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))

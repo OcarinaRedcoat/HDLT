@@ -109,4 +109,9 @@ public class FileUtils {
         return readPublicKey("keys/pub_server_" + serverId + ".der");
     }
 
+    public static PrivateKey getServerPrivateKey(int serverId) throws NoSuchAlgorithmException, IOException,
+            InvalidKeySpecException {
+
+        return readPrivateKey("keys/priv_server_" + serverId + ".key");
+    }
 }
