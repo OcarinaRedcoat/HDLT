@@ -38,9 +38,6 @@ public class LocationBL {
         this.locationReports = ReadFile.createReportsMap(filePath);
         this.publicKey = FileUtils.getServerPublicKey(serverId);
         this.privateKey = FileUtils.getServerPrivateKey(serverId);
-
-        Files.writeString(filePath, "Hello World!",
-                StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     public void submitLocationReport(SubmitLocationReportRequest request) throws Exception {
