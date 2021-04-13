@@ -1,11 +1,9 @@
 package pt.tecnico.sec.hdlt.client.communication;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.bll.ClientBL;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
@@ -13,8 +11,8 @@ import pt.tecnico.sec.hdlt.communication.*;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
@@ -22,8 +20,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
 
 public class UserClient {
 
@@ -99,6 +95,8 @@ public class UserClient {
             e.printStackTrace();
         } catch (SignatureException e) {
             e.printStackTrace();
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
         } finally {
             closeUserChannels();
         }
@@ -126,6 +124,10 @@ public class UserClient {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
         } finally {
             closeServerChannel();
         }
@@ -158,6 +160,10 @@ public class UserClient {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
         } finally {
             closeServerChannel();
         }

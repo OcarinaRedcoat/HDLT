@@ -18,7 +18,6 @@ service ClientServer {
 
 message SubmitLocationReportRequest {
   bytes encryptedSignedLocationReport = 1;
-  int32 userId = 2;
   bytes key = 3;
   bytes iv = 4;
 //  int64 epoch = 3;
@@ -71,6 +70,7 @@ message SignedLocationQuery {
 message LocationQuery {
   int32 userId = 1;
   int64 epoch = 2;
+  bool isHA = 3;
 }
 
 message ObtainLocationReportResponse {
@@ -80,7 +80,6 @@ message ObtainLocationReportResponse {
 message SignedLocationReport {
     LocationReport locationReport = 1;
     bytes signedLocationReport = 2;
-    bytes iv = 3;
 }
 
 // ---------------------------------- ObtainUsersAtLocation ----------------------------------

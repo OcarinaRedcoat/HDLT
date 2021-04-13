@@ -1,51 +1,70 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.ByteString;
+import pt.tecnico.sec.hdlt.FileUtils;
+import pt.tecnico.sec.hdlt.GeneralUtils;
 import pt.tecnico.sec.hdlt.communication.*;
+import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.generateSecretKey;
 
 public class LocationBL {
 
     private final WriteQueue<LocationReport> writeQueue;
     private final ConcurrentHashMap<LocationReportKey, LocationReport> locationReports;
+    private PublicKey publicKey;
+    private PrivateKey privateKey;
 
-    public LocationBL(Path filePath) {
+    public LocationBL(int serverId) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        Path filePath = Paths.get("Server_" + serverId + ".txt");
         this.writeQueue = new WriteQueue<>(filePath);
         this.locationReports = ReadFile.createReportsMap(filePath);
+//        this.publicKey = FileUtils.getServerPublicKey(serverId);
+//        this.privateKey = FileUtils.getServerPrivateKey(serverId);
     }
 
-    public void submitLocationReport(byte[] encryptedSignedLocationReport, int userId) throws InterruptedException, InvalidProtocolBufferException {
-        // TODO decrypt symmetric key
+    public void submitLocationReport(SubmitLocationReportRequest request) throws Exception {
 
-        byte[] reportBytes = decryptedLocationReport(encryptedSignedLocationReport);
+        byte[] reportBytes = decryptRequest(
+                request.getEncryptedSignedLocationReport().toByteArray(),
+                decryptKey(request.getKey().toByteArray()),
+                request.getIv().toByteArray());
 
-        LocationReport locationReport = LocationReport.parseFrom(reportBytes);
+        LocationReport report = LocationReport.parseFrom(reportBytes);
+        LocationInformation information = report.getLocationInformation();
 
-        if (verifySignature(locationReport.getLocationInformationSignature().toByteArray())) {
+        if (!verifySignature(information.getUserId(), report.getLocationInformation().toByteArray(),
+                report.getLocationInformationSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid location information signature");
         }
 
-        LocationInformation information = locationReport.getLocationInformation();
-
-        // TODO verify epoch
-        if (information.getUserId() != userId) {
-            throw new InvalidParameterException("Invalid user Id");
+        if (GeneralUtils.getCurrentEpoch() == information.getEpoch()) {
+            throw new InvalidParameterException("Invalid epoch");
         }
 
         HashSet<Integer> witnessIds = new HashSet<>();
 
-        if (locationReport.getLocationProofList().size() < 5) {
+        if (report.getLocationProofList().size() < 5) {
             throw new InvalidParameterException("Invalid number of proofs");
         }
 
-        for (SignedLocationProof sProof : locationReport.getLocationProofList()) {
+        for (SignedLocationProof sProof : report.getLocationProofList()) {
             LocationProof lProof = sProof.getLocationProof();
 
             if (witnessIds.contains(lProof.getWitnessId())) {
@@ -54,7 +73,7 @@ public class LocationBL {
 
             witnessIds.add(lProof.getWitnessId());
 
-            if (verifySignature(sProof.getSignature().toByteArray())) {
+            if (!verifySignature(lProof.getWitnessId(), lProof.toByteArray(), sProof.getSignature().toByteArray())) {
                 throw new InvalidParameterException("Invalid location proof signature");
             }
 
@@ -65,24 +84,63 @@ public class LocationBL {
 
         LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
         if (!this.locationReports.contains(key)) {
-            this.locationReports.put(key, locationReport);
-            this.writeQueue.write(locationReport);
+            this.locationReports.put(key, report);
+            this.writeQueue.write(report);
         }
     }
 
-    public ObtainLocationReportResponse obtainLocationReport(byte[] encryptedSignedLocationQuery) {
-//        return ObtainLocationReportResponse.newBuilder().setEncryptedSignedLocationReport().build();
-        return null;
+    public ObtainLocationReportResponse obtainLocationReport(ObtainLocationReportRequest request) throws Exception {
+
+        byte[] queryBytes = decryptRequest(
+                request.getEncryptedSignedLocationQuery().toByteArray(),
+                decryptKey(request.getKey().toByteArray()),
+                request.getIv().toByteArray());
+
+        SignedLocationQuery sLocationQuery = SignedLocationQuery.parseFrom(queryBytes);
+        LocationQuery locationQuery = sLocationQuery.getLocationQuery();
+
+        if (!verifySignature(locationQuery.getUserId(), locationQuery.toByteArray(),
+                sLocationQuery.getSignature().toByteArray())) {
+
+            throw new InvalidParameterException("Invalid location query signature");
+        }
+
+        LocationReportKey key = new LocationReportKey(locationQuery.getUserId(), locationQuery.getEpoch());
+        if (!this.locationReports.contains(key)) {
+            throw new NoSuchFieldException("No report found for user: " + locationQuery.getUserId() + "at epoch: " + locationQuery.getEpoch());
+        }
+
+        LocationReport report = this.locationReports.get(key);
+
+        IvParameterSpec iv = CryptographicOperations.generateIv();
+        SecretKey secretKey = generateSecretKey();
+
+        SignedLocationReport signedReport = SignedLocationReport.newBuilder()
+                .setLocationReport(report)
+                .setSignedLocationReport(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
+                .setIv(ByteString.copyFrom(iv.getIV()))
+                .build();
+
+        return ObtainLocationReportResponse.newBuilder()
+                .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptResponse(signedReport.toByteArray(), secretKey, iv)))
+                .build();
     }
 
-    private byte[] decryptedLocationReport(byte[] encryptedSignedLocationReport) {
-        // TODO decrypt
-        return new byte[1];
+    private byte[] decryptKey(byte[] key) throws Exception {
+        return CryptographicOperations.asymmetricDecrypt(key, this.privateKey);
     }
 
-    private boolean verifySignature(byte[] signature) {
-        // TODO verify signature
-        return true;
+    private byte[] decryptRequest(byte[] request, byte[] key, byte[] iv) throws Exception {
+        return CryptographicOperations.symmetricDecrypt(request,
+                CryptographicOperations.convertToSymmetricKey(key), new IvParameterSpec(iv));
+    }
+
+    private byte[] encryptResponse(byte[] data, SecretKey secretKey, IvParameterSpec iv) throws Exception {
+        return CryptographicOperations.symmetricEncrypt(data, secretKey, iv);
+    }
+
+    private boolean verifySignature(int userId, byte[] message, byte[] signature) throws Exception {
+        return CryptographicOperations.verifySignature(FileUtils.getUserPublicKey(userId), message, signature);
     }
 
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {
