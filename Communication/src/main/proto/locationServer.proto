@@ -6,6 +6,7 @@ package pt.tecnico.sec.hdlt.communication;
 service LocationServer {
   rpc SubmitLocationReport (SubmitLocationReportRequest) returns (SubmitLocationReportResponse) {}
   rpc ObtainLocationReport (ObtainLocationReportRequest) returns (ObtainLocationReportResponse) {}
+  rpc HAObtainLocationReport (HAObtainLocationReportRequest) returns (HAObtainLocationReportResponse) {}
   rpc ObtainUsersAtLocation (ObtainUsersAtLocationRequest) returns (ObtainUsersAtLocationResponse) {}
 }
 
@@ -84,6 +85,32 @@ message SignedLocationReport {
 
 // ---------------------------------- ObtainUsersAtLocation ----------------------------------
 
+message HAObtainLocationReportRequest {
+  bytes encryptedSignedLocationQuery = 1;
+  bytes key = 2;
+  bytes iv = 3;
+}
+
+message HASignedLocationQuery {
+  HALocationQuery locationQuery = 1;
+  bytes signature = 2;
+}
+
+message HALocationQuery {
+  int32 haId = 1;
+  int32 userId = 2;
+  int64 epoch = 3;
+}
+
+message HAObtainLocationReportResponse {
+  bytes encryptedSignedLocationReport = 1; // Encrypted bytes of message LocationInformation
+}
+
+message HASignedLocationReport {
+  LocationReport locationReport = 1;
+  bytes signedLocationReport = 2;
+  bytes iv = 3;
+}
 message ObtainUsersAtLocationRequest {
 
 }
