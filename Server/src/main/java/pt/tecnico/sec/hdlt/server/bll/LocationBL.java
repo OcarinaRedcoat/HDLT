@@ -75,13 +75,12 @@ public class LocationBL {
             }
 
             if (verifyLocationProof(information, lProof)) {
-                //TODO: not working: throw new InvalidParameterException("Invalid location proof");
+                throw new InvalidParameterException("Invalid location proof");
             }
         }
 
         LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
-        if (!this.locationReports.contains(key)) {
-            //TODO: not working
+        if (!this.locationReports.containsKey(key)) {
             this.locationReports.put(key, report);
             this.writeQueue.write(report);
         }
