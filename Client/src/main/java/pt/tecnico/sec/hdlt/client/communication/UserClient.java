@@ -117,7 +117,7 @@ public class UserClient {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "server RPC failed: {0}:", e.getMessage());
+            logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
         } finally {
             closeServerChannel();
         }
@@ -137,7 +137,7 @@ public class UserClient {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "server RPC failed: {0}:", e.getMessage());
+            logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
         } finally {
             closeServerChannel();
         }
