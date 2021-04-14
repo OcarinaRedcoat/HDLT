@@ -10,13 +10,12 @@ import static pt.tecnico.sec.hdlt.IOUtils.*;
 
 public class Main
 {
-    //TODO: G:\IST\2-Semestre\SEC\Projeto\HDLT\grids.output.json
+    //     ../grids.output.json
     public static void main(String[] args) {
-        Client.getInstance().initializeUser(readUser());
-
+        Client client = new Client(readUser());
         int f = readF();
-
-        UserServer.getInstance().start();
+        UserServer serverGroc = new UserServer(client);
+        UserClient clientGrpc = new UserClient();
 
         String command;
         long epoch;
@@ -32,13 +31,13 @@ public class Main
                     break;
                 case "submit report":
                     epoch = readEpoch();
-                    report = UserClient.getInstance().requestLocationProofs(epoch, f);
+                    report = clientGrpc.requestLocationProofs(client, epoch, f);
                     if(report != null)
-                        UserClient.getInstance().submitLocationReport(report);
+                        clientGrpc.submitLocationReport(client, report);
                     break;
                 case "obtain report":
                     epoch = readEpoch();
-                    UserClient.getInstance().obtainLocationReport(epoch);
+                    clientGrpc.obtainLocationReport(client, epoch);
                     break;
                 case "current epoch":
                     System.out.println("Current Epoch: " + getCurrentEpoch());
@@ -56,7 +55,7 @@ public class Main
             }
         }while(!command.equals("exit"));
 
-        UserServer.getInstance().stop();
+        serverGroc.stop();
     }
 
 }

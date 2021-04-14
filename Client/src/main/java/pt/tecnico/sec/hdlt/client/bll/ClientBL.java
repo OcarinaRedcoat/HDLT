@@ -24,26 +24,24 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecryp
 
 public class ClientBL {
 
-    public static LocationReport requestLocationProofs(Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
+    public static LocationReport requestLocationProofs(Client client, Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
             InvalidParameterException {
 
-        User user = Client.getInstance().getUser();
-
         Position position = Position
                 .newBuilder()
-                .setX(user.getPositionWithEpoch(epoch).getxPos())
-                .setY(user.getPositionWithEpoch(epoch).getyPos())
+                .setX(client.getUser().getPositionWithEpoch(epoch).getxPos())
+                .setY(client.getUser().getPositionWithEpoch(epoch).getyPos())
                 .build();
 
         LocationInformation locationInformation = LocationInformation
                 .newBuilder()
-                .setUserId(user.getId())
+                .setUserId(client.getUser().getId())
                 .setEpoch(epoch)
                 .setPosition(position)
                 .build();
 
-        byte[] signature = sign(locationInformation.toByteArray(), Client.getInstance().getPrivKey());
+        byte[] signature = sign(locationInformation.toByteArray(), client.getPrivKey());
 
         LocationInformationRequest request = LocationInformationRequest
                 .newBuilder()
@@ -61,8 +59,8 @@ public class ClientBL {
 
                 LocationProof locationProof = response.getLocationProof();
                 if(verifySignature(getUserPublicKey(locationProof.getWitnessId()), locationProof.toByteArray(),
-                        response.getSignature().toByteArray()) && locationProof.getProverId() == user.getId() &&
-                        locationProof.getEpoch() == epoch){
+                        response.getSignature().toByteArray()) && locationProof.getProverId() == client.getUser().getId()
+                        && locationProof.getEpoch() == epoch){
 
                     reportBuilder.addLocationProof(response);
                     continue;
@@ -81,12 +79,12 @@ public class ClientBL {
         return reportBuilder.build();
     }
 
-    public static void submitLocationReport(LocationReport report, LocationServerGrpc.LocationServerBlockingStub serverStub)
+    public static void submitLocationReport(Client client, LocationReport report, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
             IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException,
             SignatureException {
 
-        byte[] signature = sign(report.toByteArray(), Client.getInstance().getPrivKey());
+        byte[] signature = sign(report.toByteArray(), client.getPrivKey());
 
         SignedLocationReport signedLocationReport = SignedLocationReport
                 .newBuilder()
@@ -109,18 +107,18 @@ public class ClientBL {
         serverStub.submitLocationReport(request);
     }
 
-    public static LocationReport obtainLocationReport(Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
+    public static LocationReport obtainLocationReport(Client client, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
             InvalidAlgorithmParameterException {
 
         LocationQuery locationQuery = LocationQuery
                 .newBuilder()
-                .setUserId(Client.getInstance().getUser().getId())
+                .setUserId(client.getUser().getId())
                 .setEpoch(epoch)
                 .build();
 
-        byte[] signature = sign(locationQuery.toByteArray(), Client.getInstance().getPrivKey());
+        byte[] signature = sign(locationQuery.toByteArray(), client.getPrivKey());
 
         SignedLocationQuery signedLocationQuery = SignedLocationQuery
                 .newBuilder()

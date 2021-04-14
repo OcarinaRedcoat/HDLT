@@ -21,7 +21,7 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.verifySignature
 
 public class ServerBL {
 
-    public static SignedLocationProof requestLocationProof(LocationInformationRequest req, StreamObserver<SignedLocationProof> responseObserver)
+    public static SignedLocationProof requestLocationProof(Client client, LocationInformationRequest req, StreamObserver<SignedLocationProof> responseObserver)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidParameterException, IOException,
             InvalidKeySpecException {
 
@@ -34,7 +34,7 @@ public class ServerBL {
             throw new InvalidParameterException("Invalid location report client signature");
         }
 
-        User me = Client.getInstance().getUser();
+        User me = client.getUser();
         long epoch = locationInformation.getEpoch();
 
         if(me.isCloseTo(requesterId, epoch)) {
@@ -47,12 +47,12 @@ public class ServerBL {
             LocationProof proof = LocationProof
                     .newBuilder()
                     .setProverId(requesterId)
-                    .setWitnessId(Client.getInstance().getUser().getId())
+                    .setWitnessId(client.getUser().getId())
                     .setEpoch(epoch)
                     .setPosition(position)
                     .build();
 
-            byte[] signature = sign(proof.toByteArray(), Client.getInstance().getPrivKey());
+            byte[] signature = sign(proof.toByteArray(), client.getPrivKey());
 
             return SignedLocationProof.newBuilder()
                     .setLocationProof(proof)

@@ -18,22 +18,7 @@ public class Client {
     private PrivateKey privKey;
     private PublicKey pubKey;
 
-    public Client() {
-        this.user = null;
-    }
-
-    public static Client getInstance(){
-        if (INSTANCE == null)
-            INSTANCE = new Client();
-
-        return INSTANCE;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void initializeUser(User user) {
+    public Client(User user) {
         this.user = user;
         try{
             this.pubKey = getUserPublicKey(this.user.getId());
@@ -42,6 +27,10 @@ public class Client {
             System.err.println("There was a problem reading the user private and public RSA keys. Make sure they exist and are in the correct format.");
             System.exit(1);
         }
+    }
+
+    public User getUser() {
+        return user;
     }
 
     public PrivateKey getPrivKey() {

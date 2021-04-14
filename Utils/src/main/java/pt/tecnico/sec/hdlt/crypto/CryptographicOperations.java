@@ -13,7 +13,7 @@ public class CryptographicOperations {
     private static final String SYMMETRIC_ALGORITHM_WITH_PADDING = "AES/CBC/PKCS5Padding";
     private static final String SYMMETRIC_ALGORITHM = "AES";
     private static final int SYMMETRIC_KEY_SIZE = 256;
-    private static final int SYMMETRIC_BLOCK_SIZE = 128; //Block size for iv, for AES it is 128
+    private static final int SYMMETRIC_BLOCK_SIZE = 128; //Block size for iv, for AES it is 128 / 8
     private static final String ASYMMETRIC_ALGORITHM = "RSA";
     private static final int ASYMMETRIC_KEY_SIZE = 2048;
     private static final String SIGN_ALGORITHM = "SHA256withRSA";

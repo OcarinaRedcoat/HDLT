@@ -10,30 +10,23 @@ import java.util.logging.Logger;
 
 public class UserServer {
 
-    private static UserServer INSTANCE = null;
     private static final Logger logger = Logger.getLogger(UserServer.class.getName());
 
     private Server server;
 
-    public static UserServer getInstance() {
-        if (INSTANCE == null)
-            INSTANCE = new UserServer();
-
-        return INSTANCE;
-    }
-
-    public UserServer() {
+    public UserServer(Client client) {
+        start(client);
         server = null;
     }
 
-    public void start() {
+    public void start(Client client) {
         try{
             /* The port on which the server should run */
-            server = ServerBuilder.forPort(Client.getInstance().getUser().getPort())
-                    .addService(new UserImpl())
+            server = ServerBuilder.forPort(client.getUser().getPort())
+                    .addService(new UserImpl(client))
                     .build()
                     .start();
-            logger.info("Server started, listening on " + Client.getInstance().getUser().getPort());
+            logger.info("Server started, listening on " + client.getUser().getPort());
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {

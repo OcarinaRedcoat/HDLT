@@ -19,6 +19,17 @@ public class IOUtils {
         } while(true);
     }
 
+    public static User readUser(String gridLocation, int userId){
+        do {
+            try{
+                return FileUtils.parseGridUser(gridLocation, userId);
+            } catch (ParseException | IOException | IndexOutOfBoundsException | NumberFormatException |
+                    NoSuchElementException | IllegalStateException e) {
+                System.out.println("Invalid Client ID or Grid file type or location. Try again: ");
+            }
+        } while(true);
+    }
+
     public static int readF(){
         do {
             try{

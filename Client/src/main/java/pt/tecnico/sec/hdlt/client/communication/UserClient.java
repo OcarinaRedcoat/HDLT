@@ -5,6 +5,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.bll.ClientBL;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
@@ -24,7 +25,6 @@ public class UserClient {
     private static final int serverPort = 50051;
     private static final String serverAddress = "localhost";
 
-    private static UserClient INSTANCE = null;
     private static final Logger logger = Logger.getLogger(UserClient.class.getName());
 
     private ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs;
@@ -33,18 +33,11 @@ public class UserClient {
     private LocationServerGrpc.LocationServerBlockingStub serverStub;
     private ManagedChannel serverChannel;
 
-    private UserClient(){
+    public UserClient(){
         userStubs = new ArrayList<>();
         userChannels = new ArrayList<>();
         serverStub = null;
         serverChannel = null;
-    }
-
-    public static UserClient getInstance(){
-        if (INSTANCE == null)
-            INSTANCE = new UserClient();
-
-        return INSTANCE;
     }
 
     private void createCloseUsersChannels(ArrayList<Long> closeUsers){
@@ -83,13 +76,13 @@ public class UserClient {
         serverStub = null;
     }
 
-    public LocationReport requestLocationProofs(Long epoch, int f){
+    public LocationReport requestLocationProofs(Client client, Long epoch, int f){
         LocationReport report = null;
         try {
-            createCloseUsersChannels(Client.getInstance().getUser().getPositionWithEpoch(epoch).getCloseBy());
+            createCloseUsersChannels(client.getUser().getPositionWithEpoch(epoch).getCloseBy());
             logger.info("Requesting Proof to user close by:");
 
-            report = ClientBL.requestLocationProofs(epoch, f, userStubs);
+            report = ClientBL.requestLocationProofs(client, epoch, f, userStubs);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
                 IOException e) {
@@ -104,12 +97,12 @@ public class UserClient {
         return report;
     }
 
-    public void submitLocationReport(LocationReport report){
+    public void submitLocationReport(Client client, LocationReport report){
         logger.info("Submitting Report:");
         createServerChannel(serverAddress, serverPort);
 
         try {
-            ClientBL.submitLocationReport(report, serverStub);
+            ClientBL.submitLocationReport(client, report, serverStub);
             System.out.println("Submitted report successfully");
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
@@ -123,13 +116,13 @@ public class UserClient {
         }
     }
 
-    public LocationReport obtainLocationReport(Long epoch){
+    public LocationReport obtainLocationReport(Client client, Long epoch){
         logger.info("Requesting report:");
         createServerChannel(serverAddress, serverPort);
 
         LocationReport report = null;
         try {
-            report = ClientBL.obtainLocationReport(epoch, serverStub);
+            report = ClientBL.obtainLocationReport(client, epoch, serverStub);
             System.out.println("I got the report Report you wanted!");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
