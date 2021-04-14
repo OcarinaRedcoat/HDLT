@@ -1,7 +1,6 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.util.JsonFormat;
 import pt.tecnico.sec.hdlt.FileUtils;
 import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
@@ -9,18 +8,13 @@ import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,14 +23,14 @@ public class LocationBL {
 
     private final WriteQueue<LocationReport> writeQueue;
     private final ConcurrentHashMap<LocationReportKey, LocationReport> locationReports;
-    private final PublicKey publicKey;
+//    private final PublicKey publicKey;
     private final PrivateKey privateKey;
 
     public LocationBL(int serverId) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         Path filePath = Paths.get("Server_" + serverId + ".txt");
         this.writeQueue = new WriteQueue<>(filePath);
         this.locationReports = ReadFile.createReportsMap(filePath);
-        this.publicKey = FileUtils.getServerPublicKey(serverId);
+//        this.publicKey = FileUtils.getServerPublicKey(serverId);
         this.privateKey = FileUtils.getServerPrivateKey(serverId);
     }
 
@@ -106,7 +100,7 @@ public class LocationBL {
         }
 
         LocationReportKey key = new LocationReportKey(locationQuery.getUserId(), locationQuery.getEpoch());
-        if (!this.locationReports.contains(key)) {
+        if (!this.locationReports.containsKey(key)) {
             throw new NoSuchFieldException("No report found for user: " + locationQuery.getUserId() + " at epoch: " + locationQuery.getEpoch());
         }
 
@@ -185,14 +179,14 @@ public class LocationBL {
     }
 
     private boolean verifyHaSignature(byte[] message, byte[] signature) throws Exception {
-        return CryptographicOperations.verifySignature(FileUtils.getHAPublicKey(1), message, signature);
+        return CryptographicOperations.verifySignature(FileUtils.getHAPublicKey(), message, signature);
     }
 
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {
         return lInfo.getUserId() == lProof.getProverId() &&
                 lInfo.getEpoch() == lProof.getEpoch() &&
-                lInfo.getPosition().getX() == lProof.getPosition().getX() &&
-                lInfo.getPosition().getY() == lProof.getPosition().getY();
+                Math.abs(lInfo.getPosition().getX() - lProof.getPosition().getX()) <= 10 &&
+                Math.abs(lInfo.getPosition().getY() - lProof.getPosition().getY()) <= 10;
     }
 
     public void terminateWriteQueue() throws InterruptedException {

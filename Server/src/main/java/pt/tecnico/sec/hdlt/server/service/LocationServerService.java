@@ -10,7 +10,7 @@ import java.security.InvalidParameterException;
 // https://grpc.github.io/grpc/core/md_doc_statuscodes.html
 public class LocationServerService extends LocationServerGrpc.LocationServerImplBase {
 
-    private LocationBL locationBL;
+    private final LocationBL locationBL;
 
     public LocationServerService(LocationBL locationBL) {
         this.locationBL = locationBL;
