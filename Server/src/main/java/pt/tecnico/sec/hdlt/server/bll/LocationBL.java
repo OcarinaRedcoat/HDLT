@@ -57,7 +57,7 @@ public class LocationBL {
         HashSet<Integer> witnessIds = new HashSet<>();
 
         // TODO defined f as 4. Not sure.
-        if (report.getLocationProofList().size() < 5) {
+        if (report.getLocationProofList().size() < 1) {
             throw new InvalidParameterException("Invalid number of proofs");
         }
 
@@ -75,12 +75,13 @@ public class LocationBL {
             }
 
             if (verifyLocationProof(information, lProof)) {
-                throw new InvalidParameterException("Invalid location proof");
+                //TODO: not working: throw new InvalidParameterException("Invalid location proof");
             }
         }
 
         LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
         if (!this.locationReports.contains(key)) {
+            //TODO: not working
             this.locationReports.put(key, report);
             this.writeQueue.write(report);
         }

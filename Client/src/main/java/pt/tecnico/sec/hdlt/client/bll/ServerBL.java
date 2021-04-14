@@ -3,6 +3,7 @@ package pt.tecnico.sec.hdlt.client.bll;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
@@ -33,15 +34,14 @@ public class ServerBL {
             throw new InvalidParameterException("Invalid location report client signature");
         }
 
+        User me = Client.getInstance().getUser();
         long epoch = locationInformation.getEpoch();
-        long requesterXPos = locationInformation.getPosition().getX();
-        long requesterYPos = locationInformation.getPosition().getY();
 
-        if(Client.getInstance().getUser().isCloseTo(requesterId, epoch)) {
+        if(me.isCloseTo(requesterId, epoch)) {
             Position position = Position
                     .newBuilder()
-                    .setX(requesterXPos)
-                    .setY(requesterYPos)
+                    .setX(me.getPositionWithEpoch(epoch).getxPos())
+                    .setY(me.getPositionWithEpoch(epoch).getyPos())
                     .build();
 
             LocationProof proof = LocationProof
