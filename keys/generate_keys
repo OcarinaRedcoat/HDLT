@@ -1,12 +1,12 @@
 #!/bin/sh
-for i in {0..19}; do openssl genrsa -out priv_client_$i.pem 2048; done
-for i in {0..19}; do openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_client_$i.pem -out priv_client_$i.der -nocrypt; done
-for i in {0..19}; do openssl rsa -in priv_client_$i.pem -pubout -outform DER -out pub_client_$i.der; done
+for i in {1..20}; do openssl genrsa -out priv_client_$i.pem 2048; done
+for i in {1..20}; do openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_client_$i.pem -out priv_client_$i.der -nocrypt; done
+for i in {1..20}; do openssl rsa -in priv_client_$i.pem -pubout -outform DER -out pub_client_$i.der; done
 
-for i in {0..19}; do openssl genrsa -out priv_server_$i.pem 2048; done
-for i in {0..19}; do openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_server_$i.pem -out priv_server_$i.der -nocrypt; done
-for i in {0..19}; do openssl rsa -in priv_server_$i.pem -pubout -outform DER -out pub_server_$i.der; done
+for i in {1..20}; do openssl genrsa -out priv_server_$i.pem 2048; done
+for i in {1..20}; do openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_server_$i.pem -out priv_server_$i.der -nocrypt; done
+for i in {1..20}; do openssl rsa -in priv_server_$i.pem -pubout -outform DER -out pub_server_$i.der; done
 
-for i in {0..19}; do openssl genrsa -out priv_ha_$i.pem 2048; done
-for i in {0..19}; do openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_ha_$i.pem -out priv_ha_$i.der -nocrypt; done
-for i in {0..19}; do openssl rsa -in priv_ha_$i.pem -pubout -outform DER -out pub_ha_$i.der; done
+openssl genrsa -out priv_ha.pem 2048
+openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_ha.pem -out priv_ha.der -nocrypt
+openssl rsa -in priv_ha.pem -pubout -outform DER -out pub_ha.der
