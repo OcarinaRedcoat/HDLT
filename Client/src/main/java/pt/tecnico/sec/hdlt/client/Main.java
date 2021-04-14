@@ -16,7 +16,7 @@ public class Main
     public static void main(String[] args) {
         Client.getInstance().initializeUser(readUser());
 
-        int f = readInteger("Define f: ");
+        int f = readF();
 
         UserServer.getInstance().start();
 
@@ -46,7 +46,7 @@ public class Main
                     System.out.println("Current Epoch: " + getCurrentEpoch());
                     break;
                 case "redefine f":
-                    f = readInteger("New f value: ");
+                    f = readF();
                     break;
                 case "current f":
                     System.out.println("Current f: " + f);

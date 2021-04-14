@@ -55,7 +55,6 @@ public class ClientBL {
                 .newBuilder()
                 .setLocationInformation(locationInformation);
 
-        int aux = f + 1;
         for (int i = 0; i < f+1; i++) { //if f is 4 it will ask for 5 witnesses
             try {
                 SignedLocationProof response = userStubs.get(i).requestLocationProof(request);

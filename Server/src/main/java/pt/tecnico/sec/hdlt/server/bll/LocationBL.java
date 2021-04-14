@@ -108,7 +108,7 @@ public class LocationBL {
 
         LocationReportKey key = new LocationReportKey(locationQuery.getUserId(), locationQuery.getEpoch());
         if (!this.locationReports.contains(key)) {
-            throw new NoSuchFieldException("No report found for user: " + locationQuery.getUserId() + "at epoch: " + locationQuery.getEpoch());
+            throw new NoSuchFieldException("No report found for user: " + locationQuery.getUserId() + " at epoch: " + locationQuery.getEpoch());
         }
 
         LocationReport report = this.locationReports.get(key);

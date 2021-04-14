@@ -19,16 +19,41 @@ public class IOUtils {
         } while(true);
     }
 
-    public static String readGridFileLocation(){
+    public static int readF(){
+        do {
+            try{
+                return readInteger("Define f: ");
+            } catch (NumberFormatException | NoSuchElementException | IllegalStateException e) {
+                System.out.println("Invalid f. Try again: ");
+            }
+        } while(true);
+    }
+
+    private static String readGridFileLocation(){
         return readString("Specify the grid file location: ");
     }
 
     public static int readUserId(){
-        return readInteger("Specify the client ID: ");
+        do {
+            try{
+                return readInteger("Specify the client ID: ");
+            } catch (IndexOutOfBoundsException | NumberFormatException | NoSuchElementException |
+                    IllegalStateException e) {
+
+                System.out.println("Invalid Client ID. Try again: ");
+            }
+        } while(true);
+
     }
 
     public static long readEpoch(){
-        return readLong("Specify the epoch (we are asking for the current epoch for the purpose of testing): ");
+        do {
+            try{
+                return readLong("Specify the epoch (we are asking for the current epoch for the purpose of testing): ");
+            } catch (NumberFormatException | NoSuchElementException | IllegalStateException e) {
+                System.out.println("Invalid epoch. Try again: ");
+            }
+        } while(true);
     }
 
     public static String readString(String askMessage){
@@ -39,11 +64,11 @@ public class IOUtils {
         return scanner.nextLine();
     }
 
-    public static int readInteger(String askMessage){
+    private static int readInteger(String askMessage) throws NumberFormatException{
         return Integer.parseInt(readString(askMessage));
     }
 
-    public static long readLong(String askMessage){
+    private static long readLong(String askMessage) throws NumberFormatException{
         return Long.parseLong(readString(askMessage));
     }
 }
