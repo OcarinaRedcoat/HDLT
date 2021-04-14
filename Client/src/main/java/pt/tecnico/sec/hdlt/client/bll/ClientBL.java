@@ -24,8 +24,10 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecryp
 
 public class ClientBL {
 
-    public static LocationReport requestLocationProofs(Long epoch, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
-            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException {
+    public static LocationReport requestLocationProofs(Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
+            InvalidParameterException {
+
         User user = Client.getInstance().getUser();
 
         Position position = Position
@@ -53,9 +55,10 @@ public class ClientBL {
                 .newBuilder()
                 .setLocationInformation(locationInformation);
 
-        for (ClientServerGrpc.ClientServerBlockingStub stub : userStubs) {
+        int aux = f + 1;
+        for (int i = 0; i < f+1; i++) { //if f is 4 it will ask for 5 witnesses
             try {
-                SignedLocationProof response = stub.requestLocationProof(request);
+                SignedLocationProof response = userStubs.get(i).requestLocationProof(request);
 
                 LocationProof locationProof = response.getLocationProof();
                 if(verifySignature(getUserPublicKey(locationProof.getWitnessId()), locationProof.toByteArray(),
@@ -64,9 +67,14 @@ public class ClientBL {
                     reportBuilder.addLocationProof(response);
                 } else {
                     System.err.println("Someone messed with this proof, the signature does not match!");
+                    f++;
                 }
             } catch (StatusRuntimeException e){
                 System.err.println("Someone did not witness!");
+                f++;
+            }
+            if(i == userStubs.size()-1){
+                throw new InvalidParameterException("Could not get enough clients to witness me considering the f.");
             }
         }
 

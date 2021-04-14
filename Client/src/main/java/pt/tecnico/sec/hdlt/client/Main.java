@@ -15,6 +15,9 @@ public class Main
     //TODO: G:\IST\2-Semestre\SEC\Projeto\HDLT\grids.output.json
     public static void main(String[] args) {
         Client.getInstance().initializeUser(readUser());
+
+        int f = readInteger("Define f: ");
+
         UserServer.getInstance().start();
 
         String command;
@@ -30,8 +33,9 @@ public class Main
                     break;
                 case "submit report":
                     epoch = readEpoch();
-                    report = UserClient.getInstance().requestLocationProofs(epoch);
-                    UserClient.getInstance().submitLocationReport(report);
+                    report = UserClient.getInstance().requestLocationProofs(epoch, f);
+                    if(report != null)
+                        UserClient.getInstance().submitLocationReport(report);
                     break;
                 case "obtain report":
                     epoch = readEpoch();
@@ -39,6 +43,12 @@ public class Main
                     break;
                 case "current epoch":
                     System.out.println("Current Epoch: " + getCurrentEpoch());
+                    break;
+                case "redefine f":
+                    f = readInteger("New f value: ");
+                    break;
+                case "current f":
+                    System.out.println("Current f: " + f);
                     break;
                 case "exit":
                     break;

@@ -83,26 +83,20 @@ public class UserClient {
         serverStub = null;
     }
 
-    public LocationReport requestLocationProofs(Long epoch){
+    public LocationReport requestLocationProofs(Long epoch, int f){
         logger.info("Requesting Proof to user close by:");
         createCloseUsersChannels(Client.getInstance().getUser().getPositionWithEpoch(epoch).getCloseBy());
 
         LocationReport report = null;
         try {
-            report = ClientBL.requestLocationProofs(epoch, userStubs);
+            report = ClientBL.requestLocationProofs(epoch, f, userStubs);
             System.out.println("Got the location proofs");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
+                IOException e) {
+
+            System.err.println("Something went wrong!");
+        } catch (InvalidParameterException e) {
+            System.err.println("Not enough users to witness me!");
         } finally {
             closeUserChannels();
         }
@@ -117,26 +111,13 @@ public class UserClient {
         try {
             ClientBL.submitLocationReport(report, serverStub);
             System.out.println("Submitted report successfully");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
+                InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
+                InvalidKeySpecException e) {
+
+            System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-        } catch (SignatureException e) {
-            e.printStackTrace();
         } finally {
             closeServerChannel();
         }
@@ -150,28 +131,11 @@ public class UserClient {
         try {
             report = ClientBL.obtainLocationReport(epoch, serverStub);
             System.out.println("I got the report Report you wanted!");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidProtocolBufferException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        } catch (InvalidParameterException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
+                BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
+                InvalidAlgorithmParameterException | InvalidParameterException e) {
+
+            System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
         } finally {
