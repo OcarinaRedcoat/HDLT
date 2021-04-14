@@ -22,7 +22,8 @@ public class FileUtils {
         Object obj = new JSONParser().parse(fr);
         JSONArray grid = (JSONArray) obj;
 
-        JSONObject userJson = (JSONObject) grid.get(userId);
+        //-1 because the users start at 1 not at 0 in the grid file
+        JSONObject userJson = (JSONObject) grid.get(userId-1);
 
         User user = new User(
                 Integer.parseInt(userJson.get("userId").toString()),

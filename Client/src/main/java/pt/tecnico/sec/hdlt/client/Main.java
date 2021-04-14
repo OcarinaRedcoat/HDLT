@@ -5,8 +5,6 @@ import pt.tecnico.sec.hdlt.client.communication.UserServer;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
-import java.util.Scanner;
-
 import static pt.tecnico.sec.hdlt.GeneralUtils.getCurrentEpoch;
 import static pt.tecnico.sec.hdlt.IOUtils.*;
 
