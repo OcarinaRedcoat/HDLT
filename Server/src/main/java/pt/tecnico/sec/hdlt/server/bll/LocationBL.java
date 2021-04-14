@@ -51,7 +51,7 @@ public class LocationBL {
         HashSet<Integer> witnessIds = new HashSet<>();
 
         // TODO defined f as 4. Not sure.
-        if (report.getLocationProofList().size() < 1) {
+        if (report.getLocationProofList().size() < 5) {
             throw new InvalidParameterException("Invalid number of proofs");
         }
 

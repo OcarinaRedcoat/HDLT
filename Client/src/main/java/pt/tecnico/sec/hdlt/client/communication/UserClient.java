@@ -97,13 +97,19 @@ public class UserClient {
         return report;
     }
 
-    public void submitLocationReport(Client client, LocationReport report){
+    public Boolean submitLocationReport(Client client, LocationReport report){
+        if(report == null){
+            System.err.println("Invalid Report!");
+            return false;
+        }
+
         logger.info("Submitting Report:");
         createServerChannel(serverAddress, serverPort);
 
         try {
             ClientBL.submitLocationReport(client, report, serverStub);
             System.out.println("Submitted report successfully");
+            return true;
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
                 InvalidKeySpecException e) {
@@ -114,6 +120,7 @@ public class UserClient {
         } finally {
             closeServerChannel();
         }
+        return false;
     }
 
     public LocationReport obtainLocationReport(Client client, Long epoch){
