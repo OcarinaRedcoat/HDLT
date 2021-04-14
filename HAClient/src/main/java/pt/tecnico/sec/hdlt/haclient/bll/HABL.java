@@ -1,8 +1,7 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.haclient.bll;
 
 import com.google.protobuf.ByteString;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import pt.tecnico.sec.hdlt.haclient.ha.HA;
 import pt.tecnico.sec.hdlt.communication.*;
 
 import javax.crypto.BadPaddingException;
@@ -16,47 +15,13 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
-import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecrypt;
-public class HAClient {
 
-    private static HAClient INSTANCE = null;
-    private static HA ha = null;
-
-    private LocationServerGrpc.LocationServerBlockingStub serverStub;
-    private ManagedChannel serverChannel;
-
-    private HAClient(String host, int port) {
-        try {
-            createServerChannel(host, port);
-            HA.getInstance().initializeHA();
-        }catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e){
-            System.out.println(e.getMessage());
-            System.exit(-1);
-        }
-    }
-
-
-    private void createServerChannel(String host, int port){
-        String target = host + ":" + String.valueOf(port);
-        serverChannel = ManagedChannelBuilder.forTarget(target)
-                .usePlaintext()
-                .build();
-        serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
-    }
-
-    public void serverShutdown(){
-        serverChannel.shutdownNow();
-    }
-
-    public static HAClient getInstance() {
-        if (INSTANCE == null)
-            INSTANCE = new HAClient("localhost", 50051);
-        return INSTANCE;
-    }
-
+public class HABL {
 
     public static LocationReport obtainLocationReport(int userId, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
@@ -107,9 +72,59 @@ public class HAClient {
     }
     /* Params: pos, ep .....
      * Specification: returns a list of users that were at position pos at epoch ep
-     * TODO criar metodo grpc que vais buscar user por posicoes, duvida se podemos ter
-     *  mais que um utilizador por posicao
      */
-    public void obtainUsersAtLocation(){}
+    public static List<LocationReport> obtainUsersAtLocation(long x, long y, long ep, LocationServerGrpc.LocationServerBlockingStub serverStub)
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidAlgorithmParameterException,
+            BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException {
+        Position pos = Position.newBuilder()
+                .setX(x)
+                .setY(y)
+                .build();
 
+        UsersAtLocationQuery usersAtLocationQuery = UsersAtLocationQuery
+                .newBuilder()
+                .setPos(pos)
+                .setEpoch(ep)
+                .build();
+
+        byte[] signature = sign(usersAtLocationQuery.toByteArray(), HA.getInstance().getPrivateKey());
+
+        SignedUsersAtLocationQuery signedUsersAtLocationQuery = SignedUsersAtLocationQuery
+                .newBuilder()
+                .setUsersAtLocationQuery(usersAtLocationQuery)
+                .setSignature(ByteString.copyFrom(signature))
+                .build();
+
+        SecretKey key = generateSecretKey();
+
+        IvParameterSpec iv = generateIv();
+        byte[] encryptedMessage = symmetricEncrypt(signedUsersAtLocationQuery.toByteArray(), key, iv);
+        byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
+
+        ObtainUsersAtLocationRequest obtainUsersAtLocationRequest = ObtainUsersAtLocationRequest
+                .newBuilder()
+                .setEncryptedSignedUsersAtLocationQuery(ByteString.copyFrom(encryptedMessage))
+                .setIv(ByteString.copyFrom(iv.getIV()))
+                .setKey(ByteString.copyFrom(encryptedKey))
+                .build();
+
+        ObtainUsersAtLocationResponse response = serverStub.obtainUsersAtLocation(obtainUsersAtLocationRequest);
+
+        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key, iv);
+
+        SignedListLocationReport signedListLocationReport = SignedListLocationReport.parseFrom(decryptedMessage);
+        ListLocationReport listLocationReport = signedListLocationReport.getListLocationReport();
+
+        List<LocationReport> list = new ArrayList<>(listLocationReport.getLocationReportList());
+
+/*        for (LocationReport report: list) {
+            if (!verifySignature(getServerPublicKey(1), report.toByteArray(),
+                    signedLocationReport.getSignedLocationReport().toByteArray())) {
+                //TODO: exception
+                throw new InvalidKeyException();
+            }
+        }*/
+
+        return list;
+    }
 }

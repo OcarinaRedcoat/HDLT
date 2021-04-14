@@ -185,7 +185,7 @@ public class LocationBL {
     }
 
     private boolean verifyHaSignature(byte[] message, byte[] signature) throws Exception {
-        return CryptographicOperations.verifySignature(FileUtils.getHAPublicKey(1), message, signature);
+        return CryptographicOperations.verifySignature(FileUtils.getHAPublicKey(), message, signature);
     }
 
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {

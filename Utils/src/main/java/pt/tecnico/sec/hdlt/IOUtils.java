@@ -56,6 +56,16 @@ public class IOUtils {
         } while(true);
     }
 
+    public static long readPos(String message){
+        do {
+            try{
+                return readLong(message);
+            } catch (NumberFormatException | NoSuchElementException | IllegalStateException e) {
+                System.out.println("Invalid position. Try again: ");
+            }
+        } while(true);
+    }
+
     public static String readString(String askMessage){
         Scanner scanner = new Scanner(System.in);
         if(askMessage != null){

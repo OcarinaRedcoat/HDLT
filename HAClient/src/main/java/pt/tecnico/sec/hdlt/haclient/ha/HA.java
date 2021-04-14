@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.haclient.ha;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -12,22 +12,30 @@ public class HA {
 
     private static HA INSTANCE = null;
 
-    private int ha_id;
     private PrivateKey privateKey;
     private PublicKey publicKey;
 
-    private HA(int id){ this.ha_id = id; }
+    private HA() {
+        try{
+            this.privateKey = getHAPrivateKey();
+            this.publicKey = getHAPublicKey();
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e) {
+            System.err.println("There was a problem reading the ha private and public RSA keys. Make sure they exist and are in the correct format.");
+            System.exit(1);
+        }
+    }
+
 
     public static HA getInstance(){
         if (INSTANCE == null){
-            INSTANCE = new HA(1);
+            INSTANCE = new HA();
         }
         return INSTANCE;
     }
 
     public void initializeHA() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        this.privateKey = getHAPrivateKey(this.ha_id);
-        this.publicKey = getUserPublicKey(this.ha_id);
+        this.privateKey = getHAPrivateKey();
+        this.publicKey = getHAPublicKey();
     }
 
     public PrivateKey getPrivateKey() {
@@ -36,6 +44,5 @@ public class HA {
 
     public PublicKey getPublicKey() { return publicKey; }
 
-    public int getHAId(){ return ha_id; }
 
 }
