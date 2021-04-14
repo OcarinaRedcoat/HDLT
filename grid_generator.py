@@ -4,7 +4,7 @@ import sys
 import json
 
 #############################################################################
-### python gen.py grid_size distance_allowed n_epochs n_users ###
+### python gen.py
 #############################################################################
 
 class PositionShort:
@@ -67,21 +67,22 @@ def store_json(grids):
 
 epoch_correction = 2670
 
-grid_size = int(sys.argv[1])  # randint(1, 10)
-distance_allowed = int(sys.argv[2])  # randint(1, 10)
-total_n_epochs = int(sys.argv[3]) + epoch_correction  # randint(1, 10)
-n_users = int(sys.argv[4])  # randint(1, 10)
+grid_size = 100
+distance_allowed = 10
+total_n_epochs = 100 # 1...100
+n_users = 20 # 1...21
 
 
 epoch_list = GridEpoch()
 positionsSoFar = []
-uid = 0
+uid = 1
 
-while uid < n_users:
+while uid < n_users+1:
+    print("Generating for user: " + str(uid))
     user = User(uid)
 
     positions = []
-    current_epoch_n = epoch_correction
+    current_epoch_n = 1
     while current_epoch_n < total_n_epochs:
         xPos = randint(0, grid_size)
         yPos = randint(0, grid_size)

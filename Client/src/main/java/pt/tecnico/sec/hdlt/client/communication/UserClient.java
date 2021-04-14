@@ -84,11 +84,11 @@ public class UserClient {
     }
 
     public LocationReport requestLocationProofs(Long epoch, int f){
-        logger.info("Requesting Proof to user close by:");
-        createCloseUsersChannels(Client.getInstance().getUser().getPositionWithEpoch(epoch).getCloseBy());
-
         LocationReport report = null;
         try {
+            createCloseUsersChannels(Client.getInstance().getUser().getPositionWithEpoch(epoch).getCloseBy());
+            logger.info("Requesting Proof to user close by:");
+
             report = ClientBL.requestLocationProofs(epoch, f, userStubs);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
@@ -96,7 +96,7 @@ public class UserClient {
 
             System.err.println("Something went wrong!");
         } catch (InvalidParameterException e) {
-            System.err.println("Not enough users to witness me!");
+            System.err.println(e.getMessage());
         } finally {
             closeUserChannels();
         }
@@ -117,7 +117,7 @@ public class UserClient {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            logger.log(Level.WARNING, "server RPC failed: {0}:", e.getMessage());
         } finally {
             closeServerChannel();
         }
@@ -137,7 +137,7 @@ public class UserClient {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            logger.log(Level.WARNING, "server RPC failed: {0}:", e.getMessage());
         } finally {
             closeServerChannel();
         }
