@@ -61,13 +61,14 @@ public class ClientBL {
 
                 LocationProof locationProof = response.getLocationProof();
                 if(verifySignature(getUserPublicKey(locationProof.getWitnessId()), locationProof.toByteArray(),
-                        response.getSignature().toByteArray())){
+                        response.getSignature().toByteArray()) && locationProof.getProverId() == user.getId() &&
+                        locationProof.getEpoch() == epoch){
 
                     reportBuilder.addLocationProof(response);
-                } else {
-                    System.err.println("Someone messed with this proof, the signature does not match!");
-                    f++;
+                    continue;
                 }
+                System.err.println("Someone messed with this proof!");
+                f++;
             } catch (StatusRuntimeException e){
                 System.err.println("Someone did not witness!");
                 f++;

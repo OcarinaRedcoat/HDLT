@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.haclient;
 
 import pt.tecnico.sec.hdlt.haclient.communication.HAClient;
+import pt.tecnico.sec.hdlt.haclient.ha.HA;
 
 import java.util.Scanner;
 
@@ -13,6 +14,8 @@ public class Main {
         String command;
         long epoch;
         int userId;
+
+        HAClient.getInstance();
 
         System.out.println("HA Started. Type \"help\" at any point for the list of available commands.");
         do {

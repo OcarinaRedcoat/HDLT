@@ -28,13 +28,8 @@ public class HAClient {
     private static final Logger logger = Logger.getLogger(HAClient.class.getName());
 
     private HAClient(String host, int port) {
-        try {
-            createServerChannel(host, port);
-            HA.getInstance().initializeHA();
-        }catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e){
-            System.out.println(e.getMessage());
-            System.exit(-1);
-        }
+        createServerChannel(host, port);
+        HA.getInstance();
     }
 
 
@@ -68,7 +63,7 @@ public class HAClient {
                 | InvalidAlgorithmParameterException | IOException e) {
             e.printStackTrace();
         } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }
 
         System.out.println(report);
@@ -89,7 +84,7 @@ public class HAClient {
                 | InvalidAlgorithmParameterException | IOException e) {
             e.printStackTrace();
         } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }
 
         for (LocationReport report: listReport) {
