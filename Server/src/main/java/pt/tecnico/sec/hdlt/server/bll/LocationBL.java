@@ -188,8 +188,8 @@ public class LocationBL {
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {
         return lInfo.getUserId() == lProof.getProverId() &&
                 lInfo.getEpoch() == lProof.getEpoch() &&
-                Math.abs(lInfo.getPosition().getX() - lProof.getPosition().getX()) <= 10 &&
-                Math.abs(lInfo.getPosition().getY() - lProof.getPosition().getY()) <= 10;
+                Math.abs(lInfo.getPosition().getX() - lProof.getPosition().getX()) <= 15 &&
+                Math.abs(lInfo.getPosition().getY() - lProof.getPosition().getY()) <= 15;
     }
 
     public void terminateWriteQueue() throws InterruptedException {
