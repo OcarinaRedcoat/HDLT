@@ -145,7 +145,7 @@ public class LocationBL {
                     information.getPosition().getX() == usersAtLocationQuery.getPos().getX() &&
                     information.getPosition().getY() == usersAtLocationQuery.getPos().getY()) {
 
-                builder.addSignedLocationReport(report);
+                builder.addSignedLocationReportList(report);
             }
         }
 

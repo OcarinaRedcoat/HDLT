@@ -62,7 +62,7 @@ public class HAClient {
         } catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
                 | InvalidAlgorithmParameterException | IOException e) {
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }
@@ -83,7 +83,7 @@ public class HAClient {
         }catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
                 | InvalidAlgorithmParameterException | IOException e) {
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }

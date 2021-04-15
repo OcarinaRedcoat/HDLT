@@ -65,10 +65,9 @@ public class HABL {
 
         SignedLocationReport report = signedSignedLocationReport.getSignedLocationReport();
 
-        if(!verifySignature(getServerPublicKey(1), signedSignedLocationReport.toByteArray(),
+        if(!verifySignature(getServerPublicKey(1), report.toByteArray(),
                 signedSignedLocationReport.getServerSignature().toByteArray())){
-            //TODO: exception
-            throw new InvalidKeyException();
+            throw new InvalidKeyException("Invalid server signature");
         }
 
         return report;
@@ -122,10 +121,9 @@ public class HABL {
 
         List<SignedLocationReport> list = new ArrayList<>(signedLocationReportList.getSignedLocationReportListList());
 
-        if(!verifySignature(getServerPublicKey(1), signedSignedLocationReportList.toByteArray(),
+        if(!verifySignature(getServerPublicKey(1), signedLocationReportList.toByteArray(),
                 signedSignedLocationReportList.getServerSignature().toByteArray())){
-            //TODO: exception
-            throw new InvalidKeyException();
+            throw new InvalidKeyException("Invalid server signature");
         }
 
         return list;
