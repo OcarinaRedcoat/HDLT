@@ -28,7 +28,7 @@ public class LocationBL {
     private final int numberByzantineUsers;
 
     public LocationBL(int serverId, int numberByzantineUsers) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        Path filePath = Paths.get("../Server/Server_" + serverId + ".txt");
+        Path filePath = Paths.get("../Server/src/main/resources/server_" + serverId + ".txt");
         this.writeQueue = new WriteQueue<>(filePath);
         this.locationReports = ReadFile.createReportsMap(filePath);
 //        this.publicKey = FileUtils.getServerPublicKey(serverId);
