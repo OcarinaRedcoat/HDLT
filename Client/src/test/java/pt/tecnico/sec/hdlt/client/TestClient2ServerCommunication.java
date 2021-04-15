@@ -9,16 +9,13 @@ import pt.tecnico.sec.hdlt.server.LocationServer;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
 import static org.junit.Assert.*;
 import static pt.tecnico.sec.hdlt.IOUtils.readUser;
 
-public class Client2ServerCommunication {
+public class TestClient2ServerCommunication {
 
     private static final String gridFileLocation = "../grids.output.json";
     private static final String serverFileLocation = "../server_1.txt";
@@ -50,25 +47,25 @@ public class Client2ServerCommunication {
     {
         Client client1 = new Client(readUser(gridFileLocation, 1));
         UserClient userClient1 = new UserClient();
-        Client client3 = new Client(readUser(gridFileLocation, 3));
-        UserServer userServer3 = new UserServer(client3);
-        Client client9 = new Client(readUser(gridFileLocation, 9));
-        UserServer userServer9 = new UserServer(client9);
-        Client client17 = new Client(readUser(gridFileLocation, 17));
-        UserServer userServer17 = new UserServer(client17);
+        Client client6 = new Client(readUser(gridFileLocation, 6));
+        UserServer userServer6 = new UserServer(client6);
+        Client client12 = new Client(readUser(gridFileLocation, 12));
+        UserServer userServer12 = new UserServer(client12);
+        Client client19 = new Client(readUser(gridFileLocation, 19));
+        UserServer userServer19 = new UserServer(client19);
 
         startServer();
 
-        LocationReport locationReport = userClient1.requestLocationProofs(client1, 14L, 2);
+        LocationReport locationReport = userClient1.requestLocationProofs(client1, 24L, 2);
         Boolean submitedReport = userClient1.submitLocationReport(client1, locationReport);
         assertEquals(true, submitedReport);
 
         locationReport = userClient1.obtainLocationReport(client1, 14L);
         assertNotNull(locationReport);
 
-        userServer3.stop();
-        userServer9.stop();
-        userServer17.stop();
+        userServer6.stop();
+        userServer12.stop();
+        userServer19.stop();
         stopServer();
     }
 }

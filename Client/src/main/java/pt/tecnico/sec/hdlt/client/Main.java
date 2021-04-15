@@ -14,7 +14,7 @@ public class Main
     public static void main(String[] args) {
         Client client = new Client(readUser());
         int f = readF();
-        UserServer serverGroc = new UserServer(client);
+        UserServer serverGrpc = new UserServer(client);
         UserClient clientGrpc = new UserClient();
 
         String command;
@@ -55,7 +55,7 @@ public class Main
             }
         }while(!command.equals("exit"));
 
-        serverGroc.stop();
+        serverGrpc.stop();
     }
 
 }
