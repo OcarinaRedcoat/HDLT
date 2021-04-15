@@ -65,8 +65,13 @@ public class LocationServer {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
 
+        if (args.length != 1) {
+            System.err.println("Usage: LocationServer <# of byzantine users>");
+            return;
+        }
+
         try {
-            LocationBL locationBL = new LocationBL(1);
+            LocationBL locationBL = new LocationBL(1, Integer.parseInt(args[0]));
 
             final LocationServer locationServer = new LocationServer();
             locationServer.start(locationBL);

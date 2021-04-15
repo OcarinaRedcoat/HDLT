@@ -25,13 +25,15 @@ public class LocationBL {
     private final ConcurrentHashMap<LocationReportKey, LocationReport> locationReports;
 //    private final PublicKey publicKey;
     private final PrivateKey privateKey;
+    private final int numberByzantineUsers;
 
-    public LocationBL(int serverId) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    public LocationBL(int serverId, int numberByzantineUsers) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
         Path filePath = Paths.get("Server_" + serverId + ".txt");
         this.writeQueue = new WriteQueue<>(filePath);
         this.locationReports = ReadFile.createReportsMap(filePath);
 //        this.publicKey = FileUtils.getServerPublicKey(serverId);
         this.privateKey = FileUtils.getServerPrivateKey(serverId);
+        this.numberByzantineUsers = numberByzantineUsers;
     }
 
     public void submitLocationReport(SubmitLocationReportRequest request) throws Exception {
@@ -50,8 +52,7 @@ public class LocationBL {
 
         HashSet<Integer> witnessIds = new HashSet<>();
 
-        // TODO defined f as 4. Not sure.
-        if (report.getLocationProofList().size() < 5) {
+        if (report.getLocationProofList().size() <= this.numberByzantineUsers) {
             throw new InvalidParameterException("Invalid number of proofs");
         }
 
@@ -68,16 +69,18 @@ public class LocationBL {
                 throw new InvalidParameterException("Invalid location proof signature");
             }
 
-            if (verifyLocationProof(information, lProof)) {
+            if (!verifyLocationProof(information, lProof)) {
                 throw new InvalidParameterException("Invalid location proof");
             }
         }
 
         LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
-        if (!this.locationReports.containsKey(key)) {
-            this.locationReports.put(key, report);
-            this.writeQueue.write(report);
+        if (this.locationReports.containsKey(key)) {
+            throw new InvalidParameterException("Repeated location report for user: " + information.getUserId() + " and epoch: " + information.getEpoch());
         }
+
+        this.locationReports.put(key, report);
+        this.writeQueue.write(report);
     }
 
     public ObtainLocationReportResponse obtainLocationReport(ObtainLocationReportRequest request) throws Exception {
@@ -185,8 +188,8 @@ public class LocationBL {
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {
         return lInfo.getUserId() == lProof.getProverId() &&
                 lInfo.getEpoch() == lProof.getEpoch() &&
-                Math.abs(lInfo.getPosition().getX() - lProof.getPosition().getX()) <= 10 &&
-                Math.abs(lInfo.getPosition().getY() - lProof.getPosition().getY()) <= 10;
+                Math.abs(lInfo.getPosition().getX() - lProof.getPosition().getX()) <= 15 &&
+                Math.abs(lInfo.getPosition().getY() - lProof.getPosition().getY()) <= 15;
     }
 
     public void terminateWriteQueue() throws InterruptedException {
