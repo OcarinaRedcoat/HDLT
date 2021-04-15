@@ -123,46 +123,48 @@ public class LocationBL {
     }
 
     public ObtainUsersAtLocationResponse obtainUsersAtLocation(ObtainUsersAtLocationRequest request) throws Exception {
-//        byte[] secretKey = decryptKey(request.getKey().toByteArray());
-//
-//        byte[] queryBytes = decryptRequest(
-//                request.getEncryptedSignedUsersAtLocationQuery().toByteArray(),
-//                secretKey,
-//                request.getIv().toByteArray());
-//
-//        SignedUsersAtLocationQuery sUsersAtLocationQuery = SignedUsersAtLocationQuery.parseFrom(queryBytes);
-//        UsersAtLocationQuery usersAtLocationQuery = sUsersAtLocationQuery.getUsersAtLocationQuery();
-//
-//        if (!verifyHaSignature(usersAtLocationQuery.toByteArray(), sUsersAtLocationQuery.toByteArray())) {
-//            throw new InvalidParameterException("Invalid users at location query signature");
-//        }
-//
-//        ListLocationReport.Builder lLReportBuilder = ListLocationReport.newBuilder();
-//
-//        for (LocationReport report : this.locationReports.values()) {
-//            LocationInformation information = report.getLocationInformation();
-//            if (information.getEpoch() == usersAtLocationQuery.getEpoch() &&
-//                    information.getPosition().getX() == usersAtLocationQuery.getPos().getX() &&
-//                    information.getPosition().getY() == usersAtLocationQuery.getPos().getY()) {
-//
-//                lLReportBuilder.addLocationReport(report);
-//            }
-//        }
-//
-//        ListLocationReport lLReport = lLReportBuilder.build();
-//
-//        SignedListLocationReport sLLReport = SignedListLocationReport.newBuilder()
-//                .setListLocationReport(lLReport)
-//                .setSignature(ByteString.copyFrom(CryptographicOperations.sign(lLReport.toByteArray(), this.privateKey)))
-//                .build();
-//
-//        IvParameterSpec iv = CryptographicOperations.generateIv();
-//
-//        return ObtainUsersAtLocationResponse.newBuilder()
-//                .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptResponse(sLLReport.toByteArray(), secretKey, iv)))
-//                .setIv(ByteString.copyFrom(iv.getIV()))
-//                .build();
-        return null;
+        byte[] secretKey = decryptKey(request.getKey().toByteArray());
+
+        byte[] queryBytes = decryptRequest(
+                request.getEncryptedSignedUsersAtLocationQuery().toByteArray(),
+                secretKey,
+                request.getIv().toByteArray());
+
+        SignedUsersAtLocationQuery sUsersAtLocationQuery = SignedUsersAtLocationQuery.parseFrom(queryBytes);
+        UsersAtLocationQuery usersAtLocationQuery = sUsersAtLocationQuery.getUsersAtLocationQuery();
+
+        if (!verifyHaSignature(usersAtLocationQuery.toByteArray(), sUsersAtLocationQuery.toByteArray())) {
+            throw new InvalidParameterException("Invalid users at location query signature");
+        }
+
+        SignedLocationReportList.Builder builder = SignedLocationReportList.newBuilder();
+
+        for (SignedLocationReport report : this.locationReports.values()) {
+            LocationInformation information = report.getLocationReport().getLocationInformation();
+            if (information.getEpoch() == usersAtLocationQuery.getEpoch() &&
+                    information.getPosition().getX() == usersAtLocationQuery.getPos().getX() &&
+                    information.getPosition().getY() == usersAtLocationQuery.getPos().getY()) {
+
+                builder.addSignedLocationReport(report);
+            }
+        }
+
+        SignedLocationReportList signedLocationReportList = builder.build();
+
+        ServerSignedSignedLocationReportList serverSignedSignedLocationReportList = ServerSignedSignedLocationReportList
+                .newBuilder()
+                .setSignedLocationReportList(signedLocationReportList)
+                .setServerSignature(ByteString.copyFrom(CryptographicOperations.sign(signedLocationReportList.toByteArray(), this.privateKey)))
+                .build();
+
+        IvParameterSpec iv = CryptographicOperations.generateIv();
+
+        return ObtainUsersAtLocationResponse.newBuilder()
+                .setEncryptedSignedLocationReportList(
+                        ByteString.copyFrom(
+                                encryptResponse(serverSignedSignedLocationReportList.toByteArray(), secretKey, iv)))
+                .setIv(ByteString.copyFrom(iv.getIV()))
+                .build();
     }
 
     private byte[] decryptKey(byte[] key) throws Exception {
