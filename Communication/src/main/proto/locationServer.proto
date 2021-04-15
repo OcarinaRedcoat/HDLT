@@ -77,9 +77,13 @@ message LocationQuery {
 }
 
 message ObtainLocationReportResponse {
-  bytes encryptedSignedLocationReport = 1; // Encrypted bytes of message LocationInformation
+  bytes encryptedServerSignedSignedLocationReport = 1; // Encrypted bytes of message LocationInformation
+  bytes iv = 2;
+}
+
+message ServerSignedSignedLocationReport {
+  SignedLocationReport signedLocationReport = 1;
   bytes serverSignature = 2;
-  bytes iv = 3;
 }
 
 message SignedLocationReport {
@@ -109,8 +113,12 @@ message SignedLocationReportList {
   repeated SignedLocationReport signedLocationReportList = 1;
 }
 
+message ServerSignedSignedLocationReportList {
+  SignedLocationReportList signedLocationReportList = 1;
+  bytes serverSignature = 2;
+}
+
 message ObtainUsersAtLocationResponse {
   bytes encryptedSignedLocationReportList = 1; // Encrypted bytes of message LocationInformation
-  bytes serverSignature = 2;
-  bytes iv = 3;
+  bytes iv = 2;
 }

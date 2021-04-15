@@ -109,11 +109,15 @@ public class LocationBL {
 
         SignedLocationReport report = this.locationReports.get(key);
 
+        ServerSignedSignedLocationReport sSSLR = ServerSignedSignedLocationReport.newBuilder()
+                .setSignedLocationReport(report)
+                .setServerSignature(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
+                .build();
+
         IvParameterSpec iv = CryptographicOperations.generateIv();
 
         return ObtainLocationReportResponse.newBuilder()
-                .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptResponse(report.toByteArray(), secretKey, iv)))
-                .setServerSignature(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
+                .setEncryptedServerSignedSignedLocationReport(ByteString.copyFrom(encryptResponse(sSSLR.toByteArray(), secretKey, iv)))
                 .setIv(ByteString.copyFrom(iv.getIV()))
                 .build();
     }
