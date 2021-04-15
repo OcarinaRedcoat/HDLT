@@ -91,7 +91,7 @@ public class ClientBL {
         SignedLocationReport signedLocationReport = SignedLocationReport
                 .newBuilder()
                 .setLocationReport(report)
-                .setSignedLocationReport(ByteString.copyFrom(signature))
+                .setUserSignature(ByteString.copyFrom(signature))
                 .build();
 
         SecretKey key = generateSecretKey();
@@ -143,6 +143,13 @@ public class ClientBL {
 
         ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
 
+        //Verify server signature
+        if(!verifySignature(getServerPublicKey(1), response.getEncryptedSignedLocationReport().toByteArray(),
+                response.getServerSignature().toByteArray())){
+
+            throw new InvalidParameterException("Invalid response, server signature is wrong!");
+        }
+
         byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key,
                 new IvParameterSpec(response.getIv().toByteArray()));
 
@@ -150,10 +157,11 @@ public class ClientBL {
 
         LocationReport report = signedLocationReport.getLocationReport();
 
-        if(!verifySignature(getServerPublicKey(1), report.toByteArray(),
-                signedLocationReport.getSignedLocationReport().toByteArray())){
+        //Verify my signature
+        if(!verifySignature(getUserPublicKey(client.getUser().getId()), report.toByteArray(),
+                signedLocationReport.getUserSignature().toByteArray())){
 
-            throw new InvalidParameterException("Invalid location report server signature");
+            throw new InvalidParameterException("Invalid location report signature, it is not mine!");
         }
 
         return report;
