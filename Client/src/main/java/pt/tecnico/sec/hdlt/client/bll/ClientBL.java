@@ -143,17 +143,19 @@ public class ClientBL {
 
         ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
 
+        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedServerSignedSignedLocationReport().toByteArray(), key,
+                new IvParameterSpec(response.getIv().toByteArray()));
+
+        ServerSignedSignedLocationReport serverSignedSignedLocationReport = ServerSignedSignedLocationReport.parseFrom(decryptedMessage);
+
         //Verify server signature
-        if(!verifySignature(getServerPublicKey(1), response.getEncryptedSignedLocationReport().toByteArray(),
-                response.getServerSignature().toByteArray())){
+        if(!verifySignature(getServerPublicKey(1), serverSignedSignedLocationReport.getSignedLocationReport().toByteArray(),
+                serverSignedSignedLocationReport.getServerSignature().toByteArray())){
 
             throw new InvalidParameterException("Invalid response, server signature is wrong!");
         }
 
-        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key,
-                new IvParameterSpec(response.getIv().toByteArray()));
-
-        SignedLocationReport signedLocationReport = SignedLocationReport.parseFrom(decryptedMessage);
+        SignedLocationReport signedLocationReport = serverSignedSignedLocationReport.getSignedLocationReport();
 
         LocationReport report = signedLocationReport.getLocationReport();
 

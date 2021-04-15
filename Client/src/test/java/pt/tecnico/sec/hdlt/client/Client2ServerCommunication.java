@@ -43,20 +43,9 @@ public class Client2ServerCommunication {
         }
     }
 
-    private void deleteServerReports(){
-        Path fileToDeletePath = Paths.get(serverFileLocation);
-        try {
-            Files.deleteIfExists(fileToDeletePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Test
     public void submitReportAndGetReport()
     {
-        deleteServerReports();
-
         Client client1 = new Client(readUser(gridFileLocation, 1));
         UserClient userClient1 = new UserClient();
         Client client3 = new Client(readUser(gridFileLocation, 3));

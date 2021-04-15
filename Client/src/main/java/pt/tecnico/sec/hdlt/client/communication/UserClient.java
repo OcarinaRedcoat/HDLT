@@ -130,12 +130,15 @@ public class UserClient {
         LocationReport report = null;
         try {
             report = ClientBL.obtainLocationReport(client, epoch, serverStub);
-            System.out.println("I got the report Report you wanted!");
+            System.out.println("I got the report Report you wanted: ");
+            System.out.println(report);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
-                InvalidAlgorithmParameterException | InvalidParameterException e) {
+                InvalidAlgorithmParameterException e) {
 
             System.err.println("Something went wrong!");
+        } catch (InvalidParameterException e) {
+            System.err.println(e.getMessage());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
         } finally {
