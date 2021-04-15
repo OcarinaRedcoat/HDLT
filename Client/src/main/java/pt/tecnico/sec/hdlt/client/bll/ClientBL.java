@@ -53,9 +53,12 @@ public class ClientBL {
                 .newBuilder()
                 .setLocationInformation(locationInformation);
 
-        for (int i = 0; i < f+1; i++) { //if f is 4 it will ask for 5 witnesses
+        for (ClientServerGrpc.ClientServerBlockingStub stub: userStubs){
+            if(reportBuilder.getLocationProofCount() == f+1)
+                break;
+
             try {
-                SignedLocationProof response = userStubs.get(i).requestLocationProof(request);
+                SignedLocationProof response = stub.requestLocationProof(request);
 
                 LocationProof locationProof = response.getLocationProof();
                 if(verifySignature(getUserPublicKey(locationProof.getWitnessId()), locationProof.toByteArray(),
@@ -63,17 +66,16 @@ public class ClientBL {
                         && locationProof.getEpoch() == epoch){
 
                     reportBuilder.addLocationProof(response);
-                    continue;
+                } else {
+                    System.err.println("Received a proof with an invalid signature!");
                 }
-                System.err.println("Someone messed with this proof!");
-                f++;
             } catch (StatusRuntimeException e){
                 System.err.println("Someone did not witness!");
-                f++;
             }
-            if(i == userStubs.size()-1){
-                throw new InvalidParameterException("Could not get enough clients to witness me considering the f.");
-            }
+        }
+
+        if(reportBuilder.getLocationProofCount() < f+1){
+            throw new InvalidParameterException("Could not get enough clients to witness me considering the f.");
         }
 
         return reportBuilder.build();

@@ -18,29 +18,29 @@ public class Client2ServerCommunication {
     {
         Client client1 = new Client(readUser(gridFileLocation, 1));
         UserClient userClient1 = new UserClient();
-        Client client5 = new Client(readUser(gridFileLocation, 5));
-        UserServer userServer5 = new UserServer(client5);
-        Client client8 = new Client(readUser(gridFileLocation, 8));
-        UserServer userServer8 = new UserServer(client8);
-        Client client11 = new Client(readUser(gridFileLocation, 11));
-        UserServer userServer11 = new UserServer(client11);
+        Client client3 = new Client(readUser(gridFileLocation, 3));
+        UserServer userServer3 = new UserServer(client3);
+        Client client9 = new Client(readUser(gridFileLocation, 9));
+        UserServer userServer9 = new UserServer(client9);
         Client client12 = new Client(readUser(gridFileLocation, 12));
         UserServer userServer12 = new UserServer(client12);
-        Client client13 = new Client(readUser(gridFileLocation, 13));
-        UserServer userServer13 = new UserServer(client13);
+        Client client15 = new Client(readUser(gridFileLocation, 15));
+        UserServer userServer15 = new UserServer(client15);
+        Client client17 = new Client(readUser(gridFileLocation, 17));
+        UserServer userServer17 = new UserServer(client17);
 
         //TODO: start server
         //Server server = new Server(1);
 
-        LocationReport locationReport = userClient1.requestLocationProofs(client1, 1L, 4);
+        LocationReport locationReport = userClient1.requestLocationProofs(client1, 14L, 4);
         Boolean submitedReport = userClient1.submitLocationReport(client1, locationReport);
         assertEquals(true, submitedReport);
 
-        userServer5.stop();
-        userServer8.stop();
-        userServer11.stop();
+        userServer3.stop();
+        userServer9.stop();
         userServer12.stop();
-        userServer13.stop();
+        userServer15.stop();
+        userServer17.stop();
     }
 
     @Test
@@ -52,7 +52,7 @@ public class Client2ServerCommunication {
         //TODO: start server
         //Server server = new Server(1);
 
-        LocationReport locationReport = userClient1.obtainLocationReport(client1, 1L);
+        LocationReport locationReport = userClient1.obtainLocationReport(client1, 14L);
         assertNotNull(locationReport);
     }
 

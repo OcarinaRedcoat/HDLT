@@ -68,7 +68,7 @@ def store_json(grids):
 epoch_correction = 2670
 
 grid_size = 100
-distance_allowed = 10
+distance_allowed = 15
 total_n_epochs = 100 # 1...100
 n_users = 20 # 1...21
 
@@ -106,7 +106,7 @@ for user in epoch_list.users:
             if(user.id == positionShort.id):
                 continue
             if(position.epoch == positionShort.epoch):
-                if((abs(position.xPos - positionShort.xPos) <= distance_allowed) or (abs(position.yPos - positionShort.yPos) <= distance_allowed)):
+                if((abs(position.xPos - positionShort.xPos) <= distance_allowed) and (abs(position.yPos - positionShort.yPos) <= distance_allowed)):
                     position.addCloseBy(positionShort.id)
 
 
