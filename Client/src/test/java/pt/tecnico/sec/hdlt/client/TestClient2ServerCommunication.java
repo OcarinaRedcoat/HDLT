@@ -9,6 +9,9 @@ import pt.tecnico.sec.hdlt.server.LocationServer;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
@@ -18,7 +21,6 @@ import static pt.tecnico.sec.hdlt.IOUtils.readUser;
 public class TestClient2ServerCommunication {
 
     private static final String gridFileLocation = "../grids.output.json";
-    private static final String serverFileLocation = "../server_1.txt";
 
     private LocationServer server;
     private LocationBL locationBL;
@@ -42,9 +44,20 @@ public class TestClient2ServerCommunication {
         }
     }
 
+    private void deleteServerReports(){
+        Path fileToDeletePath = Paths.get("../Server/src/main/resources/server_1.txt");
+        try {
+            Files.deleteIfExists(fileToDeletePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Test
     public void submitReportAndGetReport()
     {
+        deleteServerReports();
+
         Client client1 = new Client(readUser(gridFileLocation, 1));
         UserClient userClient1 = new UserClient();
         Client client6 = new Client(readUser(gridFileLocation, 6));
@@ -60,7 +73,7 @@ public class TestClient2ServerCommunication {
         Boolean submitedReport = userClient1.submitLocationReport(client1, locationReport);
         assertEquals(true, submitedReport);
 
-        locationReport = userClient1.obtainLocationReport(client1, 14L);
+        locationReport = userClient1.obtainLocationReport(client1, 24L);
         assertNotNull(locationReport);
 
         userServer6.stop();
