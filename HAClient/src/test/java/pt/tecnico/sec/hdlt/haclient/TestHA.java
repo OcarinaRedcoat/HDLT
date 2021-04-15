@@ -18,7 +18,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 import static pt.tecnico.sec.hdlt.IOUtils.readUser;
 
-public class HATests
+public class TestHA
 {
 
     private static final String gridFileLocation = "../grids.output.json";
