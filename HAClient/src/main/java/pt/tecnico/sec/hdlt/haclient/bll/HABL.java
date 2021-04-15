@@ -56,7 +56,10 @@ public class HABL {
                 .build();
 
         ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
-        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key, iv);
+        byte[] decryptedMessage = symmetricDecrypt(
+                response.getEncryptedSignedLocationReport().toByteArray(),
+                key,
+                new IvParameterSpec(response.getIv().toByteArray()));
 
         SignedLocationReport signedLocationReport = SignedLocationReport.parseFrom(decryptedMessage);
 
