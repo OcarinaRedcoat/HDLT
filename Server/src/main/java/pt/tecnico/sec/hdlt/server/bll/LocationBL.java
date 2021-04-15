@@ -28,7 +28,7 @@ public class LocationBL {
     private final int numberByzantineUsers;
 
     public LocationBL(int serverId, int numberByzantineUsers) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        Path filePath = Paths.get("Server_" + serverId + ".txt");
+        Path filePath = Paths.get("../Server/Server_" + serverId + ".txt");
         this.writeQueue = new WriteQueue<>(filePath);
         this.locationReports = ReadFile.createReportsMap(filePath);
 //        this.publicKey = FileUtils.getServerPublicKey(serverId);
@@ -45,6 +45,11 @@ public class LocationBL {
         SignedLocationReport sReport = SignedLocationReport.parseFrom(reportBytes);
         LocationReport report = sReport.getLocationReport();
         LocationInformation information = report.getLocationInformation();
+
+        LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
+        if (this.locationReports.containsKey(key)) {
+            throw new InvalidParameterException("Repeated location report for user: " + information.getUserId() + " and epoch: " + information.getEpoch());
+        }
 
         if (!verifySignature(information.getUserId(), report.toByteArray(), sReport.getUserSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid location information signature");
@@ -72,11 +77,6 @@ public class LocationBL {
             if (!verifyLocationProof(information, lProof)) {
                 throw new InvalidParameterException("Invalid location proof");
             }
-        }
-
-        LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
-        if (this.locationReports.containsKey(key)) {
-            throw new InvalidParameterException("Repeated location report for user: " + information.getUserId() + " and epoch: " + information.getEpoch());
         }
 
         this.locationReports.put(key, sReport);
@@ -109,7 +109,7 @@ public class LocationBL {
 
         SignedLocationReport report = this.locationReports.get(key);
 
-        ServerSignedSignedLocationReport sSSLR = ServerSignedSignedLocationReport.newBuilder()
+        ServerSignedSignedLocationReport serverSignedSignedLocationReport = ServerSignedSignedLocationReport.newBuilder()
                 .setSignedLocationReport(report)
                 .setServerSignature(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
                 .build();
@@ -117,7 +117,7 @@ public class LocationBL {
         IvParameterSpec iv = CryptographicOperations.generateIv();
 
         return ObtainLocationReportResponse.newBuilder()
-                .setEncryptedServerSignedSignedLocationReport(ByteString.copyFrom(encryptResponse(sSSLR.toByteArray(), secretKey, iv)))
+                .setEncryptedServerSignedSignedLocationReport(ByteString.copyFrom(encryptResponse(serverSignedSignedLocationReport.toByteArray(), secretKey, iv)))
                 .setIv(ByteString.copyFrom(iv.getIV()))
                 .build();
     }
