@@ -2,28 +2,19 @@ package pt.tecnico.sec.hdlt.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.grpc.Status;
-import pt.tecnico.sec.hdlt.FileUtils;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
-import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.service.LocationServerService;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.InvalidParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class LocationServer {
 
-    private static final Logger logger = Logger.getLogger(LocationServer.class.getName());
+    private static final Logger logger = Logger.getLogger(App.class.getName());
     private Server server;
 
-    private void start(LocationBL locationBL) throws IOException {
+    public void start(LocationBL locationBL) throws IOException {
         /* The port on which the server should run */
         int port = 50051;
         this.server = ServerBuilder.forPort(port)
@@ -45,7 +36,7 @@ public class LocationServer {
         });
     }
 
-    private void stop() throws InterruptedException {
+    public void stop() throws InterruptedException {
         if (this.server != null) {
             this.server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
@@ -54,32 +45,9 @@ public class LocationServer {
     /**
      * Await termination on the main thread since the grpc library uses daemon threads.
      */
-    private void blockUntilShutdown() throws InterruptedException {
+    public void blockUntilShutdown() throws InterruptedException {
         if (this.server != null) {
             this.server.awaitTermination();
-        }
-    }
-
-    /**
-     * Main launches the server from the command line.
-     */
-    public static void main(String[] args) throws IOException, InterruptedException {
-
-        if (args.length != 1) {
-            System.err.println("Usage: LocationServer <# of byzantine users>");
-            return;
-        }
-
-        try {
-            LocationBL locationBL = new LocationBL(1, Integer.parseInt(args[0]));
-
-            final LocationServer locationServer = new LocationServer();
-            locationServer.start(locationBL);
-            locationServer.blockUntilShutdown();
-
-            locationBL.terminateWriteQueue();
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            e.printStackTrace();
         }
     }
 }
