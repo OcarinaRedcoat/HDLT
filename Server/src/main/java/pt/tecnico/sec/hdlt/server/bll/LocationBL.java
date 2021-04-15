@@ -133,7 +133,7 @@ public class LocationBL {
         SignedUsersAtLocationQuery sUsersAtLocationQuery = SignedUsersAtLocationQuery.parseFrom(queryBytes);
         UsersAtLocationQuery usersAtLocationQuery = sUsersAtLocationQuery.getUsersAtLocationQuery();
 
-        if (!verifyHaSignature(usersAtLocationQuery.toByteArray(), sUsersAtLocationQuery.toByteArray())) {
+        if (!verifyHaSignature(usersAtLocationQuery.toByteArray(), sUsersAtLocationQuery.getSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid users at location query signature");
         }
 
