@@ -15,6 +15,7 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,7 +76,7 @@ public class HAClient {
     public List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep) {
         logger.info("Obtain Users At Location:");
 
-        List<SignedLocationReport> listReport = null;
+        List<SignedLocationReport> listReport;
 
         try{
             listReport = HABL.obtainUsersAtLocation(x , y , ep, serverStub);
@@ -87,6 +88,6 @@ public class HAClient {
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }
-        return listReport;
+        return null;
     }
 }

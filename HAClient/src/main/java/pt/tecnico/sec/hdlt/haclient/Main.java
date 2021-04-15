@@ -36,8 +36,10 @@ public class Main {
                     long x = readPos("Specify the posX: ");
                     long y = readPos("Specify the posY: ");
                     List<SignedLocationReport> listReport = HAClient.getInstance().obtainUsersAtLocation(x, y, epoch);
-                    for (SignedLocationReport rep: listReport) {
-                        System.out.println(rep);
+                    if (listReport != null) {
+                        for (SignedLocationReport rep: listReport) {
+                            System.out.println(rep);
+                        }
                     }
                     break;
                 case "help":
