@@ -18,14 +18,9 @@ import java.util.List;
 import static org.junit.Assert.*;
 import static pt.tecnico.sec.hdlt.IOUtils.readUser;
 
-/**
- * Unit test for simple App.
- */
 public class HATests
 {
-    /**
-     * Rigorous Test :-)
-     */
+
     private static final String gridFileLocation = "../grids.output.json";
 
     private LocationServer server;
