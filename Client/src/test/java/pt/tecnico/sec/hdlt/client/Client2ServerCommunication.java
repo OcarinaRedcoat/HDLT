@@ -24,11 +24,12 @@ public class Client2ServerCommunication {
     private static final String serverFileLocation = "../server_1.txt";
 
     private LocationServer server;
+    private LocationBL locationBL;
 
     private void startServer(){
         this.server = new LocationServer();
         try {
-            LocationBL locationBL = new LocationBL(1, 2);
+            this.locationBL = new LocationBL(1, 2);
             this.server.start(locationBL);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
@@ -37,7 +38,8 @@ public class Client2ServerCommunication {
 
     private void stopServer(){
         try {
-            server.stop();
+            this.server.stop();
+            this.locationBL.terminateWriteQueue();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
