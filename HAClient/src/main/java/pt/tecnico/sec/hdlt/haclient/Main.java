@@ -29,7 +29,6 @@ public class Main {
                     epoch = readEpoch();
                     userId = readUserId();
                     SignedLocationReport report = HAClient.getInstance().obtainLocationReport(userId, epoch);
-                    System.out.println(report);
                     break;
                 case "obtain user at location":
                     epoch = readEpoch();

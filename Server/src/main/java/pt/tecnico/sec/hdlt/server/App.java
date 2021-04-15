@@ -19,12 +19,17 @@ public class App {
             return;
         }
 
+        int f = Integer.parseInt(args[0]);
+        if (f < 0) {
+            System.err.println("The number of byzantine users has to be zero or greater");
+            return;
+        }
+
         try {
-            LocationBL locationBL = new LocationBL(1, Integer.parseInt(args[0]));
+            LocationBL locationBL = new LocationBL(1, f);
 
             LocationServer locationServer = new LocationServer();
             locationServer.start(locationBL);
-//            locationServer.blockUntilShutdown();
 
             System.out.println("Type <q> or <quit> or <exit> to shutdown the server.");
 
