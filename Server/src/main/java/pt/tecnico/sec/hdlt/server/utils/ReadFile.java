@@ -2,6 +2,7 @@ package pt.tecnico.sec.hdlt.server.utils;
 
 import com.google.protobuf.util.JsonFormat;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
+import pt.tecnico.sec.hdlt.communication.SignedLocationReport;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 
 import java.io.IOException;
@@ -13,23 +14,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ReadFile {
 
-    public static ConcurrentHashMap<LocationReportKey, LocationReport> createReportsMap(Path path) {
-        ConcurrentHashMap<LocationReportKey, LocationReport> locationReports = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<LocationReportKey, SignedLocationReport> createReportsMap(Path path) {
+        ConcurrentHashMap<LocationReportKey, SignedLocationReport> locationReports = new ConcurrentHashMap<>();
 
-        for (LocationReport report : readLocationReports(path)) {
-            locationReports.put(new LocationReportKey(report.getLocationInformation().getUserId(), report.getLocationInformation().getEpoch()), report);
+        for (SignedLocationReport report : readLocationReports(path)) {
+            locationReports.put(new LocationReportKey(
+                    report.getLocationReport().getLocationInformation().getUserId(),
+                    report.getLocationReport().getLocationInformation().getEpoch()), report);
         }
 
         return locationReports;
     }
 
-    private static List<LocationReport> readLocationReports(Path path) {
-        List<LocationReport> locationReports = new ArrayList<>();
-        LocationReport.Builder builder;
+    private static List<SignedLocationReport> readLocationReports(Path path) {
+        List<SignedLocationReport> locationReports = new ArrayList<>();
+        SignedLocationReport.Builder builder;
 
         try {
             for (String l : Files.readString(path).split("\n")) {
-                builder = LocationReport.newBuilder();
+                builder = SignedLocationReport.newBuilder();
                 JsonFormat.parser().merge(l, builder);
                 locationReports.add(builder.build());
             }
