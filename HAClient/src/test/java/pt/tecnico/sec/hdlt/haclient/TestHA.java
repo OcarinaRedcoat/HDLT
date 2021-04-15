@@ -11,6 +11,9 @@ import pt.tecnico.sec.hdlt.server.LocationServer;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
@@ -45,9 +48,20 @@ public class TestHA
         }
     }
 
+    private void deleteServerReports(){
+        Path fileToDeletePath = Paths.get("../Server/src/main/resources/server_1.txt");
+        try {
+            Files.deleteIfExists(fileToDeletePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Test
     public void obtainLocationReport()
     {
+        deleteServerReports();
+
         Client client1 = new Client(readUser(gridFileLocation, 1));
         UserClient userClient1 = new UserClient();
         Client client3 = new Client(readUser(gridFileLocation, 3));
@@ -78,6 +92,8 @@ public class TestHA
     @Test
     public void obtainUsersAtLocation()
     {
+        deleteServerReports();
+
         Client client15 = new Client(readUser(gridFileLocation, 15));
         UserClient userClient15 = new UserClient();
         UserServer userServer15 = new UserServer(client15);

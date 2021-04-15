@@ -10,7 +10,7 @@ import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
 
-public class Client2ClientCommunication
+public class TestClient2ClientCommunication
 {
     private static final String gridFileLocation = "../grids.output.json";
 
