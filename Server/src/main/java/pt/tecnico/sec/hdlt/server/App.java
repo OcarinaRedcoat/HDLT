@@ -11,7 +11,7 @@ public class App {
     /**
      * Main launches the server from the command line.
      */
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
 
         if (args.length != 1) {
             System.err.println("Usage: LocationServer <# of byzantine users>");
@@ -26,7 +26,7 @@ public class App {
             locationServer.blockUntilShutdown();
 
             locationBL.terminateWriteQueue();
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | InterruptedException | IOException e) {
             e.printStackTrace();
         }
     }
