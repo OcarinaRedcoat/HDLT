@@ -60,6 +60,7 @@ public class HAClient {
 
         try{
             report = HABL.obtainLocationReport(userId, epoch, serverStub);
+            System.out.println(report);
         } catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
                 | InvalidAlgorithmParameterException | IOException e) {
