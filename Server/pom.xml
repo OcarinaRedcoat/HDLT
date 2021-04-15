@@ -14,7 +14,7 @@
 
     <name>Server</name>
     <properties>
-        <mainclass>pt.tecnico.sec.hdlt.server.LocationServer</mainclass>
+        <mainclass>pt.tecnico.sec.hdlt.server.App</mainclass>
     </properties>
 
     <dependencies>
