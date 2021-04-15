@@ -5,6 +5,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 import pt.tecnico.sec.hdlt.communication.LocationServerGrpc;
+import pt.tecnico.sec.hdlt.communication.SignedLocationReport;
 import pt.tecnico.sec.hdlt.haclient.bll.HABL;
 import pt.tecnico.sec.hdlt.haclient.ha.HA;
 
@@ -51,10 +52,10 @@ public class HAClient {
         return INSTANCE;
     }
 
-    public void obtainLocationReport(int userId, Long epoch){
+    public SignedLocationReport obtainLocationReport(int userId, Long epoch){
         logger.info("Obtain Location Report:");
 
-        LocationReport report = null;
+        SignedLocationReport report = null;
 
         try{
             report = HABL.obtainLocationReport(userId, epoch, serverStub);
@@ -66,19 +67,19 @@ public class HAClient {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }
 
-        System.out.println(report);
-
+        return report;
     }
     /* Params: pos, ep .....
      * Specification: returns a list of users that were at position pos at epoch ep
      */
-    public void obtainUsersAtLocation(long x, long y, long ep) {
+    public List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep) {
         logger.info("Obtain Users At Location:");
 
-        List<LocationReport> listReport = null;
+        List<SignedLocationReport> listReport = null;
 
         try{
             listReport = HABL.obtainUsersAtLocation(x , y , ep, serverStub);
+            return listReport;
         }catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
                 | InvalidAlgorithmParameterException | IOException e) {
@@ -86,9 +87,6 @@ public class HAClient {
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }
-
-        for (LocationReport report: listReport) {
-            System.out.println(report);
-        }
+        return listReport;
     }
 }

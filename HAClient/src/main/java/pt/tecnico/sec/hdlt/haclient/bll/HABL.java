@@ -23,7 +23,7 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
 
 public class HABL {
 
-    public static LocationReport obtainLocationReport(int userId, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
+    public static SignedLocationReport obtainLocationReport(int userId, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException {
 
@@ -57,16 +57,16 @@ public class HABL {
 
         ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
         byte[] decryptedMessage = symmetricDecrypt(
-                response.getEncryptedSignedLocationReport().toByteArray(),
+                response.getEncryptedServerSignedSignedLocationReport().toByteArray(),
                 key,
                 new IvParameterSpec(response.getIv().toByteArray()));
 
-        SignedLocationReport signedLocationReport = SignedLocationReport.parseFrom(decryptedMessage);
+        ServerSignedSignedLocationReport signedSignedLocationReport = ServerSignedSignedLocationReport.parseFrom(decryptedMessage);
 
-        LocationReport report = signedLocationReport.getLocationReport();
+        SignedLocationReport report = signedSignedLocationReport.getSignedLocationReport();
 
-        if(!verifySignature(getServerPublicKey(1), report.toByteArray(),
-                signedLocationReport.getSignedLocationReport().toByteArray())){
+        if(!verifySignature(getServerPublicKey(1), signedSignedLocationReport.toByteArray(),
+                signedSignedLocationReport.getServerSignature().toByteArray())){
             //TODO: exception
             throw new InvalidKeyException();
         }
@@ -76,7 +76,7 @@ public class HABL {
     /* Params: pos, ep .....
      * Specification: returns a list of users that were at position pos at epoch ep
      */
-    public static List<LocationReport> obtainUsersAtLocation(long x, long y, long ep, LocationServerGrpc.LocationServerBlockingStub serverStub)
+    public static List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidAlgorithmParameterException,
             BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException {
         Position pos = Position.newBuilder()
@@ -113,20 +113,20 @@ public class HABL {
 
         ObtainUsersAtLocationResponse response = serverStub.obtainUsersAtLocation(obtainUsersAtLocationRequest);
 
-        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReport().toByteArray(), key, iv);
+        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReportList().toByteArray(),
+                key,
+                new IvParameterSpec(response.getIv().toByteArray()));
 
-        SignedListLocationReport signedListLocationReport = SignedListLocationReport.parseFrom(decryptedMessage);
-        ListLocationReport listLocationReport = signedListLocationReport.getListLocationReport();
+        ServerSignedSignedLocationReportList signedSignedLocationReportList = ServerSignedSignedLocationReportList.parseFrom(decryptedMessage);
+        SignedLocationReportList signedLocationReportList = signedSignedLocationReportList.getSignedLocationReportList();
 
-        List<LocationReport> list = new ArrayList<>(listLocationReport.getLocationReportList());
+        List<SignedLocationReport> list = new ArrayList<>(signedLocationReportList.getSignedLocationReportListList());
 
-/*        for (LocationReport report: list) {
-            if (!verifySignature(getServerPublicKey(1), report.toByteArray(),
-                    signedLocationReport.getSignedLocationReport().toByteArray())) {
-                //TODO: exception
-                throw new InvalidKeyException();
-            }
-        }*/
+        if(!verifySignature(getServerPublicKey(1), signedSignedLocationReportList.toByteArray(),
+                signedSignedLocationReportList.getServerSignature().toByteArray())){
+            //TODO: exception
+            throw new InvalidKeyException();
+        }
 
         return list;
     }
