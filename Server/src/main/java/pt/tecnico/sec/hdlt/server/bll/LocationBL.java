@@ -52,7 +52,7 @@ public class LocationBL {
 
         HashSet<Integer> witnessIds = new HashSet<>();
 
-        if (report.getLocationProofList().size() < this.numberByzantineUsers + 1) {
+        if (report.getLocationProofList().size() <= this.numberByzantineUsers) {
             throw new InvalidParameterException("Invalid number of proofs");
         }
 
