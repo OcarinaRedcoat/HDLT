@@ -42,8 +42,12 @@ public class LocationBL {
                 decryptKey(request.getKey().toByteArray()),
                 request.getIv().toByteArray());
 
-        SignedLocationReport sReport = SignedLocationReport.parseFrom(reportBytes);
-        LocationReport report = sReport.getLocationReport();
+        SignedLocationReport signedLocationReport = SignedLocationReport.parseFrom(reportBytes);
+        handleSubmitLocationReport(signedLocationReport);
+    }
+
+    public void handleSubmitLocationReport(SignedLocationReport signedLocationReport) throws Exception {
+        LocationReport report = signedLocationReport.getLocationReport();
         LocationInformation information = report.getLocationInformation();
 
         LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
@@ -51,7 +55,7 @@ public class LocationBL {
             throw new InvalidParameterException("Repeated location report for user: " + information.getUserId() + " and epoch: " + information.getEpoch());
         }
 
-        if (!verifySignature(information.getUserId(), report.toByteArray(), sReport.getUserSignature().toByteArray())) {
+        if (!verifySignature(information.getUserId(), report.toByteArray(), signedLocationReport.getUserSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid location information signature");
         }
 
@@ -79,8 +83,8 @@ public class LocationBL {
             }
         }
 
-        this.locationReports.put(key, sReport);
-        this.writeQueue.write(sReport);
+        this.locationReports.put(key, signedLocationReport);
+        this.writeQueue.write(signedLocationReport);
     }
 
     public ObtainLocationReportResponse obtainLocationReport(ObtainLocationReportRequest request) throws Exception {
