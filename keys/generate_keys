@@ -1,12 +1,9 @@
 #!/bin/sh
-for i in {1..20}; do openssl genrsa -out priv_client_$i.pem 2048; done
-for i in {1..20}; do openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_client_$i.pem -out priv_client_$i.der -nocrypt; done
-for i in {1..20}; do openssl rsa -in priv_client_$i.pem -pubout -outform DER -out pub_client_$i.der; done
+for i in {1..20}; do keytool -genkeypair -dname "CN=SEC, OU=MEIC, O=IST, L=Lisbon, S=Lisbon, C=PT" -keysize 2048 -keyalg RSA -alias client_$i -keystore client_$i.jks -storepass client_$i; done
+for i in {1..20}; do keytool -export -alias client_$i -keystore client_$i.jks -file client_pub_$i.pem -storepass client_$i; done
 
-for i in {1..20}; do openssl genrsa -out priv_server_$i.pem 2048; done
-for i in {1..20}; do openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_server_$i.pem -out priv_server_$i.der -nocrypt; done
-for i in {1..20}; do openssl rsa -in priv_server_$i.pem -pubout -outform DER -out pub_server_$i.der; done
+for i in {1..20}; do keytool -genkeypair -dname "CN=SEC, OU=MEIC, O=IST, L=Lisbon, S=Lisbon, C=PT" -keysize 2048 -keyalg RSA -alias server_$i -keystore server_$i.jks -storepass server_$i; done
+for i in {1..20}; do keytool -export -alias server_$i -keystore server_$i.jks -file server_pub_$i.pem -storepass server_$i; done
 
-openssl genrsa -out priv_ha.pem 2048
-openssl pkcs8 -topk8 -inform PEM -outform DER -in priv_ha.pem -out priv_ha.der -nocrypt
-openssl rsa -in priv_ha.pem -pubout -outform DER -out pub_ha.der
+keytool -genkeypair -dname "CN=SEC, OU=MEIC, O=IST, L=Lisbon, S=Lisbon, C=PT" -keysize 2048 -keyalg RSA -alias ha_1 -keystore ha_1.jks -storepass ha_keystore_1
+keytool -export -alias ha_1 -keystore ha_1.jks -file ha_pub_1.pem -storepass ha_keystore_1
