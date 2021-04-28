@@ -6,10 +6,9 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.io.*;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.net.URL;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -75,47 +74,43 @@ public class FileUtils {
         return keyFacPub.generatePublic(pubSpec);
     }
 
-    public static PrivateKey readPrivateKey(String privateKeyPath) throws IOException, NoSuchAlgorithmException,
-            InvalidKeySpecException {
-
-        System.out.println("Reading private key from file: " + privateKeyPath);
-        byte[] privEncoded = readFile(privateKeyPath);
-        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(privEncoded);
-        KeyFactory keyFacPriv = KeyFactory.getInstance("RSA");
-        return keyFacPriv.generatePrivate(privSpec);
-    }
-
-    public static PrivateKey getUserPrivateKey(int userId)
-            throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-
-        return readPrivateKey("../keys/priv_client_" + userId + ".der");
-    }
-
     public static PublicKey getUserPublicKey(int userId)
             throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
 
-        return readPublicKey("../keys/pub_client_" + userId + ".der");
+        return readPublicKey("../keys/client_pub_" + userId + ".der");
     }
 
     public static PublicKey getServerPublicKey(int serverId)
             throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
 
-        return readPublicKey("../keys/pub_server_" + serverId + ".der");
-    }
-
-    public static PrivateKey getServerPrivateKey(int serverId) throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException {
-
-        return readPrivateKey("../keys/priv_server_" + serverId + ".der");
-    }
-
-    public static PrivateKey getHAPrivateKey() throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException{
-        return readPrivateKey("../keys/priv_ha.der");
+        return readPublicKey("../keys/server_pub_" + serverId + ".der");
     }
 
     public static PublicKey getHAPublicKey() throws NoSuchAlgorithmException, IOException,
             InvalidKeySpecException{
-        return readPublicKey("../keys/pub_ha.der");
+        return readPublicKey("../keys/ha_pub_1.der");
+    }
+
+    public static KeyStore loadKeyStore(File keystoreFile, String password, String keyStoreType)
+            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+
+        if (keystoreFile == null) {
+            throw new IllegalArgumentException("Keystore url may not be null");
+        }
+
+        URL keystoreUrl = keystoreFile.toURI().toURL();
+        KeyStore keystore = KeyStore.getInstance(keyStoreType);
+
+        InputStream is = null;
+        try {
+            is = keystoreUrl.openStream();
+            keystore.load(is, null == password ? null : password.toCharArray());
+        } finally {
+            if (null != is) {
+                is.close();
+            }
+        }
+
+        return keystore;
     }
 }

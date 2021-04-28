@@ -3,10 +3,19 @@ package pt.tecnico.sec.hdlt.crypto;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
 import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+
+import static pt.tecnico.sec.hdlt.FileUtils.loadKeyStore;
 
 public class CryptographicOperations {
 
@@ -111,5 +120,15 @@ public class CryptographicOperations {
     public static boolean verifyMessageDigest(String data, String digest) throws NoSuchAlgorithmException {
         String computedDigest = createMessageDigest(data);
         return computedDigest.equals(digest);
+    }
+
+    public static KeyPair getKeyPairFromKeyStore(File keystoreFile, String password, String keyStoreType, String alias)
+            throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, UnrecoverableKeyException {
+
+        KeyStore keyStore = loadKeyStore(keystoreFile, password, keyStoreType);
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, password.toCharArray());
+        Certificate cert = keyStore.getCertificate(alias);
+
+        return new KeyPair(cert.getPublicKey(), privateKey);
     }
 }
