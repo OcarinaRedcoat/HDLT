@@ -91,7 +91,7 @@ public class FileUtils {
         return readPublicKey("../keys/ha_pub_1.der");
     }
 
-    public static KeyStore loadKeyStore(File keystoreFile, String password, String keyStoreType)
+    public static KeyStore loadKeyStore(File keystoreFile, String password)
             throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
 
         if (keystoreFile == null) {
@@ -99,7 +99,7 @@ public class FileUtils {
         }
 
         URL keystoreUrl = keystoreFile.toURI().toURL();
-        KeyStore keystore = KeyStore.getInstance(keyStoreType);
+        KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
 
         InputStream is = null;
         try {

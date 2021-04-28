@@ -122,10 +122,10 @@ public class CryptographicOperations {
         return computedDigest.equals(digest);
     }
 
-    public static KeyPair getKeyPairFromKeyStore(File keystoreFile, String password, String keyStoreType, String alias)
+    public static KeyPair getKeyPairFromKeyStore(File keystoreFile, String password, String alias)
             throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, UnrecoverableKeyException {
 
-        KeyStore keyStore = loadKeyStore(keystoreFile, password, keyStoreType);
+        KeyStore keyStore = loadKeyStore(keystoreFile, password);
         PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, password.toCharArray());
         Certificate cert = keyStore.getCertificate(alias);
 

@@ -90,11 +90,11 @@ public class IOUtils {
         return scanner.nextLine();
     }
 
-    private static int readInteger(String askMessage) throws NumberFormatException{
+    public static int readInteger(String askMessage){
         return Integer.parseInt(readString(askMessage));
     }
 
-    private static long readLong(String askMessage) throws NumberFormatException{
+    public static long readLong(String askMessage){
         return Long.parseLong(readString(askMessage));
     }
 }
