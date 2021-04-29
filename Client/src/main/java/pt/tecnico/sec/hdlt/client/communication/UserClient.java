@@ -15,6 +15,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -85,7 +86,7 @@ public class UserClient {
             report = ClientBL.requestLocationProofs(client, epoch, f, userStubs);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
-                IOException e) {
+                IOException | CertificateException e) {
 
             System.err.println("Something went wrong!");
         } catch (InvalidParameterException e) {
@@ -112,7 +113,7 @@ public class UserClient {
             return true;
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
-                InvalidKeySpecException e) {
+                InvalidKeySpecException | CertificateException e) {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
@@ -134,7 +135,7 @@ public class UserClient {
             System.out.println(report);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
-                InvalidAlgorithmParameterException e) {
+                InvalidAlgorithmParameterException | CertificateException e) {
 
             System.err.println("Something went wrong!");
         } catch (InvalidParameterException e) {

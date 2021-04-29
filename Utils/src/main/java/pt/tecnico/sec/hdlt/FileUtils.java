@@ -7,12 +7,17 @@ import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 
 public class FileUtils {
 
@@ -64,31 +69,35 @@ public class FileUtils {
         return content;
     }
 
-    public static PublicKey readPublicKey(String publicKeyPath) throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException {
+    public static PublicKey readPublicKey(String publicKeyPath) throws CertificateException, IOException {
+        InputStream inputStream = new FileInputStream(publicKeyPath);
+        X509Certificate certificate =
+                (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(inputStream);
+        inputStream.close();
+        return certificate.getPublicKey();
 
-        System.out.println("Reading public key from file: " + publicKeyPath);
-        byte[] pubEncoded = readFile(publicKeyPath);
-        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubEncoded);
-        KeyFactory keyFacPub = KeyFactory.getInstance("RSA");
-        return keyFacPub.generatePublic(pubSpec);
+//        byte[] pubEncoded = readFile(publicKeyPath);
+//        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubEncoded);
+//        KeyFactory keyFacPub = KeyFactory.getInstance("RSA");
+//        return keyFacPub.generatePublic(pubSpec);
     }
 
     public static PublicKey getUserPublicKey(int userId)
-            throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+            throws CertificateException, IOException {
 
-        return readPublicKey("../keys/client_pub_" + userId + ".der");
+        return readPublicKey("../keys/client_pub_" + userId + ".cert");
     }
 
     public static PublicKey getServerPublicKey(int serverId)
-            throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+            throws CertificateException, IOException {
 
-        return readPublicKey("../keys/server_pub_" + serverId + ".der");
+        return readPublicKey("../keys/server_pub_" + serverId + ".cert");
     }
 
-    public static PublicKey getHAPublicKey() throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException{
-        return readPublicKey("../keys/ha_pub_1.der");
+    public static PublicKey getHAPublicKey()
+            throws CertificateException, IOException {
+        
+        return readPublicKey("../keys/ha_pub_1.cert");
     }
 
     public static KeyStore loadKeyStore(File keystoreFile, String password)

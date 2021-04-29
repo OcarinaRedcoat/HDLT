@@ -12,6 +12,7 @@ import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,20 +36,13 @@ class UserImpl extends ClientServerGrpc.ClientServerImplBase{
             SignedLocationProof response = ServerBL.requestLocationProof(client, req, responseObserver);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
+        } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException | InvalidKeySpecException |
+                IOException | CertificateException e) {
             e.printStackTrace();
         } catch (InvalidParameterException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("You are not close to me.").asRuntimeException());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

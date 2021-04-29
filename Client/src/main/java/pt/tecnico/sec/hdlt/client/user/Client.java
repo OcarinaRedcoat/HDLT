@@ -13,8 +13,6 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.getKeyPairFromK
 
 public class Client {
 
-    private static Client INSTANCE = null;
-
     private User user;
     private KeyPair keyPair;
 

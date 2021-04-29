@@ -13,6 +13,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -26,7 +27,7 @@ public class ClientBL {
 
     public static LocationReport requestLocationProofs(Client client, Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
-            InvalidParameterException {
+            InvalidParameterException, CertificateException {
 
         Position position = Position
                 .newBuilder()
@@ -84,7 +85,7 @@ public class ClientBL {
     public static void submitLocationReport(Client client, LocationReport report, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
             IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException,
-            SignatureException {
+            SignatureException, CertificateException {
 
         byte[] signature = sign(report.toByteArray(), client.getPrivKey());
 
@@ -112,7 +113,7 @@ public class ClientBL {
     public static LocationReport obtainLocationReport(Client client, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
-            InvalidAlgorithmParameterException {
+            InvalidAlgorithmParameterException, CertificateException {
 
         LocationQuery locationQuery = LocationQuery
                 .newBuilder()

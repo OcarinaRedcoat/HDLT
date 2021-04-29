@@ -12,6 +12,7 @@ import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
 import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
@@ -23,7 +24,7 @@ public class ServerBL {
 
     public static SignedLocationProof requestLocationProof(Client client, LocationInformationRequest req, StreamObserver<SignedLocationProof> responseObserver)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidParameterException, IOException,
-            InvalidKeySpecException {
+            InvalidKeySpecException, CertificateException {
 
         LocationInformation locationInformation = req.getLocationInformation();
         int requesterId = locationInformation.getUserId();

@@ -5,8 +5,15 @@ import pt.tecnico.sec.hdlt.client.communication.UserServer;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 
+import static pt.tecnico.sec.hdlt.FileUtils.getUserPublicKey;
+import static pt.tecnico.sec.hdlt.GeneralUtils.F;
 import static pt.tecnico.sec.hdlt.GeneralUtils.getCurrentEpoch;
 import static pt.tecnico.sec.hdlt.IOUtils.*;
 
@@ -18,7 +25,7 @@ public class Main
         System.out.println("(1) Submit a report");
         System.out.println("(2) Obtain a report");
         System.out.println("(3) Current epoch");
-        System.out.println("(4) Current f");
+        System.out.println("(4) Defined F");
         System.out.println("(5) Exit");
         System.out.println("-----------------------------");
     }
@@ -26,13 +33,10 @@ public class Main
     //     ../grids.output.json
     public static void main(String[] args) {
         Client client = new Client(readUser());
-        //TODO change F
-        int f = readF();
         UserServer serverGrpc = new UserServer(client);
         UserClient clientGrpc = new UserClient();
 
         int command;
-        long epoch;
         LocationReport report;
 
         System.out.println("||| CLIENT INITIALIZED |||");
@@ -41,20 +45,18 @@ public class Main
             command = readInteger(null);
             switch (command){
                 case 1:
-                    epoch = readEpoch();
-                    report = clientGrpc.requestLocationProofs(client, epoch, f);
+                    report = clientGrpc.requestLocationProofs(client, readEpoch(), F);
                     if(report != null)
                         clientGrpc.submitLocationReport(client, report);
                     break;
                 case 2:
-                    epoch = readEpoch();
-                    clientGrpc.obtainLocationReport(client, epoch);
+                    clientGrpc.obtainLocationReport(client, readEpoch());
                     break;
                 case 3:
                     System.out.println("-----> Current Epoch: " + getCurrentEpoch());
                     break;
                 case 4:
-                    System.out.println("-----> Current f: " + f);
+                    System.out.println("-----> Defined F = " + F);
                     break;
                 case 5:
                     break;

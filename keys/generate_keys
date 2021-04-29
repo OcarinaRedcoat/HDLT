@@ -1,11 +1,9 @@
 #!/bin/sh
 for i in {1..20}; do keytool -genkeypair -dname "CN=SEC, OU=MEIC, O=IST, L=Lisbon, S=Lisbon, C=PT" -keysize 2048 -keyalg RSA -alias client_$i -keystore client_$i.jks -storepass client_$i; done
-for i in {1..20}; do keytool -export -alias client_$i -keystore client_$i.jks -file client_pub_$i.pem -storepass client_$i; done
+for i in {1..20}; do keytool -export -alias client_$i -keystore client_$i.jks -file client_pub_$i.cert -storepass client_$i; done
 
 for i in {1..20}; do keytool -genkeypair -dname "CN=SEC, OU=MEIC, O=IST, L=Lisbon, S=Lisbon, C=PT" -keysize 2048 -keyalg RSA -alias server_$i -keystore server_$i.jks -storepass server_$i; done
-for i in {1..20}; do keytool -export -alias server_$i -keystore server_$i.jks -file server_pub_$i.pem -storepass server_$i; done
+for i in {1..20}; do keytool -export -alias server_$i -keystore server_$i.jks -file server_pub_$i.cert -storepass server_$i; done
 
 keytool -genkeypair -dname "CN=SEC, OU=MEIC, O=IST, L=Lisbon, S=Lisbon, C=PT" -keysize 2048 -keyalg RSA -alias ha_1 -keystore ha_1.jks -storepass ha_keystore_1
-keytool -export -alias ha_1 -keystore ha_1.jks -file ha_pub_1.pem -storepass ha_keystore_1
-
-#keytool -importcert -alias XXXX -keystore XXXPASSXXX -file XXXFILENAMEXXX
+keytool -export -alias ha_1 -keystore ha_1.jks -file ha_pub_1.cert -storepass ha_keystore_1
