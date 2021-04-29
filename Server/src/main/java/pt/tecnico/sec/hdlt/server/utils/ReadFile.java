@@ -1,7 +1,7 @@
 package pt.tecnico.sec.hdlt.server.utils;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
-import pt.tecnico.sec.hdlt.communication.LocationReport;
 import pt.tecnico.sec.hdlt.communication.SignedLocationReport;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 
@@ -33,11 +33,13 @@ public class ReadFile {
         try {
             for (String l : Files.readString(path).split("\n")) {
                 builder = SignedLocationReport.newBuilder();
-                JsonFormat.parser().merge(l, builder);
-                locationReports.add(builder.build());
+                try {
+                    JsonFormat.parser().merge(l, builder);
+                    locationReports.add(builder.build());
+                } catch (InvalidProtocolBufferException ignored) { }
             }
         } catch (IOException e) {
-            System.err.println("Unable to read from file: " + e.getMessage());
+            System.err.println("Unable to read from file " + path.getFileName());
         }
 
         return locationReports;
