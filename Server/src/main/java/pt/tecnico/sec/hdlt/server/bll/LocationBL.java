@@ -2,38 +2,44 @@ package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.ByteString;
 import pt.tecnico.sec.hdlt.FileUtils;
+import pt.tecnico.sec.hdlt.GeneralUtils;
 import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
+import pt.tecnico.sec.hdlt.server.utils.MessageWriteQueue;
+import pt.tecnico.sec.hdlt.server.utils.NonceWriteQueue;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
-import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import javax.crypto.spec.IvParameterSpec;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.spec.InvalidKeySpecException;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocationBL {
 
-    private final WriteQueue<SignedLocationReport> writeQueue;
+    private final MessageWriteQueue messageWriteQueue;
+    private final NonceWriteQueue nonceWriteQueue;
     private final ConcurrentHashMap<LocationReportKey, SignedLocationReport> locationReports;
-//    private final PublicKey publicKey;
+    private final Set<String> nonceSet;
     private final PrivateKey privateKey;
     private final int numberByzantineUsers;
 
-    public LocationBL(int serverId, int numberByzantineUsers) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        Path filePath = Paths.get("../Server/src/main/resources/server_" + serverId + ".txt");
-        this.writeQueue = new WriteQueue<>(filePath);
-        this.locationReports = ReadFile.createReportsMap(filePath);
-//        this.publicKey = FileUtils.getServerPublicKey(serverId);
-        this.privateKey = FileUtils.getServerPrivateKey(serverId);
-        this.numberByzantineUsers = numberByzantineUsers;
+    public LocationBL(int serverId, String serverPwd) throws Exception {
+        Path messageFilePath = Paths.get("../Server/src/main/resources/server_" + serverId + ".txt");
+        Path nonceFilePath = Paths.get("../Server/src/main/resources/server_" + serverId + "_nonce.txt");
+
+        this.messageWriteQueue = new MessageWriteQueue(messageFilePath);
+        this.nonceWriteQueue = new NonceWriteQueue(nonceFilePath);
+
+        this.locationReports = ReadFile.createReportsMap(messageFilePath);
+        this.nonceSet = ReadFile.createNonceSet(nonceFilePath);
+
+        this.privateKey = CryptographicOperations.getServerPrivateKey(serverId, serverPwd);
+        this.numberByzantineUsers = GeneralUtils.F;
     }
 
     public void submitLocationReport(SubmitLocationReportRequest request) throws Exception {
@@ -49,6 +55,13 @@ public class LocationBL {
     public void handleSubmitLocationReport(SignedLocationReport signedLocationReport) throws Exception {
         LocationReport report = signedLocationReport.getLocationReport();
         LocationInformation information = report.getLocationInformation();
+
+        if (this.nonceSet.contains(report.getNonce())) {
+            throw new InvalidParameterException("Invalid nonce");
+        }
+
+        this.nonceSet.add(report.getNonce());
+        this.nonceWriteQueue.write(report.getNonce());
 
         LocationReportKey key = new LocationReportKey(information.getUserId(), information.getEpoch());
         if (this.locationReports.containsKey(key)) {
@@ -84,7 +97,7 @@ public class LocationBL {
         }
 
         this.locationReports.put(key, signedLocationReport);
-        this.writeQueue.write(signedLocationReport);
+        this.messageWriteQueue.write(signedLocationReport);
     }
 
     public ObtainLocationReportResponse obtainLocationReport(ObtainLocationReportRequest request) throws Exception {
@@ -97,6 +110,13 @@ public class LocationBL {
 
         SignedLocationQuery sLocationQuery = SignedLocationQuery.parseFrom(queryBytes);
         LocationQuery locationQuery = sLocationQuery.getLocationQuery();
+
+        if (this.nonceSet.contains(locationQuery.getNonce())) {
+            throw new InvalidParameterException("Invalid nonce");
+        }
+
+        this.nonceSet.add(locationQuery.getNonce());
+        this.nonceWriteQueue.write(locationQuery.getNonce());
 
         boolean verifySignature = locationQuery.getIsHA() ?
                 verifyHaSignature(locationQuery.toByteArray(), sLocationQuery.getSignature().toByteArray()) :
@@ -136,6 +156,13 @@ public class LocationBL {
 
         SignedUsersAtLocationQuery sUsersAtLocationQuery = SignedUsersAtLocationQuery.parseFrom(queryBytes);
         UsersAtLocationQuery usersAtLocationQuery = sUsersAtLocationQuery.getUsersAtLocationQuery();
+
+        if (this.nonceSet.contains(usersAtLocationQuery.getNonce())) {
+            throw new InvalidParameterException("Invalid nonce");
+        }
+
+        this.nonceSet.add(usersAtLocationQuery.getNonce());
+        this.nonceWriteQueue.write(usersAtLocationQuery.getNonce());
 
         if (!verifyHaSignature(usersAtLocationQuery.toByteArray(), sUsersAtLocationQuery.getSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid users at location query signature");
@@ -199,7 +226,11 @@ public class LocationBL {
                 Math.abs(lInfo.getPosition().getY() - lProof.getPosition().getY()) <= 15;
     }
 
-    public void terminateWriteQueue() throws InterruptedException {
-        this.writeQueue.terminate();
+    public void terminateMessageWriteQueue() throws InterruptedException {
+        this.messageWriteQueue.terminate();
+    }
+
+    public void terminateNonceWriteQueue() throws InterruptedException {
+        this.nonceWriteQueue.terminate();
     }
 }
