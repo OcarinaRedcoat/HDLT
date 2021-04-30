@@ -2,29 +2,28 @@ package pt.tecnico.sec.hdlt.client.user;
 
 import pt.tecnico.sec.hdlt.User;
 
+import java.io.File;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
 import static pt.tecnico.sec.hdlt.FileUtils.*;
+import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.getKeyPairFromKeyStore;
 
 public class Client {
 
-    private static Client INSTANCE = null;
-
     private User user;
-    private PrivateKey privKey;
-    private PublicKey pubKey;
+    private KeyPair keyPair;
 
     public Client(User user) {
         this.user = user;
         try{
-            this.pubKey = getUserPublicKey(this.user.getId());
-            this.privKey = getUserPrivateKey(this.user.getId());
-        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e) {
-            System.err.println("There was a problem reading the user private and public RSA keys. Make sure they exist and are in the correct format.");
+            String aux = "client_" + user.getId();
+            this.keyPair = getKeyPairFromKeyStore(new File("../keys/" + aux + ".jks"), aux, aux);
+        } catch (NoSuchAlgorithmException | IOException | CertificateException |
+                KeyStoreException | UnrecoverableKeyException e) {
+            System.err.println("There was a problem reading the user RSA key pairs. Make sure the keyStore exists and is correct.");
             System.exit(1);
         }
     }
@@ -34,11 +33,11 @@ public class Client {
     }
 
     public PrivateKey getPrivKey() {
-        return privKey;
+        return keyPair.getPrivate();
     }
 
     public PublicKey getPubKey() {
-        return pubKey;
+        return keyPair.getPublic();
     }
 
 }

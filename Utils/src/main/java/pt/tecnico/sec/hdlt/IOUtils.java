@@ -30,21 +30,6 @@ public class IOUtils {
         } while(true);
     }
 
-    public static int readF(){
-        do {
-            try{
-                int f = readInteger("Define f: ");
-                if(f<0){
-                    System.err.println("f has to be >= 0!");
-                    continue;
-                }
-                return f;
-            } catch (NumberFormatException | NoSuchElementException | IllegalStateException e) {
-                System.err.println("Invalid f. Try again: ");
-            }
-        } while(true);
-    }
-
     private static String readGridFileLocation(){
         return readString("Specify the grid file location: ");
     }
@@ -90,11 +75,11 @@ public class IOUtils {
         return scanner.nextLine();
     }
 
-    private static int readInteger(String askMessage) throws NumberFormatException{
+    public static int readInteger(String askMessage){
         return Integer.parseInt(readString(askMessage));
     }
 
-    private static long readLong(String askMessage) throws NumberFormatException{
+    public static long readLong(String askMessage){
         return Long.parseLong(readString(askMessage));
     }
 }

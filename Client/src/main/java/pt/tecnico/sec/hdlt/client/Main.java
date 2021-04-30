@@ -5,55 +5,66 @@ import pt.tecnico.sec.hdlt.client.communication.UserServer;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+
+import static pt.tecnico.sec.hdlt.FileUtils.getUserPublicKey;
+import static pt.tecnico.sec.hdlt.GeneralUtils.F;
 import static pt.tecnico.sec.hdlt.GeneralUtils.getCurrentEpoch;
 import static pt.tecnico.sec.hdlt.IOUtils.*;
 
 public class Main
 {
+    private static void printCommands(){
+        System.out.println("-----------------------------");
+        System.out.println("Available commands:");
+        System.out.println("(1) Submit a report");
+        System.out.println("(2) Obtain a report");
+        System.out.println("(3) Current epoch");
+        System.out.println("(4) Defined F");
+        System.out.println("(5) Exit");
+        System.out.println("-----------------------------");
+    }
+
     //     ../grids.output.json
     public static void main(String[] args) {
         Client client = new Client(readUser());
-        int f = readF();
         UserServer serverGrpc = new UserServer(client);
         UserClient clientGrpc = new UserClient();
 
-        String command;
-        long epoch;
+        int command;
         LocationReport report;
 
-        System.out.println("Client Initialized. Type \"help\" at any point for the list of available commands.");
+        System.out.println("||| CLIENT INITIALIZED |||");
+        printCommands();
         do{
-            command = readString(null);
+            command = readInteger(null);
             switch (command){
-                case "help":
-                    System.out.println("Available commands: \"help\", \"submit report\"(it will also request witnesses automatically), " +
-                            "\"current epoch\", \"redefine f\",\"current f\", \"obtain report\", \"exit\".");
-                    break;
-                case "submit report":
-                    epoch = readEpoch();
-                    report = clientGrpc.requestLocationProofs(client, epoch, f);
+                case 1:
+                    report = clientGrpc.requestLocationProofs(client, readEpoch(), F);
                     if(report != null)
                         clientGrpc.submitLocationReport(client, report);
                     break;
-                case "obtain report":
-                    epoch = readEpoch();
-                    clientGrpc.obtainLocationReport(client, epoch);
+                case 2:
+                    clientGrpc.obtainLocationReport(client, readEpoch());
                     break;
-                case "current epoch":
-                    System.out.println("Current Epoch: " + getCurrentEpoch());
+                case 3:
+                    System.out.println("-----> Current Epoch: " + getCurrentEpoch());
                     break;
-                case "redefine f":
-                    f = readF();
+                case 4:
+                    System.out.println("-----> Defined F = " + F);
                     break;
-                case "current f":
-                    System.out.println("Current f: " + f);
-                    break;
-                case "exit":
+                case 5:
                     break;
                 default:
-                    System.out.println("Invalid Command. Type \"help\" for available commands.");
+                    System.out.println("-----> Invalid Command.");
             }
-        }while(!command.equals("exit"));
+            printCommands();
+        }while(command != 5);
 
         serverGrpc.stop();
     }
