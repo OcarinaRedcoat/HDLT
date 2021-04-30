@@ -19,12 +19,12 @@ message SubmitLocationReportRequest {
   bytes encryptedSignedLocationReport = 1;
   bytes key = 2;
   bytes iv = 3;
-//  int64 epoch = 3;
 }
 
 message LocationReport {
   LocationInformation locationInformation = 1;
   repeated SignedLocationProof locationProof = 2;
+  string nonce = 3;
 }
 
 message LocationInformationRequest {
@@ -74,6 +74,7 @@ message LocationQuery {
   int32 userId = 1;
   int64 epoch = 2;
   bool isHA = 3;
+  string nonce = 4;
 }
 
 message ObtainLocationReportResponse {
@@ -107,6 +108,7 @@ message SignedUsersAtLocationQuery {
 message UsersAtLocationQuery {
   Position pos = 1;
   int64 epoch = 2;
+  string nonce = 3;
 }
 
 message SignedLocationReportList {

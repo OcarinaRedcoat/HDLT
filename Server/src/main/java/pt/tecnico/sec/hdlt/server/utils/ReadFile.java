@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,5 +47,15 @@ public class ReadFile {
         return locationReports;
     }
 
+    public static Set<String> createNonceSet(Path nonceFilePath) {
+        Set<String> nonceSet = ConcurrentHashMap.newKeySet();
 
+        try {
+            nonceSet.addAll(Arrays.asList(Files.readString(nonceFilePath).split("\n")));
+        } catch (IOException e) {
+            System.err.println("Unable to read from file " + nonceFilePath.getFileName());
+        }
+
+        return nonceSet;
+    }
 }

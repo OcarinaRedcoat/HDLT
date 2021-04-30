@@ -34,7 +34,8 @@ public class App {
 
             System.out.println("SHUTTING SERVER DOWN!");
             locationServer.stop();
-            locationBL.terminateWriteQueue();
+            locationBL.terminateMessageWriteQueue();
+            locationBL.terminateNonceWriteQueue();
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }

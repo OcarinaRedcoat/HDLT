@@ -10,6 +10,6 @@ public class NonceWriteQueue extends WriteQueue<String> {
 
     @Override
     protected String stringToWrite() throws InterruptedException {
-        return this.writes.take();
+        return this.writes.take() + "\n";
     }
 }
