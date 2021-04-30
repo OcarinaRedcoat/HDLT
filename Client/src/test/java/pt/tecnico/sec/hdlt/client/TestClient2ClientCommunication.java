@@ -17,11 +17,11 @@ public class TestClient2ClientCommunication
     @Test
     public void requestProofsWithEnoughWitnesses()
     {
-        Client client1 = new Client(readUser(gridFileLocation, 1));
+        Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
         UserClient userClient1 = new UserClient();
-        Client client3 = new Client(readUser(gridFileLocation, 3));
+        Client client3 = new Client(readUser(gridFileLocation, 3), "client_3");
         UserServer userServer3 = new UserServer(client3);
-        Client client11 = new Client(readUser(gridFileLocation, 11));
+        Client client11 = new Client(readUser(gridFileLocation, 11), "client_11");
         UserServer userServer11 = new UserServer(client11);
 
         LocationReport locationReport = userClient1.requestLocationProofs(client1, 2L, 1);
@@ -34,9 +34,9 @@ public class TestClient2ClientCommunication
     @Test
     public void requestProofsWithoutEnoughWitnesses()
     {
-        Client client1 = new Client(readUser(gridFileLocation, 1));
+        Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
         UserClient userClient1 = new UserClient();
-        Client client7 = new Client(readUser(gridFileLocation, 7));
+        Client client7 = new Client(readUser(gridFileLocation, 7), "client_7");
         UserServer userServer7 = new UserServer(client7);
 
         LocationReport locationReport = userClient1.requestLocationProofs(client1, 4L, 1);
@@ -48,10 +48,10 @@ public class TestClient2ClientCommunication
     @Test
     public void requestProofsInvalidWitnessSignature()
     {
-        Client client1 = new Client(readUser(gridFileLocation, 1));
+        Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
         UserClient userClient1 = new UserClient();
         //private and public key of user 13 do not match
-        Client client13 = new Client(readUser(gridFileLocation, 13));
+        Client client13 = new Client(readUser(gridFileLocation, 13), "client_13");
         UserServer userServer13 = new UserServer(client13);
 
         LocationReport locationReport = userClient1.requestLocationProofs(client1, 16L, 0);
@@ -64,9 +64,9 @@ public class TestClient2ClientCommunication
     public void requestProofsInvalidRequesterSignature()
     {
         //private and public key of user 13 do not match
-        Client client13 = new Client(readUser(gridFileLocation, 13));
+        Client client13 = new Client(readUser(gridFileLocation, 13), "client_13");
         UserClient userClient13 = new UserClient();
-        Client client1 = new Client(readUser(gridFileLocation, 1));
+        Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
         UserServer userServer1 = new UserServer(client1);
 
         LocationReport locationReport = userClient13.requestLocationProofs(client13, 16L, 0);

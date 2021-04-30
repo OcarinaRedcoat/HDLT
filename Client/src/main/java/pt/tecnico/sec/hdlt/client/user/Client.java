@@ -9,6 +9,7 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
 import static pt.tecnico.sec.hdlt.FileUtils.*;
+import static pt.tecnico.sec.hdlt.IOUtils.readString;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.getKeyPairFromKeyStore;
 
 public class Client {
@@ -19,8 +20,21 @@ public class Client {
     public Client(User user) {
         this.user = user;
         try{
-            String aux = "client_" + user.getId();
-            this.keyPair = getKeyPairFromKeyStore(new File("../keys/" + aux + ".jks"), aux, aux);
+            String password = readString("client " + user.getId() + " password: (default is client_N where N is the id of the client)");
+            this.keyPair = getKeyPairFromKeyStore(
+                    new File("../keys/client_" + user.getId() + ".jks"), password, "client_" + user.getId());
+        } catch (NoSuchAlgorithmException | IOException | CertificateException |
+                KeyStoreException | UnrecoverableKeyException e) {
+            System.err.println("There was a problem reading the user RSA key pairs. Make sure the keyStore exists and is correct.");
+            System.exit(1);
+        }
+    }
+
+    public Client(User user, String password) {
+        this.user = user;
+        try{
+            this.keyPair = getKeyPairFromKeyStore(
+                    new File("../keys/client_" + user.getId() + ".jks"), password, "client_" + user.getId());
         } catch (NoSuchAlgorithmException | IOException | CertificateException |
                 KeyStoreException | UnrecoverableKeyException e) {
             System.err.println("There was a problem reading the user RSA key pairs. Make sure the keyStore exists and is correct.");
