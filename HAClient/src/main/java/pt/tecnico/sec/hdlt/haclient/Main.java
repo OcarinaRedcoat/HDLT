@@ -11,26 +11,33 @@ import static pt.tecnico.sec.hdlt.IOUtils.*;
 
 public class Main {
 
+    private static void printCommands(){
+        System.out.println("-----------------------------");
+        System.out.println("Available commands:");
+        System.out.println("(1) Obtain a location report");
+        System.out.println("(2) Obtain users at location");
+        System.out.println("(3) Exit");
+        System.out.println("-----------------------------");
+    }
+
     public static void main(String[] args) {
 
-        String command;
         long epoch;
-        int userId;
+        int userId, command;
 
         HAClient.getInstance();
 
-        System.out.println("HA Started. Type \"help\" at any point for the list of available commands.");
+        System.out.println("||| HA INITIALIZED |||");
+        printCommands();
         do {
-            command = readString(null);
+            command = readInteger(null);
             switch (command) {
-                case "exit":
-                    break;
-                case "obtain location report":
+                case 1:
                     epoch = readEpoch();
                     userId = readUserId();
                     SignedLocationReport report = HAClient.getInstance().obtainLocationReport(userId, epoch);
                     break;
-                case "obtain user at location":
+                case 2:
                     epoch = readEpoch();
                     long x = readPos("Specify the posX: ");
                     long y = readPos("Specify the posY: ");
@@ -41,13 +48,13 @@ public class Main {
                         }
                     }
                     break;
-                case "help":
-                    System.out.println("Available commands: \"help\", \"obtain location report\", \"obtain user at location\", \"exit\".");
+                case 3:
                     break;
                 default:
-                    System.out.println("Invalid Command. Type \"help\" for available commands.");
+                    System.out.println("Invalid Command.");
             }
-        } while (!command.equals("exit"));
+        } while (command != 3);
+
         HAClient.getInstance().serverShutdown();
     }
 }

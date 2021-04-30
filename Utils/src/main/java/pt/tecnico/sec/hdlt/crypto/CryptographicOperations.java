@@ -152,7 +152,7 @@ public class CryptographicOperations {
         return getPrivateKey(new File("../keys/" + aux + ".jks"), keyStorePassword, aux);
     }
 
-    public static String generatorNonce(){
+    public static String generateNonce(){
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < NONCE_SIZE; i++) {

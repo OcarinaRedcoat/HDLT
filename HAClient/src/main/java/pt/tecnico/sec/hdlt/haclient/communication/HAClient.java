@@ -14,6 +14,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +64,7 @@ public class HAClient {
             System.out.println(report);
         } catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
-                | InvalidAlgorithmParameterException | IOException e) {
+                | InvalidAlgorithmParameterException | IOException | CertificateException e) {
             System.err.println(e.getMessage());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
@@ -84,11 +85,12 @@ public class HAClient {
             return listReport;
         }catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
-                | InvalidAlgorithmParameterException | IOException e) {
+                | InvalidAlgorithmParameterException | IOException | CertificateException e) {
             System.err.println(e.getMessage());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
         }
+
         return null;
     }
 }

@@ -14,6 +14,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class HABL {
 
     public static SignedLocationReport obtainLocationReport(int userId, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
-            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException {
+            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException, CertificateException {
 
         LocationQuery locationQuery = LocationQuery
                 .newBuilder()
@@ -77,7 +78,7 @@ public class HABL {
      */
     public static List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep, LocationServerGrpc.LocationServerBlockingStub serverStub)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidAlgorithmParameterException,
-            BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException {
+            BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, CertificateException {
         Position pos = Position.newBuilder()
                 .setX(x)
                 .setY(y)
@@ -87,6 +88,7 @@ public class HABL {
                 .newBuilder()
                 .setPos(pos)
                 .setEpoch(ep)
+                .setNonce(generateNonce())
                 .build();
 
         byte[] signature = sign(usersAtLocationQuery.toByteArray(), HA.getInstance().getPrivateKey());

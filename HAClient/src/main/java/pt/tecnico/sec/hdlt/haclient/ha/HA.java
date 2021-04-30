@@ -1,28 +1,38 @@
 package pt.tecnico.sec.hdlt.haclient.ha;
 
+import java.io.File;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
 import static pt.tecnico.sec.hdlt.FileUtils.*;
+import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.getKeyPairFromKeyStore;
 
 public class HA {
 
     private static HA INSTANCE = null;
 
-    private PrivateKey privateKey;
-    private PublicKey publicKey;
+    private KeyPair keyPair;
 
     private HA() {
         try{
-            this.privateKey = getHAPrivateKey();
-            this.publicKey = getHAPublicKey();
-        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e) {
+            String aux = "ha_keystore_1";
+            this.keyPair = getKeyPairFromKeyStore(new File("../keys/" + aux + ".jks"), aux, aux);
+        } catch (IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException |
+                KeyStoreException e) {
+            e.printStackTrace();
             System.err.println("There was a problem reading the ha private and public RSA keys. Make sure they exist and are in the correct format.");
             System.exit(1);
         }
+    }
+
+    public PrivateKey getPrivateKey() {
+        return keyPair.getPrivate();
+    }
+
+    public PublicKey getPublicKey() {
+        return keyPair.getPublic();
     }
 
 
@@ -32,17 +42,5 @@ public class HA {
         }
         return INSTANCE;
     }
-
-    public void initializeHA() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        this.privateKey = getHAPrivateKey();
-        this.publicKey = getHAPublicKey();
-    }
-
-    public PrivateKey getPrivateKey() {
-        return privateKey;
-    }
-
-    public PublicKey getPublicKey() { return publicKey; }
-
 
 }

@@ -29,12 +29,12 @@ public class TestHA
     private LocationServer server;
     private LocationBL locationBL;
 
-    private void startServer(int numberByzantineUsers){
+    private void startServer(){
         this.server = new LocationServer();
         try {
-            this.locationBL = new LocationBL(1, numberByzantineUsers);
+            this.locationBL = new LocationBL(1, "server_1");
             this.server.start(locationBL);
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -42,7 +42,8 @@ public class TestHA
     private void stopServer(){
         try {
             server.stop();
-            this.locationBL.terminateWriteQueue();
+            this.locationBL.terminateNonceWriteQueue();
+            this.locationBL.terminateMessageWriteQueue();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -57,6 +58,7 @@ public class TestHA
         }
     }
 
+    //TODO Tests are most likely wrong
     @Test
     public void obtainLocationReport()
     {
@@ -71,7 +73,7 @@ public class TestHA
         Client client17 = new Client(readUser(gridFileLocation, 17));
         UserServer userServer17 = new UserServer(client17);
 
-        startServer(2);
+        startServer();
 
         LocationReport locationReport = userClient1.requestLocationProofs(client1, 14L, 2);
         userClient1.submitLocationReport(client1, locationReport);
@@ -89,6 +91,7 @@ public class TestHA
         stopServer();
     }
 
+    //TODO Tests are most likely wrong
     @Test
     public void obtainUsersAtLocation()
     {
@@ -102,7 +105,7 @@ public class TestHA
         UserClient userClient19 = new UserClient();
         UserServer userServer19 = new UserServer(client19);
 
-        startServer(0);
+        startServer();
 
         LocationReport locationReport15 = userClient15.requestLocationProofs(client15, 2L, 0);
         userClient15.submitLocationReport(client15, locationReport15);
