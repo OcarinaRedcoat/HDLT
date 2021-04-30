@@ -32,7 +32,7 @@ public class TestServer {
     public void testIncorrectNumberOfProofs() {
 
         try {
-            LocationBL locationBL = new LocationBL(1, 2);
+            LocationBL locationBL = new LocationBL(1, "server_1");
 
             Path path = Paths.get("../Server/src/test/resources/2_proofs.txt");
             String l = Files.readString(path).split("\n")[0];
@@ -53,7 +53,7 @@ public class TestServer {
     public void testIncorrectUserSignature() {
 
         try {
-            LocationBL locationBL = new LocationBL(1, 1);
+            LocationBL locationBL = new LocationBL(1, "server_1");
 
             Path path = Paths.get("../Server/src/test/resources/incorrect_user_signature.txt");
             String l = Files.readString(path).split("\n")[0];
@@ -75,7 +75,7 @@ public class TestServer {
         SignedLocationReport report = null;
 
         try {
-            LocationBL locationBL = new LocationBL(1, 1);
+            LocationBL locationBL = new LocationBL(1, "server_1");
 
             Path path = Paths.get("../Server/src/test/resources/2_proofs.txt");
             String l = Files.readString(path).split("\n")[0];

@@ -1,5 +1,7 @@
 package pt.tecnico.sec.hdlt.crypto;
 
+import pt.tecnico.sec.hdlt.FileUtils;
+
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -14,8 +16,7 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-
-import static pt.tecnico.sec.hdlt.FileUtils.loadKeyStore;
+import java.util.NoSuchElementException;
 
 public class CryptographicOperations {
 
@@ -125,10 +126,28 @@ public class CryptographicOperations {
     public static KeyPair getKeyPairFromKeyStore(File keystoreFile, String password, String alias)
             throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, UnrecoverableKeyException {
 
-        KeyStore keyStore = loadKeyStore(keystoreFile, password);
+        KeyStore keyStore = FileUtils.loadKeyStore(keystoreFile, password);
         PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, password.toCharArray());
         Certificate cert = keyStore.getCertificate(alias);
 
         return new KeyPair(cert.getPublicKey(), privateKey);
+    }
+
+    public static PrivateKey getPrivateKey(File keystoreFile, String keyStorePassword, String keyAlias)
+            throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException,
+            UnrecoverableKeyException {
+
+        Key key = FileUtils.loadKeyStore(keystoreFile, keyStorePassword).getKey(keyAlias, keyStorePassword.toCharArray());
+
+        if (key instanceof PrivateKey) {
+            return (PrivateKey) key;
+        }
+
+        throw new NoSuchElementException("Private key " + keyAlias + " not found");
+    }
+
+    public static PrivateKey getServerPrivateKey(int serverId, String keyStorePassword) throws Exception {
+        String aux = "server_" + serverId;
+        return getPrivateKey(new File("../keys/" + aux + ".jks"), keyStorePassword, aux);
     }
 }

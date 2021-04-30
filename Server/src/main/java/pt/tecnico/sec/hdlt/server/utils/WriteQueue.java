@@ -1,24 +1,20 @@
 package pt.tecnico.sec.hdlt.server.utils;
 
-import com.google.protobuf.MessageOrBuilder;
-import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class WriteQueue<T extends MessageOrBuilder> implements Runnable {
+public abstract class WriteQueue<T> implements Runnable {
 
-    private LinkedBlockingQueue<T> writes;
-    private Path file;
+    protected final LinkedBlockingQueue<T> writes;
+    private final Path file;
     private volatile boolean running;
-    private Thread thread;
+    private final Thread thread;
 
     public WriteQueue(Path file) {
         this.writes = new LinkedBlockingQueue<>();
@@ -37,7 +33,7 @@ public class WriteQueue<T extends MessageOrBuilder> implements Runnable {
     public void run() {
         while (this.running) {
             try {
-                Files.writeString(this.file, JsonFormat.printer().print(this.writes.take()).replace("\n", "") + "\n",
+                Files.writeString(this.file, stringToWrite(),
                         StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             } catch (IOException e) {
                 System.out.println("Error writing to file");
@@ -46,6 +42,8 @@ public class WriteQueue<T extends MessageOrBuilder> implements Runnable {
             }
         }
     }
+
+    protected abstract String stringToWrite() throws InterruptedException, InvalidProtocolBufferException;
 
     public void terminate() throws InterruptedException {
         while (!this.writes.isEmpty()) {}

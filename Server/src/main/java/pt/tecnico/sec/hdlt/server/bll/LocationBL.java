@@ -1,7 +1,9 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
+import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.protobuf.ByteString;
 import pt.tecnico.sec.hdlt.FileUtils;
+import pt.tecnico.sec.hdlt.GeneralUtils;
 import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
@@ -9,31 +11,29 @@ import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 import pt.tecnico.sec.hdlt.server.utils.WriteQueue;
 
 import javax.crypto.spec.IvParameterSpec;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.spec.InvalidKeySpecException;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocationBL {
 
     private final WriteQueue<SignedLocationReport> writeQueue;
     private final ConcurrentHashMap<LocationReportKey, SignedLocationReport> locationReports;
-//    private final PublicKey publicKey;
+//    private final Set<String> nonceMap;
     private final PrivateKey privateKey;
     private final int numberByzantineUsers;
 
-    public LocationBL(int serverId, int numberByzantineUsers) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    public LocationBL(int serverId, String serverPwd) throws Exception {
         Path filePath = Paths.get("../Server/src/main/resources/server_" + serverId + ".txt");
         this.writeQueue = new WriteQueue<>(filePath);
         this.locationReports = ReadFile.createReportsMap(filePath);
-//        this.publicKey = FileUtils.getServerPublicKey(serverId);
-        this.privateKey = FileUtils.getServerPrivateKey(serverId);
-        this.numberByzantineUsers = numberByzantineUsers;
+//        this.nonceMap = ReadFile.createNonceMap();
+        this.privateKey = CryptographicOperations.getServerPrivateKey(serverId, serverPwd);
+        this.numberByzantineUsers = GeneralUtils.F;
     }
 
     public void submitLocationReport(SubmitLocationReportRequest request) throws Exception {
