@@ -28,6 +28,7 @@ public class CryptographicOperations {
     private static final int ASYMMETRIC_KEY_SIZE = 2048;
     private static final String SIGN_ALGORITHM = "SHA256withRSA";
     private static final String HASH_ALGORITHM = "SHA-256";
+    private static final int NONCE_SIZE = 20;
 
     public static SecretKey generateSecretKey() throws NoSuchAlgorithmException {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(SYMMETRIC_ALGORITHM);
@@ -149,5 +150,14 @@ public class CryptographicOperations {
     public static PrivateKey getServerPrivateKey(int serverId, String keyStorePassword) throws Exception {
         String aux = "server_" + serverId;
         return getPrivateKey(new File("../keys/" + aux + ".jks"), keyStorePassword, aux);
+    }
+
+    public static String generatorNonce(){
+        SecureRandom secureRandom = new SecureRandom();
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < NONCE_SIZE; i++) {
+            stringBuilder.append(secureRandom.nextInt(10));
+        }
+        return stringBuilder.toString();
     }
 }

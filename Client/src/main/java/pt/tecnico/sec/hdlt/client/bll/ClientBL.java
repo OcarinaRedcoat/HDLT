@@ -52,6 +52,7 @@ public class ClientBL {
 
         LocationReport.Builder reportBuilder = LocationReport
                 .newBuilder()
+                .setNonce(generatorNonce())
                 .setLocationInformation(locationInformation);
 
         for (ClientServerGrpc.ClientServerBlockingStub stub: userStubs){
@@ -119,6 +120,7 @@ public class ClientBL {
                 .newBuilder()
                 .setUserId(client.getUser().getId())
                 .setEpoch(epoch)
+                .setNonce(generatorNonce())
                 .build();
 
         byte[] signature = sign(locationQuery.toByteArray(), client.getPrivKey());
