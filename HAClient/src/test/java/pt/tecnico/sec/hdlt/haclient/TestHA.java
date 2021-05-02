@@ -91,7 +91,7 @@ public class TestHA
         stopServer();
     }
 
-//    TODO a epoch já não pode ser 0
+//    TODO o F já não pode ser 0
 //    @Test
 //    public void obtainUsersAtLocation()
 //    {
