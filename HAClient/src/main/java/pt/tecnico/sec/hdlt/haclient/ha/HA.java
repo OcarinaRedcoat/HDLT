@@ -18,7 +18,8 @@ public class HA {
 
     private HA() {
         try{
-            String password = readString("ha password: (default is ha_keystore_1)");
+            //String password = readString("ha password: (default is ha_keystore_1)");
+            String password = "ha_keystore_1";
             this.keyPair = getKeyPairFromKeyStore(
                     new File("../keys/ha_1.jks"), password, "ha_1");
         } catch (IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException |

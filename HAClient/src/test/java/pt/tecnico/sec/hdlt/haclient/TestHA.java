@@ -51,26 +51,27 @@ public class TestHA
 
     private void deleteServerReports(){
         Path fileToDeletePath = Paths.get("../Server/src/main/resources/server_1.txt");
+        Path fileToDeletePath2 = Paths.get("../Server/src/main/resources/server_1_nonce.txt");
         try {
             Files.deleteIfExists(fileToDeletePath);
+            Files.deleteIfExists(fileToDeletePath2);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    //TODO Tests are most likely wrong
     @Test
     public void obtainLocationReport()
     {
         deleteServerReports();
 
-        Client client1 = new Client(readUser(gridFileLocation, 1));
+        Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
         UserClient userClient1 = new UserClient();
-        Client client3 = new Client(readUser(gridFileLocation, 3));
+        Client client3 = new Client(readUser(gridFileLocation, 3), "client_3");
         UserServer userServer3 = new UserServer(client3);
-        Client client9 = new Client(readUser(gridFileLocation, 9));
+        Client client9 = new Client(readUser(gridFileLocation, 9), "client_9");
         UserServer userServer9 = new UserServer(client9);
-        Client client17 = new Client(readUser(gridFileLocation, 17));
+        Client client17 = new Client(readUser(gridFileLocation, 17), "client_17");
         UserServer userServer17 = new UserServer(client17);
 
         startServer();
@@ -82,7 +83,6 @@ public class TestHA
         userServer9.stop();
         userServer17.stop();
 
-
         HAClient haclient = HAClient.getInstance();
 
         SignedLocationReport signedLocationReport = haclient.obtainLocationReport(1, 14L);
@@ -91,17 +91,16 @@ public class TestHA
         stopServer();
     }
 
-    //TODO Tests are most likely wrong
     @Test
     public void obtainUsersAtLocation()
     {
         deleteServerReports();
 
-        Client client15 = new Client(readUser(gridFileLocation, 15));
+        Client client15 = new Client(readUser(gridFileLocation, 15), "client_15");
         UserClient userClient15 = new UserClient();
         UserServer userServer15 = new UserServer(client15);
 
-        Client client19 = new Client(readUser(gridFileLocation, 19));
+        Client client19 = new Client(readUser(gridFileLocation, 19), "client_19");
         UserClient userClient19 = new UserClient();
         UserServer userServer19 = new UserServer(client19);
 

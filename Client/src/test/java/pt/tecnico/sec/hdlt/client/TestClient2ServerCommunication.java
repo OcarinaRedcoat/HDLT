@@ -45,8 +45,10 @@ public class TestClient2ServerCommunication {
 
     private void deleteServerReports(){
         Path fileToDeletePath = Paths.get("../Server/src/main/resources/server_1.txt");
+        Path fileToDeletePath2 = Paths.get("../Server/src/main/resources/server_1_nonce.txt");
         try {
             Files.deleteIfExists(fileToDeletePath);
+            Files.deleteIfExists(fileToDeletePath2);
         } catch (IOException e) {
             e.printStackTrace();
         }
