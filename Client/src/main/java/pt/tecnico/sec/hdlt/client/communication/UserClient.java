@@ -1,11 +1,8 @@
 package pt.tecnico.sec.hdlt.client.communication;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import pt.tecnico.sec.hdlt.User;
 import pt.tecnico.sec.hdlt.client.bll.ClientBL;
 import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.*;
@@ -21,27 +18,26 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class UserClient {
+import static pt.tecnico.sec.hdlt.GeneralUtils.*;
 
-    private static final int serverPort = 50051;
-    private static final String serverAddress = "localhost";
+public class UserClient {
 
     private static final Logger logger = Logger.getLogger(UserClient.class.getName());
 
-    private ArrayList<ClientServerGrpc.ClientServerBlockingStub> userStubs;
+    private ArrayList<ClientServerGrpc.ClientServerStub> userStubs;
     private ArrayList<ManagedChannel> userChannels;
 
-    private LocationServerGrpc.LocationServerBlockingStub serverStub;
-    private ManagedChannel serverChannel;
+    private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
+    private ArrayList<ManagedChannel> serverChannels;
 
     public UserClient(){
         userStubs = new ArrayList<>();
         userChannels = new ArrayList<>();
-        serverStub = null;
-        serverChannel = null;
+        serverStubs = new ArrayList<>();
+        serverChannels = new ArrayList<>();
     }
 
-    private void createCloseUsersChannels(ArrayList<Long> closeUsers){
+    private void createCloseUsersAsyncStubs(ArrayList<Long> closeUsers){
         userStubs = new ArrayList<>();
         userChannels = new ArrayList<>();
         for (Long closeUserId: closeUsers) {
@@ -50,17 +46,23 @@ public class UserClient {
                     .usePlaintext()
                     .build();
             userChannels.add(channel);
-            ClientServerGrpc.ClientServerBlockingStub blockingStub = ClientServerGrpc.newBlockingStub(channel);
-            userStubs.add(blockingStub);
+            ClientServerGrpc.ClientServerStub stub = ClientServerGrpc.newStub(channel);
+            userStubs.add(stub);
         }
     }
 
-    private void createServerChannel(String host, int port){
-        String target = host + ":" + port;
-        serverChannel = ManagedChannelBuilder.forTarget(target)
+    private void createServerStubs(){
+        serverStubs = new ArrayList<>();
+        serverChannels = new ArrayList<>();
+        for (int i = 0; i < N_SERVERS; i++) {
+            String target = SERVER_HOST + ":" + (SERVER_START_PORT + i);
+            ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
                     .usePlaintext()
                     .build();
-        serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
+            serverChannels.add(channel);
+            LocationServerGrpc.LocationServerStub stub = LocationServerGrpc.newStub(channel);
+            serverStubs.add(stub);
+        }
     }
 
     public void closeUserChannels(){
@@ -72,26 +74,29 @@ public class UserClient {
     }
 
     public void closeServerChannel(){
-        serverChannel.shutdownNow();
-        serverChannel = null;
-        serverStub = null;
+
+        for (ManagedChannel channel : serverChannels) {
+            channel.shutdownNow();
+        }
+        serverChannels = new ArrayList<>();
+        serverStubs = new ArrayList<>();
     }
 
     public LocationReport requestLocationProofs(Client client, Long epoch, int f){
         LocationReport report = null;
         try {
-            createCloseUsersChannels(client.getUser().getPositionWithEpoch(epoch).getCloseBy());
+            createCloseUsersAsyncStubs(client.getUser().getPositionWithEpoch(epoch).getCloseBy());
             logger.info("Requesting Proof to user close by:");
 
             report = ClientBL.requestLocationProofs(client, epoch, f, userStubs);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
-                IOException | CertificateException e) {
+                IOException | CertificateException | InterruptedException e) {
 
             System.err.println("Something went wrong!");
         } catch (InvalidParameterException e) {
             System.err.println(e.getMessage());
-        } finally {
+        }  finally {
             closeUserChannels();
         }
 
@@ -99,21 +104,15 @@ public class UserClient {
     }
 
     public Boolean submitLocationReport(Client client, LocationReport report){
-        if(report == null){
-            System.err.println("Invalid Report!");
-            return false;
-        }
-
-        logger.info("Submitting Report:");
-        createServerChannel(serverAddress, serverPort);
+        createServerStubs();
 
         try {
-            ClientBL.submitLocationReport(client, report, serverStub);
+            ClientBL.submitLocationReport(client, report, serverStubs);
             System.out.println("Submitted report successfully");
             return true;
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
-                InvalidKeySpecException | CertificateException e) {
+                InvalidKeySpecException | CertificateException | InterruptedException e) {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
@@ -125,21 +124,18 @@ public class UserClient {
     }
 
     public LocationReport obtainLocationReport(Client client, Long epoch){
-        logger.info("Requesting report:");
-        createServerChannel(serverAddress, serverPort);
+        createServerStubs();
 
         LocationReport report = null;
         try {
-            report = ClientBL.obtainLocationReport(client, epoch, serverStub);
+            report = ClientBL.obtainLocationReport(client, epoch, serverStubs);
             System.out.println("I got the report Report you wanted: ");
             System.out.println(report);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
-                InvalidAlgorithmParameterException | CertificateException e) {
+                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException e) {
 
             System.err.println("Something went wrong!");
-        } catch (InvalidParameterException e) {
-            System.err.println(e.getMessage());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
         } finally {
