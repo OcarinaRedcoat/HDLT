@@ -27,7 +27,11 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecryp
 
 public class ClientBL {
 
-    private static int WTS = 0;
+    private static int WTS = -1;
+
+    private static void init(){
+        WTS = -1;
+    }
 
     public static LocationReport.Builder requestLocationProofs(Client client, Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerStub> userStubs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
@@ -107,8 +111,6 @@ public class ClientBL {
             IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException,
             SignatureException, CertificateException, InterruptedException {
 
-
-
         final CountDownLatch finishLatch = new CountDownLatch(serverStubs.size());
         StreamObserver<SubmitLocationReportResponse> responseObserver = new StreamObserver<>() {
             @Override
@@ -127,10 +129,10 @@ public class ClientBL {
             }
         };
 
+        WTS++;
         LocationReport report;
         for (LocationServerGrpc.LocationServerStub stub: serverStubs){
             report = reportBuilder.setWts(WTS).build();
-            WTS++;
 
             byte[] signature = sign(report.toByteArray(), client.getPrivKey());
 
@@ -162,6 +164,7 @@ public class ClientBL {
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
             InvalidAlgorithmParameterException, CertificateException {
+
 
         //TODO Not implemented
         return LocationReport.newBuilder().build();
