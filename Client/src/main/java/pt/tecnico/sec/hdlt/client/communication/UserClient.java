@@ -82,13 +82,13 @@ public class UserClient {
         serverStubs = new ArrayList<>();
     }
 
-    public LocationReport requestLocationProofs(Client client, Long epoch, int f){
-        LocationReport report = null;
+    public LocationReport.Builder requestLocationProofs(Client client, Long epoch, int f){
+        LocationReport.Builder reportBuilder = null;
         try {
             createCloseUsersAsyncStubs(client.getUser().getPositionWithEpoch(epoch).getCloseBy());
             logger.info("Requesting Proof to user close by:");
 
-            report = ClientBL.requestLocationProofs(client, epoch, f, userStubs);
+            reportBuilder = ClientBL.requestLocationProofs(client, epoch, f, userStubs);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
                 IOException | CertificateException | InterruptedException e) {
@@ -100,14 +100,14 @@ public class UserClient {
             closeUserChannels();
         }
 
-        return report;
+        return reportBuilder;
     }
 
-    public Boolean submitLocationReport(Client client, LocationReport report){
+    public Boolean submitLocationReport(Client client, LocationReport.Builder reportBuilder){
         createServerStubs();
 
         try {
-            ClientBL.submitLocationReport(client, report, serverStubs);
+            ClientBL.submitLocationReport(client, reportBuilder, serverStubs);
             System.out.println("Submitted report successfully");
             return true;
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |

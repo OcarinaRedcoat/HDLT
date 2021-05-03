@@ -76,7 +76,7 @@ public class TestHA
 
         startServer();
 
-        LocationReport locationReport = userClient1.requestLocationProofs(client1, 14L, 2);
+        LocationReport.Builder locationReport = userClient1.requestLocationProofs(client1, 14L, 2);
         userClient1.submitLocationReport(client1, locationReport);
 
         userServer3.stop();
@@ -107,10 +107,10 @@ public class TestHA
 //
 //        startServer();
 //
-//        LocationReport locationReport15 = userClient15.requestLocationProofs(client15, 2L, 0);
+//        LocationReport.Builder locationReport15 = userClient15.requestLocationProofs(client15, 2L, 0);
 //        userClient15.submitLocationReport(client15, locationReport15);
 //
-//        LocationReport locationReport19 = userClient19.requestLocationProofs(client19, 2L, 0);
+//        LocationReport.Builder locationReport19 = userClient19.requestLocationProofs(client19, 2L, 0);
 //        userClient19.submitLocationReport(client19, locationReport19);
 //
 //        userServer15.stop();

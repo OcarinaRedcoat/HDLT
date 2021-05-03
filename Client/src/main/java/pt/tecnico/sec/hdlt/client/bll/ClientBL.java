@@ -27,7 +27,9 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecryp
 
 public class ClientBL {
 
-    public static LocationReport requestLocationProofs(Client client, Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerStub> userStubs)
+    private static int WTS = 0;
+
+    public static LocationReport.Builder requestLocationProofs(Client client, Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerStub> userStubs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
             InvalidParameterException, CertificateException, InterruptedException {
 
@@ -96,34 +98,16 @@ public class ClientBL {
         if(reportBuilder.getLocationProofCount() < f+1){
             throw new InvalidParameterException("Could not get enough clients to witness me considering the f.");
         }
-        return reportBuilder.build();
+        return reportBuilder;
     }
 
 
-    public static void submitLocationReport(Client client, LocationReport report, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs)
+    public static void submitLocationReport(Client client, LocationReport.Builder reportBuilder, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
             IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException,
             SignatureException, CertificateException, InterruptedException {
 
-        byte[] signature = sign(report.toByteArray(), client.getPrivKey());
 
-        SignedLocationReport signedLocationReport = SignedLocationReport
-                .newBuilder()
-                .setLocationReport(report)
-                .setUserSignature(ByteString.copyFrom(signature))
-                .build();
-
-        SecretKey key = generateSecretKey();
-        IvParameterSpec iv = generateIv();
-        byte[] encryptedMessage = symmetricEncrypt(signedLocationReport.toByteArray(), key, iv);
-        byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
-
-        SubmitLocationReportRequest request = SubmitLocationReportRequest
-                .newBuilder()
-                .setKey(ByteString.copyFrom(encryptedKey))
-                .setIv(ByteString.copyFrom(iv.getIV()))
-                .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
-                .build();
 
         final CountDownLatch finishLatch = new CountDownLatch(serverStubs.size());
         StreamObserver<SubmitLocationReportResponse> responseObserver = new StreamObserver<>() {
@@ -143,7 +127,31 @@ public class ClientBL {
             }
         };
 
+        LocationReport report;
         for (LocationServerGrpc.LocationServerStub stub: serverStubs){
+            report = reportBuilder.setWts(WTS).build();
+            WTS++;
+
+            byte[] signature = sign(report.toByteArray(), client.getPrivKey());
+
+            SignedLocationReport signedLocationReport = SignedLocationReport
+                    .newBuilder()
+                    .setLocationReport(report)
+                    .setUserSignature(ByteString.copyFrom(signature))
+                    .build();
+
+            SecretKey key = generateSecretKey();
+            IvParameterSpec iv = generateIv();
+            byte[] encryptedMessage = symmetricEncrypt(signedLocationReport.toByteArray(), key, iv);
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
+
+            SubmitLocationReportRequest request = SubmitLocationReportRequest
+                    .newBuilder()
+                    .setKey(ByteString.copyFrom(encryptedKey))
+                    .setIv(ByteString.copyFrom(iv.getIV()))
+                    .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
+                    .build();
+
             stub.submitLocationReport(request, responseObserver);
         }
 

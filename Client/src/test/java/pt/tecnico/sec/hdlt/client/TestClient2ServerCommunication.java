@@ -70,11 +70,11 @@ public class TestClient2ServerCommunication {
 
         startServer();
 
-        LocationReport locationReport = userClient1.requestLocationProofs(client1, 24L, 2);
-        Boolean submitedReport = userClient1.submitLocationReport(client1, locationReport);
+        LocationReport.Builder reportBuilder = userClient1.requestLocationProofs(client1, 24L, 2);
+        Boolean submitedReport = userClient1.submitLocationReport(client1, reportBuilder);
         assertEquals(true, submitedReport);
 
-        locationReport = userClient1.obtainLocationReport(client1, 24L);
+        LocationReport locationReport = userClient1.obtainLocationReport(client1, 24L);
         assertNotNull(locationReport);
 
         userServer6.stop();

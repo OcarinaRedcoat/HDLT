@@ -25,6 +25,7 @@ message LocationReport {
   LocationInformation locationInformation = 1;
   repeated SignedLocationProof locationProof = 2;
   string nonce = 3;
+  int32 wts = 4;
 }
 
 message LocationInformationRequest {

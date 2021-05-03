@@ -37,17 +37,16 @@ public class Main
         UserClient clientGrpc = new UserClient();
 
         int command;
-        LocationReport report;
 
         System.out.println("||| CLIENT INITIALIZED |||");
-        printCommands();
         do{
+            printCommands();
             command = readInteger(null);
             switch (command){
                 case 1:
-                    report = clientGrpc.requestLocationProofs(client, readEpoch(), F);
-                    if(report != null)
-                        clientGrpc.submitLocationReport(client, report);
+                    LocationReport.Builder reportBuilder = clientGrpc.requestLocationProofs(client, readEpoch(), F);
+                    if(reportBuilder != null)
+                        clientGrpc.submitLocationReport(client, reportBuilder);
                     break;
                 case 2:
                     clientGrpc.obtainLocationReport(client, readEpoch());
@@ -63,7 +62,6 @@ public class Main
                 default:
                     System.out.println("-----> Invalid Command.");
             }
-            printCommands();
         }while(command != 5);
 
         serverGrpc.stop();

@@ -28,8 +28,8 @@ public class Main {
         HAClient.getInstance();
 
         System.out.println("||| HA INITIALIZED |||");
-        printCommands();
         do {
+            printCommands();
             command = readInteger(null);
             switch (command) {
                 case 1:
