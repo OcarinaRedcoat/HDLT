@@ -14,9 +14,9 @@ public class LocationServer {
     private static final Logger logger = Logger.getLogger(App.class.getName());
     private Server server;
 
-    public void start(LocationBL locationBL) throws IOException {
+    public void start(int id, LocationBL locationBL) throws IOException {
         /* The port on which the server should run */
-        int port = 50051;
+        int port = 50050 + (id - 1);
         this.server = ServerBuilder.forPort(port)
                 .addService(new LocationServerService(locationBL)).build().start();
 

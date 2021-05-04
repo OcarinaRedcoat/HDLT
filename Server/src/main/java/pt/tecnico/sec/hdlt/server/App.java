@@ -16,11 +16,14 @@ public class App {
             return;
         }
 
+
+        int id = Integer.parseInt(args[0]);
+
         try {
-            LocationBL locationBL = new LocationBL(Integer.parseInt(args[0]), args[1]);
+            LocationBL locationBL = new LocationBL(id, args[1]);
 
             LocationServer locationServer = new LocationServer();
-            locationServer.start(locationBL);
+            locationServer.start(id, locationBL);
 
             System.out.println("Type <q> or <quit> or <exit> to shutdown the server.");
 
