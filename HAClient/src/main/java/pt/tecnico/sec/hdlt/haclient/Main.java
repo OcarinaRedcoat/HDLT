@@ -30,7 +30,7 @@ public class Main {
         System.out.println("||| HA INITIALIZED |||");
         do {
             printCommands();
-            command = readInteger(null);
+            command = readCommand();
             switch (command) {
                 case 1:
                     epoch = readEpoch();
@@ -39,8 +39,8 @@ public class Main {
                     break;
                 case 2:
                     epoch = readEpoch();
-                    long x = readPos("Specify the posX: ");
-                    long y = readPos("Specify the posY: ");
+                    long x = readPosX();
+                    long y = readPosY();
                     List<SignedLocationReport> listReport = HAClient.getInstance().obtainUsersAtLocation(x, y, epoch);
                     if (listReport != null) {
                         for (SignedLocationReport rep: listReport) {

@@ -17,6 +17,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
@@ -27,13 +28,16 @@ import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.symmetricDecryp
 
 public class ClientBL {
 
-    private static int WTS = -1;
+    private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
 
-    private static void init(){
-        WTS = -1;
+    private int wts;
+
+    public ClientBL(ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
+        this.serverStubs = serverStubs;
+        this.wts = 0;
     }
 
-    public static LocationReport.Builder requestLocationProofs(Client client, Long epoch, int f, ArrayList<ClientServerGrpc.ClientServerStub> userStubs)
+    public static LocationReport.Builder requestLocationProofs(ArrayList<ClientServerGrpc.ClientServerStub> userStubs, Client client, Long epoch, int f)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
             InvalidParameterException, CertificateException, InterruptedException {
 
@@ -106,7 +110,7 @@ public class ClientBL {
     }
 
 
-    public static void submitLocationReport(Client client, LocationReport.Builder reportBuilder, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs)
+    public void submitLocationReport(Client client, LocationReport.Builder reportBuilder)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
             IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException,
             SignatureException, CertificateException, InterruptedException {
@@ -129,10 +133,9 @@ public class ClientBL {
             }
         };
 
-        WTS++;
         LocationReport report;
         for (LocationServerGrpc.LocationServerStub stub: serverStubs){
-            report = reportBuilder.setWts(WTS).build();
+            report = reportBuilder.setWts(this.wts).build();
 
             byte[] signature = sign(report.toByteArray(), client.getPrivKey());
 
@@ -158,15 +161,17 @@ public class ClientBL {
         }
 
         finishLatch.await();
+        this.wts++;
     }
 
-    public static LocationReport obtainLocationReport(Client client, Long epoch, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs)
+
+    //TODO Not implemented
+    public LocationReport obtainLocationReport(Client client, Long epoch)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
             InvalidAlgorithmParameterException, CertificateException {
 
 
-        //TODO Not implemented
         return LocationReport.newBuilder().build();
 //        LocationQuery locationQuery = LocationQuery
 //                .newBuilder()
@@ -223,6 +228,15 @@ public class ClientBL {
 //
 //
 //        return report;
+    }
+
+    //TODO Not implemented
+    public Proofs ObtainMyProofs(Client client, List<Long> epochs)
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
+            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
+            InvalidAlgorithmParameterException, CertificateException {
+
+        return Proofs.newBuilder().build();
     }
 
 }

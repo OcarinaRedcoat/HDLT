@@ -7,7 +7,7 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
 import static pt.tecnico.sec.hdlt.FileUtils.*;
-import static pt.tecnico.sec.hdlt.IOUtils.readString;
+import static pt.tecnico.sec.hdlt.IOUtils.readPassword;
 import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.getKeyPairFromKeyStore;
 
 public class HA {
@@ -18,10 +18,10 @@ public class HA {
 
     private HA() {
         try{
-            //String password = readString("ha password: (default is ha_keystore_1)");
-            String password = "ha_keystore_1";
             this.keyPair = getKeyPairFromKeyStore(
-                    new File("../keys/ha_1.jks"), password, "ha_1");
+                    new File("../keys/ha_1.jks"),
+                    readPassword("Password: (default= ha_keystore_1)"),
+                    "ha_1");
         } catch (IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException |
                 KeyStoreException e) {
             System.err.println("There was a problem reading the ha private and public RSA keys. Make sure they exist and are in the correct format.");

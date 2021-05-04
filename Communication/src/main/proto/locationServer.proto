@@ -6,6 +6,7 @@ package pt.tecnico.sec.hdlt.communication;
 service LocationServer {
   rpc SubmitLocationReport (SubmitLocationReportRequest) returns (SubmitLocationReportResponse) {}
   rpc ObtainLocationReport (ObtainLocationReportRequest) returns (ObtainLocationReportResponse) {}
+  rpc ObtainMyProofs (ObtainMyProofsRequest) returns (ObtainMyProofsResponse) {}
   rpc ObtainUsersAtLocation (ObtainUsersAtLocationRequest) returns (ObtainUsersAtLocationResponse) {}
 }
 
@@ -57,6 +58,38 @@ message Position {
 }
 
 message SubmitLocationReportResponse {}
+
+// ---------------------------------- ObtainMyProofs ----------------------------------
+message ObtainMyProofsRequest {
+  bytes encryptedSignedProofsQuery = 1;
+  bytes key = 2;
+  bytes iv = 3;
+}
+
+message SignedProofsQuery {
+  ProofsQuery proofsQuery = 1;
+  bytes signature = 2;
+}
+
+message ProofsQuery {
+  int32 userId = 1;
+  string nonce = 2;
+}
+
+message ObtainMyProofsResponse {
+  bytes encryptedServerSignedProofs = 1; // Encrypted bytes of message LocationInformation
+  bytes iv = 2;
+}
+
+message ServerSignedProofs {
+  Proofs proofs = 1;
+  bytes serverSignature = 2;
+}
+
+message Proofs {
+  repeated SignedLocationProof locationProof = 1;
+  string nonce = 2;
+}
 
 // ---------------------------------- ObtainLocationReport ----------------------------------
 

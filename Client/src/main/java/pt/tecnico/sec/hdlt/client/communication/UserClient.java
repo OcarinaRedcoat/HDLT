@@ -15,6 +15,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,11 +31,13 @@ public class UserClient {
     private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
     private ArrayList<ManagedChannel> serverChannels;
 
+    private ClientBL clientBL;
+
     public UserClient(){
-        userStubs = new ArrayList<>();
-        userChannels = new ArrayList<>();
-        serverStubs = new ArrayList<>();
-        serverChannels = new ArrayList<>();
+        this.userStubs = new ArrayList<>();
+        this.userChannels = new ArrayList<>();
+        createServerStubs();
+        this.clientBL = new ClientBL(serverStubs);
     }
 
     private void createCloseUsersAsyncStubs(ArrayList<Long> closeUsers){
@@ -65,7 +68,7 @@ public class UserClient {
         }
     }
 
-    public void closeUserChannels(){
+    private void closeUserChannels(){
         for (ManagedChannel channel : userChannels) {
             channel.shutdownNow();
         }
@@ -74,7 +77,6 @@ public class UserClient {
     }
 
     public void closeServerChannel(){
-
         for (ManagedChannel channel : serverChannels) {
             channel.shutdownNow();
         }
@@ -88,7 +90,7 @@ public class UserClient {
             createCloseUsersAsyncStubs(client.getUser().getPositionWithEpoch(epoch).getCloseBy());
             logger.info("Requesting Proof to user close by:");
 
-            reportBuilder = ClientBL.requestLocationProofs(client, epoch, f, userStubs);
+            reportBuilder = ClientBL.requestLocationProofs(userStubs, client, epoch, f);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
                 IOException | CertificateException | InterruptedException e) {
@@ -104,10 +106,8 @@ public class UserClient {
     }
 
     public Boolean submitLocationReport(Client client, LocationReport.Builder reportBuilder){
-        createServerStubs();
-
         try {
-            ClientBL.submitLocationReport(client, reportBuilder, serverStubs);
+            clientBL.submitLocationReport(client, reportBuilder);
             System.out.println("Submitted report successfully");
             return true;
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
@@ -117,18 +117,16 @@ public class UserClient {
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
-        } finally {
-            closeServerChannel();
         }
+
         return false;
     }
 
     public LocationReport obtainLocationReport(Client client, Long epoch){
-        createServerStubs();
-
         LocationReport report = null;
+
         try {
-            report = ClientBL.obtainLocationReport(client, epoch, serverStubs);
+            report = clientBL.obtainLocationReport(client, epoch);
             System.out.println("I got the report Report you wanted: ");
             System.out.println(report);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
@@ -138,11 +136,27 @@ public class UserClient {
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
-        } finally {
-            closeServerChannel();
         }
 
         return report;
+    }
+
+    public Proofs obtainMyProofs(Client client, List<Long> epochs){
+        Proofs proofs = null;
+
+        try {
+            proofs = clientBL.ObtainMyProofs(client, epochs);
+            return proofs;
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
+                BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
+                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException e) {
+
+            System.err.println("Something went wrong!");
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
+        }
+
+        return proofs;
     }
 
 }

@@ -60,36 +60,37 @@ public class TestHA
         }
     }
 
-    @Test
-    public void obtainLocationReport()
-    {
-        deleteServerReports();
-
-        Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
-        UserClient userClient1 = new UserClient();
-        Client client3 = new Client(readUser(gridFileLocation, 3), "client_3");
-        UserServer userServer3 = new UserServer(client3);
-        Client client9 = new Client(readUser(gridFileLocation, 9), "client_9");
-        UserServer userServer9 = new UserServer(client9);
-        Client client17 = new Client(readUser(gridFileLocation, 17), "client_17");
-        UserServer userServer17 = new UserServer(client17);
-
-        startServer();
-
-        LocationReport.Builder locationReport = userClient1.requestLocationProofs(client1, 14L, 2);
-        userClient1.submitLocationReport(client1, locationReport);
-
-        userServer3.stop();
-        userServer9.stop();
-        userServer17.stop();
-
-        HAClient haclient = HAClient.getInstance();
-
-        SignedLocationReport signedLocationReport = haclient.obtainLocationReport(1, 14L);
-        assertNotNull(signedLocationReport);
-
-        stopServer();
-    }
+//    TODO asks for input
+//    @Test
+//    public void obtainLocationReport()
+//    {
+//        deleteServerReports();
+//
+//        Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
+//        UserClient userClient1 = new UserClient();
+//        Client client3 = new Client(readUser(gridFileLocation, 3), "client_3");
+//        UserServer userServer3 = new UserServer(client3);
+//        Client client9 = new Client(readUser(gridFileLocation, 9), "client_9");
+//        UserServer userServer9 = new UserServer(client9);
+//        Client client17 = new Client(readUser(gridFileLocation, 17), "client_17");
+//        UserServer userServer17 = new UserServer(client17);
+//
+//        startServer();
+//
+//        LocationReport.Builder locationReport = userClient1.requestLocationProofs(client1, 14L, 2);
+//        userClient1.submitLocationReport(client1, locationReport);
+//
+//        userServer3.stop();
+//        userServer9.stop();
+//        userServer17.stop();
+//
+//        HAClient haclient = HAClient.getInstance();
+//
+//        SignedLocationReport signedLocationReport = haclient.obtainLocationReport(1, 14L);
+//        assertNotNull(signedLocationReport);
+//
+//        stopServer();
+//    }
 
 //    TODO o F já não pode ser 0
 //    @Test
