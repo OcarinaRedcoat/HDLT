@@ -2,7 +2,7 @@ package pt.tecnico.sec.hdlt.client.communication;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.entities.Client;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

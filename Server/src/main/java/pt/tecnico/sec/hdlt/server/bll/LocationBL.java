@@ -1,10 +1,10 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.ByteString;
-import pt.tecnico.sec.hdlt.FileUtils;
-import pt.tecnico.sec.hdlt.GeneralUtils;
+import pt.tecnico.sec.hdlt.utils.FileUtils;
+import pt.tecnico.sec.hdlt.utils.GeneralUtils;
 import pt.tecnico.sec.hdlt.communication.*;
-import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
+import pt.tecnico.sec.hdlt.utils.CryptographicUtils;
 import pt.tecnico.sec.hdlt.server.entities.LocationReportKey;
 import pt.tecnico.sec.hdlt.server.utils.MessageWriteQueue;
 import pt.tecnico.sec.hdlt.server.utils.NonceWriteQueue;
@@ -38,7 +38,7 @@ public class LocationBL {
         this.locationReports = ReadFile.createReportsMap(messageFilePath);
         this.nonceSet = ReadFile.createNonceSet(nonceFilePath);
 
-        this.privateKey = CryptographicOperations.getServerPrivateKey(serverId, serverPwd);
+        this.privateKey = CryptographicUtils.getServerPrivateKey(serverId, serverPwd);
         this.numberByzantineUsers = GeneralUtils.F;
     }
 
@@ -135,10 +135,10 @@ public class LocationBL {
 
         ServerSignedSignedLocationReport serverSignedSignedLocationReport = ServerSignedSignedLocationReport.newBuilder()
                 .setSignedLocationReport(report)
-                .setServerSignature(ByteString.copyFrom(CryptographicOperations.sign(report.toByteArray(), this.privateKey)))
+                .setServerSignature(ByteString.copyFrom(CryptographicUtils.sign(report.toByteArray(), this.privateKey)))
                 .build();
 
-        IvParameterSpec iv = CryptographicOperations.generateIv();
+        IvParameterSpec iv = CryptographicUtils.generateIv();
 
         return ObtainLocationReportResponse.newBuilder()
                 .setEncryptedServerSignedSignedLocationReport(ByteString.copyFrom(encryptResponse(serverSignedSignedLocationReport.toByteArray(), secretKey, iv)))
@@ -185,10 +185,10 @@ public class LocationBL {
         ServerSignedSignedLocationReportList serverSignedSignedLocationReportList = ServerSignedSignedLocationReportList
                 .newBuilder()
                 .setSignedLocationReportList(signedLocationReportList)
-                .setServerSignature(ByteString.copyFrom(CryptographicOperations.sign(signedLocationReportList.toByteArray(), this.privateKey)))
+                .setServerSignature(ByteString.copyFrom(CryptographicUtils.sign(signedLocationReportList.toByteArray(), this.privateKey)))
                 .build();
 
-        IvParameterSpec iv = CryptographicOperations.generateIv();
+        IvParameterSpec iv = CryptographicUtils.generateIv();
 
         return ObtainUsersAtLocationResponse.newBuilder()
                 .setEncryptedSignedLocationReportList(
@@ -199,24 +199,24 @@ public class LocationBL {
     }
 
     private byte[] decryptKey(byte[] key) throws Exception {
-        return CryptographicOperations.asymmetricDecrypt(key, this.privateKey);
+        return CryptographicUtils.asymmetricDecrypt(key, this.privateKey);
     }
 
     private byte[] decryptRequest(byte[] request, byte[] key, byte[] iv) throws Exception {
-        return CryptographicOperations.symmetricDecrypt(request,
-                CryptographicOperations.convertToSymmetricKey(key), new IvParameterSpec(iv));
+        return CryptographicUtils.symmetricDecrypt(request,
+                CryptographicUtils.convertToSymmetricKey(key), new IvParameterSpec(iv));
     }
 
     private byte[] encryptResponse(byte[] data, byte[] secretKey, IvParameterSpec iv) throws Exception {
-        return CryptographicOperations.symmetricEncrypt(data, CryptographicOperations.convertToSymmetricKey(secretKey), iv);
+        return CryptographicUtils.symmetricEncrypt(data, CryptographicUtils.convertToSymmetricKey(secretKey), iv);
     }
 
     private boolean verifySignature(int userId, byte[] message, byte[] signature) throws Exception {
-        return CryptographicOperations.verifySignature(FileUtils.getUserPublicKey(userId), message, signature);
+        return CryptographicUtils.verifySignature(FileUtils.getUserPublicKey(userId), message, signature);
     }
 
     private boolean verifyHaSignature(byte[] message, byte[] signature) throws Exception {
-        return CryptographicOperations.verifySignature(FileUtils.getHAPublicKey(), message, signature);
+        return CryptographicUtils.verifySignature(FileUtils.getHAPublicKey(), message, signature);
     }
 
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {

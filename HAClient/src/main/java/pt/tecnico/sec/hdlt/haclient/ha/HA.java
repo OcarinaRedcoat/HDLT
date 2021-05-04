@@ -4,11 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
 
-import static pt.tecnico.sec.hdlt.FileUtils.*;
-import static pt.tecnico.sec.hdlt.IOUtils.readPassword;
-import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.getKeyPairFromKeyStore;
+import static pt.tecnico.sec.hdlt.utils.IOUtils.readPassword;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.getKeyPairFromKeyStore;
 
 public class HA {
 

@@ -3,7 +3,7 @@ package pt.tecnico.sec.hdlt.client;
 import org.junit.Test;
 import pt.tecnico.sec.hdlt.client.communication.UserClient;
 import pt.tecnico.sec.hdlt.client.communication.UserServer;
-import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 import pt.tecnico.sec.hdlt.server.LocationServer;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.Assert.*;
-import static pt.tecnico.sec.hdlt.IOUtils.readUser;
+import static pt.tecnico.sec.hdlt.utils.IOUtils.readUser;
 
 public class TestClient2ServerCommunication {
 

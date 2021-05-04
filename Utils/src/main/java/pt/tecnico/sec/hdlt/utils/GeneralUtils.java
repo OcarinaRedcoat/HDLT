@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.utils;
 
 import java.util.Calendar;
 import java.util.TimeZone;

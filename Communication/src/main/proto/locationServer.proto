@@ -22,6 +22,11 @@ message SubmitLocationReportRequest {
   bytes iv = 3;
 }
 
+message SignedLocationReport {
+  LocationReport locationReport = 1;
+  bytes userSignature = 2;
+}
+
 message LocationReport {
   LocationInformation locationInformation = 1;
   repeated SignedLocationProof locationProof = 2;
@@ -57,39 +62,21 @@ message Position {
   int64 y = 2;
 }
 
-message SubmitLocationReportResponse {}
-
-// ---------------------------------- ObtainMyProofs ----------------------------------
-message ObtainMyProofsRequest {
-  bytes encryptedSignedProofsQuery = 1;
-  bytes key = 2;
-  bytes iv = 3;
-}
-
-message SignedProofsQuery {
-  ProofsQuery proofsQuery = 1;
-  bytes signature = 2;
-}
-
-message ProofsQuery {
-  int32 userId = 1;
-  string nonce = 2;
-}
-
-message ObtainMyProofsResponse {
-  bytes encryptedServerSignedProofs = 1; // Encrypted bytes of message LocationInformation
+message SubmitLocationReportResponse {
+  bytes encryptedSignedAck = 1;
   bytes iv = 2;
 }
 
-message ServerSignedProofs {
-  Proofs proofs = 1;
-  bytes serverSignature = 2;
+message SignedAck {
+  Ack ack = 1;
+  bytes signature = 2;
 }
 
-message Proofs {
-  repeated SignedLocationProof locationProof = 1;
-  string nonce = 2;
+message Ack {
+  int32 wts = 1;
+  int32 serverId = 2;
 }
+
 
 // ---------------------------------- ObtainLocationReport ----------------------------------
 
@@ -109,6 +96,7 @@ message LocationQuery {
   int64 epoch = 2;
   bool isHA = 3;
   string nonce = 4;
+  int32 rid = 5;
 }
 
 message ObtainLocationReportResponse {
@@ -119,11 +107,42 @@ message ObtainLocationReportResponse {
 message ServerSignedSignedLocationReport {
   SignedLocationReport signedLocationReport = 1;
   bytes serverSignature = 2;
+  int32 serverId = 3;
 }
 
-message SignedLocationReport {
-  LocationReport locationReport = 1;
-  bytes userSignature = 2;
+
+
+// ---------------------------------- ObtainMyProofs ----------------------------------
+message ObtainMyProofsRequest {
+  bytes encryptedSignedProofsQuery = 1;
+  bytes key = 2;
+  bytes iv = 3;
+}
+
+message SignedProofsQuery {
+  ProofsQuery proofsQuery = 1;
+  bytes signature = 2;
+}
+
+message ProofsQuery {
+  int32 userId = 1;
+  string nonce = 2;
+  int32 rid = 3;
+}
+
+message ObtainMyProofsResponse {
+  bytes encryptedServerSignedProofs = 1; // Encrypted bytes of message LocationInformation
+  bytes iv = 2;
+  int32 serverId = 3;
+}
+
+message ServerSignedProofs {
+  Proofs proofs = 1;
+  bytes serverSignature = 2;
+}
+
+message Proofs {
+  repeated SignedLocationProof locationProof = 1;
 }
 
 // ---------------------------------- ObtainUsersAtLocationRequest ----------------------------------

@@ -1,4 +1,4 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.entities;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;

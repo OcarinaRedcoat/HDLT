@@ -1,10 +1,9 @@
 package pt.tecnico.sec.hdlt.client.bll;
 
 import com.google.protobuf.ByteString;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import pt.tecnico.sec.hdlt.User;
-import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.entities.User;
+import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
 import java.io.IOException;
@@ -15,10 +14,9 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
-import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
-import static pt.tecnico.sec.hdlt.FileUtils.getUserPublicKey;
-import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.sign;
-import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.verifySignature;
+import static pt.tecnico.sec.hdlt.utils.FileUtils.getUserPublicKey;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.sign;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.verifySignature;
 
 public class ServerBL {
 

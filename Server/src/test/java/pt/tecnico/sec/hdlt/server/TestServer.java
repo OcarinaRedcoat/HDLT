@@ -1,21 +1,5 @@
 package pt.tecnico.sec.hdlt.server;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.util.JsonFormat;
-import org.junit.Before;
-import org.junit.Test;
-import pt.tecnico.sec.hdlt.FileUtils;
-import pt.tecnico.sec.hdlt.communication.*;
-import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
-import pt.tecnico.sec.hdlt.server.bll.LocationBL;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import static org.junit.Assert.*;
-
 public class TestServer {
 
 //    @Before

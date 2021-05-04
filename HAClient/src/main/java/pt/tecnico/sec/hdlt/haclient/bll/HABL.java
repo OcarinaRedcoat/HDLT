@@ -19,8 +19,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static pt.tecnico.sec.hdlt.FileUtils.getServerPublicKey;
-import static pt.tecnico.sec.hdlt.crypto.CryptographicOperations.*;
+import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
 
 public class HABL {
 

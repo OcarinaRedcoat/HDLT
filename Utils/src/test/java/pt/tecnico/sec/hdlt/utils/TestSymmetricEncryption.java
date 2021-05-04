@@ -1,7 +1,6 @@
 package pt.tecnico.sec.hdlt.utils;
 
 import org.junit.Test;
-import pt.tecnico.sec.hdlt.crypto.CryptographicOperations;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -16,11 +15,11 @@ public class TestSymmetricEncryption {
         String stringToEncrypt = "Hello World!";
 
         try {
-            SecretKey key = CryptographicOperations.generateSecretKey();
-            IvParameterSpec iv = CryptographicOperations.generateIv();
+            SecretKey key = CryptographicUtils.generateSecretKey();
+            IvParameterSpec iv = CryptographicUtils.generateIv();
 
-            byte[] encryptedBytes = CryptographicOperations.symmetricEncrypt(stringToEncrypt.getBytes(), key, iv);
-            byte[] decryptedBytes = CryptographicOperations.symmetricDecrypt(encryptedBytes, key, iv);
+            byte[] encryptedBytes = CryptographicUtils.symmetricEncrypt(stringToEncrypt.getBytes(), key, iv);
+            byte[] decryptedBytes = CryptographicUtils.symmetricDecrypt(encryptedBytes, key, iv);
             String decryptedString = new String(decryptedBytes);
 
             assertEquals(stringToEncrypt, decryptedString);

@@ -1,13 +1,13 @@
 package pt.tecnico.sec.hdlt.client;
 
 import static org.junit.Assert.*;
-import static pt.tecnico.sec.hdlt.IOUtils.readUser;
+import static pt.tecnico.sec.hdlt.utils.IOUtils.readUser;
 
 import org.junit.Test;
 import pt.tecnico.sec.hdlt.client.communication.UserClient;
 import pt.tecnico.sec.hdlt.client.communication.UserServer;
-import pt.tecnico.sec.hdlt.client.user.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
+import pt.tecnico.sec.hdlt.entities.Client;
 
 
 public class TestClient2ClientCommunication

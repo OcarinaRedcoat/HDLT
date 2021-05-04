@@ -2,12 +2,10 @@ package pt.tecnico.sec.hdlt.haclient;
 
 import pt.tecnico.sec.hdlt.communication.SignedLocationReport;
 import pt.tecnico.sec.hdlt.haclient.communication.HAClient;
-import pt.tecnico.sec.hdlt.haclient.ha.HA;
 
 import java.util.List;
-import java.util.Scanner;
 
-import static pt.tecnico.sec.hdlt.IOUtils.*;
+import static pt.tecnico.sec.hdlt.utils.IOUtils.*;
 
 public class Main {
 

@@ -1,15 +1,10 @@
-package pt.tecnico.sec.hdlt.crypto;
-
-import pt.tecnico.sec.hdlt.FileUtils;
+package pt.tecnico.sec.hdlt.utils;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URL;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -18,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.NoSuchElementException;
 
-public class CryptographicOperations {
+public class CryptographicUtils {
 
     private static final String SYMMETRIC_ALGORITHM_WITH_PADDING = "AES/CBC/PKCS5Padding";
     private static final String SYMMETRIC_ALGORITHM = "AES";

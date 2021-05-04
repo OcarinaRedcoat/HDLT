@@ -4,7 +4,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.sec.hdlt.client.bll.ClientBL;
-import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
 import javax.crypto.BadPaddingException;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static pt.tecnico.sec.hdlt.GeneralUtils.*;
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.*;
 
 public class UserClient {
 
@@ -112,13 +112,12 @@ public class UserClient {
             return true;
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
-                InvalidKeySpecException | CertificateException | InterruptedException e) {
+                CertificateException | InterruptedException e) {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
         }
-
         return false;
     }
 
@@ -130,8 +129,9 @@ public class UserClient {
             System.out.println("I got the report Report you wanted: ");
             System.out.println(report);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
-                BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
-                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException e) {
+                BadPaddingException | IllegalBlockSizeException | IOException |
+                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException |
+                InterruptedException e) {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
@@ -149,7 +149,8 @@ public class UserClient {
             return proofs;
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
-                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException e) {
+                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException |
+                InterruptedException e) {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {

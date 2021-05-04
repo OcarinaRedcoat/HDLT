@@ -4,7 +4,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.client.bll.ServerBL;
-import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
 import java.io.IOException;

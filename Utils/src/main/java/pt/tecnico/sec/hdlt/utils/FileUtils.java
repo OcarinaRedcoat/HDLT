@@ -1,23 +1,19 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.utils;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import pt.tecnico.sec.hdlt.entities.Position;
+import pt.tecnico.sec.hdlt.entities.User;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
 
 public class FileUtils {
 

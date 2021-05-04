@@ -1,6 +1,8 @@
-package pt.tecnico.sec.hdlt;
+package pt.tecnico.sec.hdlt.utils;
 
 import org.json.simple.parser.ParseException;
+import pt.tecnico.sec.hdlt.entities.User;
+import pt.tecnico.sec.hdlt.utils.FileUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;

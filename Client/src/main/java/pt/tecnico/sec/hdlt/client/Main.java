@@ -2,19 +2,11 @@ package pt.tecnico.sec.hdlt.client;
 
 import pt.tecnico.sec.hdlt.client.communication.UserClient;
 import pt.tecnico.sec.hdlt.client.communication.UserServer;
-import pt.tecnico.sec.hdlt.client.user.Client;
+import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
-
-import static pt.tecnico.sec.hdlt.FileUtils.getUserPublicKey;
-import static pt.tecnico.sec.hdlt.GeneralUtils.*;
-import static pt.tecnico.sec.hdlt.IOUtils.*;
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.*;
+import static pt.tecnico.sec.hdlt.utils.IOUtils.*;
 
 public class Main
 {
