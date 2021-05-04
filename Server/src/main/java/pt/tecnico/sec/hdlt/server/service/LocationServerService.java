@@ -19,9 +19,9 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
     @Override
     public void submitLocationReport(SubmitLocationReportRequest request, StreamObserver<SubmitLocationReportResponse> responseObserver) {
         try {
-            this.locationBL.submitLocationReport(request);
+            SubmitLocationReportResponse response = this.locationBL.submitLocationReport(request);
 
-            responseObserver.onNext(SubmitLocationReportResponse.newBuilder().build());
+            responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (InvalidParameterException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
@@ -48,6 +48,18 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
     public void obtainUsersAtLocation(ObtainUsersAtLocationRequest request, StreamObserver<ObtainUsersAtLocationResponse> responseObserver) {
         try {
             responseObserver.onNext(this.locationBL.obtainUsersAtLocation(request));
+            responseObserver.onCompleted();
+        } catch (InvalidParameterException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        }
+    }
+
+    @Override
+    public void requestMyProofs(RequestMyProofsRequest request, StreamObserver<RequestMyProofsResponse> responseObserver) {
+        try {
+            responseObserver.onNext(this.locationBL.requestMyProofs(request));
             responseObserver.onCompleted();
         } catch (InvalidParameterException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
