@@ -96,12 +96,10 @@ public class UserClient {
 
             reportBuilder = clientBL.requestLocationProofs(userStubs, epoch, f, witnessesId);
             System.out.println("Got the location proofs");
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
-                IOException | CertificateException | InterruptedException e) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InterruptedException |
+                InvalidParameterException e) {
 
-            System.err.println("Something went wrong!");
-        } catch (InvalidParameterException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Something went wrong! Error: " + e.getMessage());
         }  finally {
             closeUserChannels();
         }
@@ -146,9 +144,8 @@ public class UserClient {
                         "there where more crashes or byzantine servers than supported, or the client crashed");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
-                BadPaddingException | IllegalBlockSizeException | IOException |
-                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException |
-                InterruptedException e) {
+                BadPaddingException | IllegalBlockSizeException | IOException | InvalidAlgorithmParameterException |
+                CertificateException | InvalidParameterException | InterruptedException e) {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
@@ -171,9 +168,8 @@ public class UserClient {
                         "there where more crashes or byzantine servers than supported, or the client crashed");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
-                BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
-                InvalidAlgorithmParameterException | CertificateException | InvalidParameterException |
-                InterruptedException e) {
+                BadPaddingException | IllegalBlockSizeException | IOException | InvalidAlgorithmParameterException |
+                CertificateException | InvalidParameterException | InterruptedException e) {
 
             System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {

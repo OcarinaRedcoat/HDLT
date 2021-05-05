@@ -61,8 +61,7 @@ public class ClientBL {
 
     public LocationReport.Builder requestLocationProofs(ArrayList<ClientServerGrpc.ClientServerStub> userStubs,
                                                         Long epoch, int f, ArrayList<Long> witnessesId)
-            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
-            InvalidParameterException, CertificateException, InterruptedException {
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InterruptedException {
 
         LocationInformation locationInformation = buildLocationInformation(client, epoch);
         byte[] signature = sign(locationInformation.toByteArray(), client.getPrivKey());
@@ -88,8 +87,8 @@ public class ClientBL {
 
                             reportBuilder.addLocationProof(response);
                         }
-                    } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException |
-                            CertificateException | IOException e) {
+                    } catch (IOException | CertificateException | NoSuchAlgorithmException | InvalidKeyException |
+                            SignatureException e) {
                         System.err.println("Something unexpected happen during signature verification.");
                     }
                 }
@@ -116,10 +115,10 @@ public class ClientBL {
         return reportBuilder;
     }
 
-    public LocationReport submitLocationReport(LocationReport.Builder reportBuilder)
-            throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
-            IllegalBlockSizeException, InvalidAlgorithmParameterException, CertificateException, IOException,
-            InterruptedException, SignatureException {
+    public LocationReport submitLocationReport(LocationReport.Builder reportBuilder) throws BadPaddingException,
+            InterruptedException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException,
+            SignatureException, NoSuchPaddingException, InvalidAlgorithmParameterException, CertificateException,
+            IOException {
 
         this.wts++;
         this.rid++;
@@ -128,9 +127,10 @@ public class ClientBL {
         return submitLocationReport(report);
     }
 
-    public LocationReport submitLocationReport(LocationReport report) throws NoSuchAlgorithmException,
-            SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, BadPaddingException,
-            NoSuchPaddingException, IllegalBlockSizeException, CertificateException, IOException, InterruptedException {
+    public LocationReport submitLocationReport(LocationReport report) throws BadPaddingException,
+            InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException,
+            NoSuchPaddingException, InvalidKeyException, SignatureException, InterruptedException, CertificateException,
+            IOException {
 
         byte[] signature = sign(report.toByteArray(), client.getPrivKey());
         SignedLocationReport signedLocationReport = buildSignedLocationReport(report, signature);
@@ -182,9 +182,9 @@ public class ClientBL {
         return null;
     }
 
-    public LocationReport obtainLocationReport(Long epoch)
-            throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException,
-            BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, CertificateException, IOException, InterruptedException {
+    public LocationReport obtainLocationReport(Long epoch) throws NoSuchAlgorithmException, InvalidKeyException,
+            BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException,
+            SignatureException, InterruptedException, CertificateException, IOException {
 
         this.rid++;
         this.acks = 0;
@@ -242,10 +242,9 @@ public class ClientBL {
         return report;
     }
 
-    public Proofs ObtainMyProofs(List<Long> epochs)
-            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
-            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
-            InvalidAlgorithmParameterException, CertificateException, InterruptedException {
+    public Proofs ObtainMyProofs(List<Long> epochs) throws NoSuchAlgorithmException, InvalidKeyException,
+            SignatureException, InvalidAlgorithmParameterException, BadPaddingException, NoSuchPaddingException,
+            IllegalBlockSizeException, InterruptedException, CertificateException, IOException {
 
         this.rid++;
         this.readList = new LinkedList<>();
