@@ -20,47 +20,51 @@ public class TestClient2ServerCommunication {
 
     private static final String gridFileLocation = "../grids.output.json";
 
-    private LocationServer server;
-    private LocationBL locationBL;
-
-    private void startServer(){
-        this.server = new LocationServer();
+    private LocationBL createServerLocationBl(int serverId){
         try {
-            this.locationBL = new LocationBL(1, "server_1");
-            this.server.start(locationBL);
+            return new LocationBL(serverId, "server_" + serverId);
         } catch (Exception e) {
-            e.printStackTrace();
+            fail();
         }
+        return null;
     }
 
-    private void stopServer(){
+    private void startServer(int id, LocationServer server, LocationBL locationBL){
         try {
-            this.server.stop();
-            this.locationBL.terminateMessageWriteQueue();
-            this.locationBL.terminateNonceWriteQueue();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            locationBL = new LocationBL(1, "server_1");
+            server.start(id, locationBL);
+        } catch (Exception e) {
+            fail();
         }
     }
 
-    private void deleteServerReports(){
-        Path fileToDeletePath = Paths.get("../Server/src/main/resources/server_1.txt");
-        Path fileToDeletePath2 = Paths.get("../Server/src/main/resources/server_1_nonce.txt");
+    private void stopServer(LocationServer server, LocationBL locationBL){
+        try {
+            server.stop();
+            locationBL.terminateMessageWriteQueue();
+            locationBL.terminateNonceWriteQueue();
+        } catch (InterruptedException e) {
+            fail();
+        }
+    }
+
+    private void deleteServerReports(int serverId){
+        Path fileToDeletePath = Paths.get("../Server/src/main/resources/server_" + serverId + ".txt");
+        Path fileToDeletePath2 = Paths.get("../Server/src/main/resources/server_" + serverId + "_nonce.txt");
         try {
             Files.deleteIfExists(fileToDeletePath);
             Files.deleteIfExists(fileToDeletePath2);
         } catch (IOException e) {
-            e.printStackTrace();
+            fail();
         }
     }
 
     @Test
     public void submitReportAndGetReport()
     {
-        deleteServerReports();
-
+        //START CLIENTS
         Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
-        UserClient userClient1 = new UserClient();
+        UserClient userClient1 = new UserClient(client1);
         Client client6 = new Client(readUser(gridFileLocation, 6), "client_6");
         UserServer userServer6 = new UserServer(client6);
         Client client12 = new Client(readUser(gridFileLocation, 12), "client_12");
@@ -68,18 +72,48 @@ public class TestClient2ServerCommunication {
         Client client19 = new Client(readUser(gridFileLocation, 19), "client_19");
         UserServer userServer19 = new UserServer(client19);
 
-        startServer();
+        //MAKE A REPORT
+        LocationReport.Builder reportBuilder = userClient1.requestLocationProofs(24L, 2);
 
-        LocationReport.Builder reportBuilder = userClient1.requestLocationProofs(client1, 24L, 2);
-        Boolean submitedReport = userClient1.submitLocationReport(client1, reportBuilder);
-        assertEquals(true, submitedReport);
-
-        LocationReport locationReport = userClient1.obtainLocationReport(client1, 24L);
-        assertNotNull(locationReport);
-
+        //STOP CLIENT SERVERS
         userServer6.stop();
         userServer12.stop();
         userServer19.stop();
-        stopServer();
+
+        //START SERVERS
+        int id = 1;
+        deleteServerReports(id);
+        LocationServer server1 = new LocationServer();
+        LocationBL locationBL1 = createServerLocationBl(id);
+        startServer(id, server1, locationBL1);
+        id = 2;
+        deleteServerReports(id);
+        LocationServer server2 = new LocationServer();
+        LocationBL locationBL2 = createServerLocationBl(id);
+        startServer(id, server2, locationBL2);
+        id = 3;
+        deleteServerReports(id);
+        LocationServer server3 = new LocationServer();
+        LocationBL locationBL3 = createServerLocationBl(id);
+        startServer(id, server3, locationBL3);
+        id = 4;
+        deleteServerReports(id);
+        LocationServer server4 = new LocationServer();
+        LocationBL locationBL4 = createServerLocationBl(id);
+        startServer(id, server4, locationBL4);
+
+        //SUBMIT A REPORT
+        Boolean submitedReport = userClient1.submitLocationReport(reportBuilder);
+        assertEquals(true, submitedReport);
+
+        //GET A REPORT
+        LocationReport locationReport = userClient1.obtainLocationReport(24L);
+        assertNotNull(locationReport);
+
+        //STOP SERVERS
+        stopServer(server1, locationBL1);
+        stopServer(server2, locationBL2);
+        stopServer(server3, locationBL3);
+        stopServer(server4, locationBL4);
     }
 }

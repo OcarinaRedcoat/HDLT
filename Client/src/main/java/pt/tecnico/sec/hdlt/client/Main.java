@@ -27,7 +27,7 @@ public class Main
     public static void main(String[] args) {
         Client client = new Client(readUser());
         UserServer serverGrpc = new UserServer(client);
-        UserClient clientGrpc = new UserClient();
+        UserClient clientGrpc = new UserClient(client);
 
         int command;
 
@@ -37,15 +37,15 @@ public class Main
             command = readCommand();
             switch (command){
                 case 1:
-                    LocationReport.Builder reportBuilder = clientGrpc.requestLocationProofs(client, readEpoch(), F);
+                    LocationReport.Builder reportBuilder = clientGrpc.requestLocationProofs(readEpoch(), F);
                     if(reportBuilder != null)
-                        clientGrpc.submitLocationReport(client, reportBuilder);
+                        clientGrpc.submitLocationReport(reportBuilder);
                     break;
                 case 2:
-                    clientGrpc.obtainLocationReport(client, readEpoch());
+                    clientGrpc.obtainLocationReport(readEpoch());
                     break;
                 case 3:
-                    clientGrpc.obtainMyProofs(client, readEpochs());
+                    clientGrpc.obtainMyProofs(readEpochs());
                     break;
                 case 4:
                     System.out.println("Current Epoch: " + getCurrentEpoch());

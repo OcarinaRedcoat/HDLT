@@ -22,8 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static pt.tecnico.sec.hdlt.utils.DependableUtils.biggestProofsList;
-import static pt.tecnico.sec.hdlt.utils.DependableUtils.highestVal;
+import static pt.tecnico.sec.hdlt.utils.DependableUtils.*;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getUserPublicKey;
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
@@ -35,35 +34,33 @@ public class ClientBL {
 
     private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
     private CountDownLatch finishLatch;
+    private Client client;
 
     private int wts;
-    private int ackList;
+    private int acks;
     private int rid;
     private List<ReadAck> readList;
+    private List<Ack> ackList;
+    private Boolean reading;
 
-    public ClientBL(ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
+    public ClientBL(Client client, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
+        this.client = client;
         this.serverStubs = serverStubs;
         this.wts = 0;
-        this.ackList = 0;
+        this.acks = 0;
         this.rid = 0;
         this.readList = new LinkedList<>();
+        this.ackList = new LinkedList<>();
+        this.reading = false;
     }
 
     private void resetFinishLatch(){
         this.finishLatch = new CountDownLatch(serverStubs.size());
     }
 
-    private void resetAckList(){
-        this.ackList = 0;
-    }
-
-    private void resetReadList(){
-        this.readList = new LinkedList<>();
-    }
-
 
     public LocationReport.Builder requestLocationProofs(ArrayList<ClientServerGrpc.ClientServerStub> userStubs,
-                                                        Client client, Long epoch, int f, ArrayList<Long> witnessesId)
+                                                        Long epoch, int f, ArrayList<Long> witnessesId)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException, InvalidKeySpecException,
             InvalidParameterException, CertificateException, InterruptedException {
 
@@ -119,13 +116,22 @@ public class ClientBL {
         return reportBuilder;
     }
 
-    public Boolean submitLocationReport(Client client, LocationReport.Builder reportBuilder)
+    public LocationReport submitLocationReport(LocationReport.Builder reportBuilder)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
             IllegalBlockSizeException, InvalidAlgorithmParameterException, CertificateException, IOException,
             InterruptedException, SignatureException {
 
         this.wts++;
-        LocationReport report = reportBuilder.setWts(this.wts).build();
+        this.rid++;
+        this.acks = 0;
+        LocationReport report = reportBuilder.setWts(this.wts).setRid(this.rid).build();
+        return submitLocationReport(report);
+    }
+
+    public LocationReport submitLocationReport(LocationReport report) throws NoSuchAlgorithmException,
+            SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, BadPaddingException,
+            NoSuchPaddingException, IllegalBlockSizeException, CertificateException, IOException, InterruptedException {
+
         byte[] signature = sign(report.toByteArray(), client.getPrivKey());
         SignedLocationReport signedLocationReport = buildSignedLocationReport(report, signature);
 
@@ -151,12 +157,12 @@ public class ClientBL {
 
                 @Override
                 public void onCompleted() {
-                    if(ackList > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+                    finishLatch.countDown();
+                    if(ackList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
                         do{
                             finishLatch.countDown();
-                        } while(finishLatch.getCount() != 1);
+                        } while(finishLatch.getCount() != 0);
                     }
-                    finishLatch.countDown();
                 }
             };
 
@@ -166,21 +172,25 @@ public class ClientBL {
         }
 
         finishLatch.await();
-        if(ackList > (N_SERVERS + F)/2){
-            resetAckList();
-            return true;
-        } else {
-            System.err.println("No enough server responses for a quorum. This can only happen if " +
-                    "there where more crashes or byzantine servers than supported, or the client crashed");
-            return false;
+        if(acks > (N_SERVERS + F)/2){
+            this.acks = 0;
+            if(reading){
+                reading = false;
+            }
+            return report;
         }
+        return null;
     }
 
-    public LocationReport obtainLocationReport(Client client, Long epoch)
+    public LocationReport obtainLocationReport(Long epoch)
             throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException,
             BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, CertificateException, IOException, InterruptedException {
 
-        rid++;
+        this.rid++;
+        this.acks = 0;
+        this.readList = new LinkedList<>();
+        this.reading = true;
+
         LocationQuery locationQuery = buildLocationQuery(client, epoch, rid);
         byte[] signature = sign(locationQuery.toByteArray(), client.getPrivKey());
         SignedLocationQuery signedLocationQuery = buildSignedLocationQuery(locationQuery, signature);
@@ -197,7 +207,7 @@ public class ClientBL {
             observer = new StreamObserver<>() {
                 @Override
                 public void onNext(ObtainLocationReportResponse response) {
-                    handleObtainLocationReportResponse(response, key, client, serverId, epoch);
+                    handleObtainLocationReportResponse(response, key, serverId, epoch);
                 }
 
                 @Override
@@ -207,12 +217,12 @@ public class ClientBL {
 
                 @Override
                 public void onCompleted() {
+                    finishLatch.countDown();
                     if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
                         do{
                             finishLatch.countDown();
-                        } while(finishLatch.getCount() != 1);
+                        } while(finishLatch.getCount() != 0);
                     }
-                    finishLatch.countDown();
                 }
             };
 
@@ -225,21 +235,21 @@ public class ClientBL {
 
         LocationReport report = null;
         if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            report = highestVal(readList);
-            resetReadList();
-        } else {
-            System.err.println("No enough server responses for a quorum. This can only happen if " +
-                    "there where more crashes or byzantine servers than supported, or the client crashed");
+            report = (LocationReport) highestAck(readList).getValue();
+            this.readList = new LinkedList<>();
+            report = submitLocationReport(report);
         }
         return report;
     }
 
-    public Proofs ObtainMyProofs(Client client, List<Long> epochs)
+    public Proofs ObtainMyProofs(List<Long> epochs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
             InvalidAlgorithmParameterException, CertificateException, InterruptedException {
 
-        rid++;
+        this.rid++;
+        this.readList = new LinkedList<>();
+
         ProofsQuery proofsQuery = buildProofsQuery(client, rid, epochs);
         byte[] signature = sign(proofsQuery.toByteArray(), client.getPrivKey());
         SignedProofsQuery signedProofsQuery = buildSignedProofsQuery(proofsQuery, signature);
@@ -257,7 +267,7 @@ public class ClientBL {
             observer = new StreamObserver<>() {
                 @Override
                 public void onNext(RequestMyProofsResponse response) {
-                    handleRequestMyProofsResponse(response, key, client, serverId, epochs);
+                    handleRequestMyProofsResponse(response, key, serverId, epochs);
                 }
 
                 @Override
@@ -267,12 +277,12 @@ public class ClientBL {
 
                 @Override
                 public void onCompleted() {
+                    finishLatch.countDown();
                     if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
                         do{
                             finishLatch.countDown();
-                        } while(finishLatch.getCount() != 1);
+                        } while(finishLatch.getCount() != 0);
                     }
-                    finishLatch.countDown();
                 }
             };
 
@@ -286,11 +296,7 @@ public class ClientBL {
         Proofs proofs = null;
         if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
             proofs = biggestProofsList(readList);
-            resetReadList();
-            return proofs;
-        } else {
-            System.err.println("No enough server responses for a quorum. This can only happen if " +
-                    "there where more crashes or byzantine servers than supported, or the client crashed");
+            this.readList = new LinkedList<>();
         }
         return proofs;
     }
@@ -299,6 +305,8 @@ public class ClientBL {
 
     private void handleSubmitLocationReportResponse(SubmitLocationReportResponse response, SecretKey key, int serverId){
         try {
+            acks++;
+
             byte[] encryptedSignedAck = response.getEncryptedSignedAck().toByteArray();
             byte[] decryptedSignedAck = symmetricDecrypt(encryptedSignedAck, key, new IvParameterSpec(response.getIv().toByteArray()));
 
@@ -308,9 +316,7 @@ public class ClientBL {
             byte[] message = ack.toByteArray();
             byte[] signature = signedAck.getSignature().toByteArray();
             if(ack.getWts() == wts && verifySignature(getServerPublicKey(serverId), message, signature)){
-                if(ackList <= (N_SERVERS + F)/2){
-                    ackList++;
-                }
+                ackList.add(ack);
             }
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
                 NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
@@ -320,7 +326,7 @@ public class ClientBL {
         }
     }
 
-    private void handleObtainLocationReportResponse(ObtainLocationReportResponse response, SecretKey key, Client client, int serverId, Long epoch){
+    private void handleObtainLocationReportResponse(ObtainLocationReportResponse response, SecretKey key, int serverId, Long epoch){
         try {
             byte[] encryptedBody = response.getEncryptedServerSignedSignedLocationReportRid().toByteArray();
             byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
@@ -345,9 +351,7 @@ public class ClientBL {
                 return;
             }
 
-            if(readList.size() <= (N_SERVERS + F)/2){
-                readList.add(new ReadAck(report.getWts(), report));
-            }
+            readList.add(new ReadAck(report.getWts(), report));
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
                 NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
                 SignatureException e) {
@@ -355,7 +359,7 @@ public class ClientBL {
         }
     }
 
-    private void handleRequestMyProofsResponse(RequestMyProofsResponse response, SecretKey key, Client client, int serverId, List<Long> epochs){
+    private void handleRequestMyProofsResponse(RequestMyProofsResponse response, SecretKey key, int serverId, List<Long> epochs){
         try {
             byte[] encryptedBody = response.getEncryptedServerSignedProofs().toByteArray();
             byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
@@ -381,10 +385,7 @@ public class ClientBL {
                 }
             }
 
-            if(readList.size() <= (N_SERVERS + F)/2){
-                //wts does not matter in this case, since if we received a proof and it passes the validations then the wts is implicit
-                readList.add(new ReadAck(1, proofs));
-            }
+            readList.add(new ReadAck(1, proofs));
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
                 NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
                 SignatureException e) {

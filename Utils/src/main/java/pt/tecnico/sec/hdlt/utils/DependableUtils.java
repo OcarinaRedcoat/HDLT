@@ -8,12 +8,12 @@ import java.util.List;
 
 public class DependableUtils {
 
-    public static LocationReport highestVal(List<ReadAck> readList){
-        LocationReport highestValue = null;
+    public static ReadAck highestAck(List<ReadAck> readList){
+        ReadAck highestValue = null;
         int highestWts = -1;
         for (ReadAck ack: readList){
             if(ack.getWts() > highestWts){
-                highestValue = (LocationReport) ack.getValue();
+                highestValue = ack;
             }
         }
         return highestValue;

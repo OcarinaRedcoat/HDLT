@@ -33,11 +33,14 @@ public class UserClient {
 
     private ClientBL clientBL;
 
-    public UserClient(){
+    private Client client;
+
+    public UserClient(Client client){
         this.userStubs = new ArrayList<>();
         this.userChannels = new ArrayList<>();
         createServerStubs();
-        this.clientBL = new ClientBL(serverStubs);
+        this.clientBL = new ClientBL(client, serverStubs);
+        this.client = client;
     }
 
     private void createCloseUsersAsyncStubs(ArrayList<Long> closeUsers){
@@ -84,14 +87,14 @@ public class UserClient {
         serverStubs = new ArrayList<>();
     }
 
-    public LocationReport.Builder requestLocationProofs(Client client, Long epoch, int f){
+    public LocationReport.Builder requestLocationProofs(Long epoch, int f){
         LocationReport.Builder reportBuilder = null;
         try {
             ArrayList<Long> witnessesId = client.getUser().getPositionWithEpoch(epoch).getCloseBy();
             createCloseUsersAsyncStubs(witnessesId);
             logger.info("Requesting Proof to user close by:");
 
-            reportBuilder = clientBL.requestLocationProofs(userStubs, client, epoch, f, witnessesId);
+            reportBuilder = clientBL.requestLocationProofs(userStubs, epoch, f, witnessesId);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
                 IOException | CertificateException | InterruptedException e) {
@@ -106,13 +109,17 @@ public class UserClient {
         return reportBuilder;
     }
 
-    public Boolean submitLocationReport(Client client, LocationReport.Builder reportBuilder){
-        Boolean success = false;
+    public Boolean submitLocationReport(LocationReport.Builder reportBuilder){
+        LocationReport locationReport;
 
         try {
-            success = clientBL.submitLocationReport(client, reportBuilder);
-            if(success){
+            locationReport = clientBL.submitLocationReport(reportBuilder);
+            if(locationReport != null){
                 System.out.println("Submitted report successfully");
+                return true;
+            } else {
+                System.err.println("No enough server responses for a quorum. This can only happen if " +
+                        "there where more crashes or byzantine servers than supported, or the client crashed");
             }
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
@@ -123,17 +130,20 @@ public class UserClient {
             logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
         }
 
-        return success;
+        return false;
     }
 
-    public LocationReport obtainLocationReport(Client client, Long epoch){
+    public LocationReport obtainLocationReport(Long epoch){
         LocationReport report = null;
 
         try {
-            report = clientBL.obtainLocationReport(client, epoch);
+            report = clientBL.obtainLocationReport(epoch);
             if(report != null){
                 System.out.println("I got the report Report you wanted: ");
                 System.out.println(report);
+            } else {
+                System.err.println("No enough server responses for a quorum. This can only happen if " +
+                        "there where more crashes or byzantine servers than supported, or the client crashed");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | IOException |
@@ -148,14 +158,17 @@ public class UserClient {
         return report;
     }
 
-    public Proofs obtainMyProofs(Client client, List<Long> epochs){
+    public Proofs obtainMyProofs(List<Long> epochs){
         Proofs proofs = null;
 
         try {
-            proofs = clientBL.ObtainMyProofs(client, epochs);
+            proofs = clientBL.ObtainMyProofs(epochs);
             if(proofs != null){
                 System.out.println("I got the proofs you wanted: ");
                 System.out.println(proofs);
+            } else {
+                System.err.println("No enough server responses for a quorum. This can only happen if " +
+                        "there where more crashes or byzantine servers than supported, or the client crashed");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
