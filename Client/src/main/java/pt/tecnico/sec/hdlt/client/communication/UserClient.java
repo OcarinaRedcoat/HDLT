@@ -87,10 +87,11 @@ public class UserClient {
     public LocationReport.Builder requestLocationProofs(Client client, Long epoch, int f){
         LocationReport.Builder reportBuilder = null;
         try {
-            createCloseUsersAsyncStubs(client.getUser().getPositionWithEpoch(epoch).getCloseBy());
+            ArrayList<Long> witnessesId = client.getUser().getPositionWithEpoch(epoch).getCloseBy();
+            createCloseUsersAsyncStubs(witnessesId);
             logger.info("Requesting Proof to user close by:");
 
-            reportBuilder = ClientBL.requestLocationProofs(userStubs, client, epoch, f);
+            reportBuilder = clientBL.requestLocationProofs(userStubs, client, epoch, f, witnessesId);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidKeySpecException |
                 IOException | CertificateException | InterruptedException e) {
