@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import static pt.tecnico.sec.hdlt.utils.DependableUtils.biggestProofsList;
 import static pt.tecnico.sec.hdlt.utils.DependableUtils.highestVal;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getUserPublicKey;
@@ -224,7 +225,7 @@ public class ClientBL {
 
         LocationReport report = null;
         if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            report = (LocationReport) highestVal(readList);
+            report = highestVal(readList);
             resetReadList();
         } else {
             System.err.println("No enough server responses for a quorum. This can only happen if " +
@@ -256,7 +257,7 @@ public class ClientBL {
             observer = new StreamObserver<>() {
                 @Override
                 public void onNext(RequestMyProofsResponse response) {
-                    handleObtainMyProofsResponse(response, key, client, serverId, epochs);
+                    handleRequestMyProofsResponse(response, key, client, serverId, epochs);
                 }
 
                 @Override
@@ -284,7 +285,7 @@ public class ClientBL {
 
         Proofs proofs = null;
         if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            proofs = (Proofs) highestVal(readList);
+            proofs = biggestProofsList(readList);
             resetReadList();
             return proofs;
         } else {
@@ -306,9 +307,7 @@ public class ClientBL {
 
             byte[] message = ack.toByteArray();
             byte[] signature = signedAck.getSignature().toByteArray();
-            if(ack.getServerId() == serverId &&
-                    ack.getWts() == wts &&
-                    verifySignature(getServerPublicKey(ack.getServerId() + 1), message, signature)){
+            if(ack.getWts() == wts && verifySignature(getServerPublicKey(serverId), message, signature)){
                 if(ackList <= (N_SERVERS + F)/2){
                     ackList++;
                 }
@@ -321,7 +320,7 @@ public class ClientBL {
         }
     }
 
-    private void handleObtainLocationReportResponse(ObtainLocationReportResponse response, SecretKey key, Client client, int serverStubId, Long epoch){
+    private void handleObtainLocationReportResponse(ObtainLocationReportResponse response, SecretKey key, Client client, int serverId, Long epoch){
         try {
             byte[] encryptedBody = response.getEncryptedServerSignedSignedLocationReportRid().toByteArray();
             byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
@@ -330,15 +329,13 @@ public class ClientBL {
             SignedLocationReport signedLocationReport = signedLocationReportRid.getSignedLocationReport();
             LocationReport report = signedLocationReport.getLocationReport();
 
-            if(signedLocationReportRid.getServerId() != serverStubId ||
-                    signedLocationReportRid.getRid() != rid ||
-                    report.getLocationInformation().getEpoch() != epoch){
+            if(signedLocationReportRid.getRid() != rid || report.getLocationInformation().getEpoch() != epoch){
                 return;
             }
 
             byte[] message = signedLocationReport.toByteArray();
             byte[] signature = serverSignedLocationReport.getServerSignature().toByteArray();
-            if(!verifySignature(getServerPublicKey(signedLocationReportRid.getServerId() + 1), message, signature)){
+            if(!verifySignature(getServerPublicKey(serverId), message, signature)){
                 return;
             }
 
@@ -358,20 +355,20 @@ public class ClientBL {
         }
     }
 
-    private void handleObtainMyProofsResponse(RequestMyProofsResponse response, SecretKey key, Client client, int serverStubId, List<Long> epochs){
+    private void handleRequestMyProofsResponse(RequestMyProofsResponse response, SecretKey key, Client client, int serverId, List<Long> epochs){
         try {
             byte[] encryptedBody = response.getEncryptedServerSignedProofs().toByteArray();
             byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
             ServerSignedProofs serverSignedProofs = ServerSignedProofs.parseFrom(decryptedMessage);
             Proofs proofs = serverSignedProofs.getProofs();
 
-            if(proofs.getServerId() != serverStubId || proofs.getRid() != rid){
+            if(proofs.getRid() != rid){
                 return;
             }
 
             byte[] message = proofs.toByteArray();
             byte[] signature = serverSignedProofs.getServerSignature().toByteArray();
-            if(!verifySignature(getServerPublicKey(proofs.getServerId() + 1), message, signature)){
+            if(!verifySignature(getServerPublicKey(serverId), message, signature)){
                 return;
             }
 
@@ -385,8 +382,8 @@ public class ClientBL {
             }
 
             if(readList.size() <= (N_SERVERS + F)/2){
-                //TODO no idea where the wts is (its implicit)
-                //readList.add(new ReadAck(report.getWts(), proofs));
+                //wts does not matter in this case, since if we received a proof and it passes the validations then the wts is implicit
+                readList.add(new ReadAck(1, proofs));
             }
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
                 NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |

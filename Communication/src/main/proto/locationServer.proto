@@ -74,7 +74,6 @@ message SignedAck {
 
 message Ack {
   int32 wts = 1;
-  int32 serverId = 2;
   string message = 3;
 }
 
@@ -112,7 +111,6 @@ message ServerSignedSignedLocationReportRid {
 
 message SignedLocationReportRid {
   SignedLocationReport signedLocationReport = 1;
-  int32 serverId = 2;
   int32 rid = 3;
 }
 
@@ -147,7 +145,6 @@ message ServerSignedProofs {
 
 message Proofs {
   repeated SignedLocationProof locationProof = 1;
-  int32 serverId = 2;
   int32 rid = 3;
 }
 
