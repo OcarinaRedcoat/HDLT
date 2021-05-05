@@ -118,7 +118,7 @@ public class ClientBL {
         return reportBuilder;
     }
 
-    public void submitLocationReport(Client client, LocationReport.Builder reportBuilder)
+    public Boolean submitLocationReport(Client client, LocationReport.Builder reportBuilder)
             throws NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, NoSuchPaddingException,
             IllegalBlockSizeException, InvalidAlgorithmParameterException, CertificateException, IOException,
             InterruptedException, SignatureException {
@@ -167,9 +167,11 @@ public class ClientBL {
         finishLatch.await();
         if(ackList > (N_SERVERS + F)/2){
             resetAckList();
+            return true;
         } else {
-            throw new InvalidParameterException("No enough responses for a quorum. This can only happen if " +
+            System.err.println("No enough server responses for a quorum. This can only happen if " +
                     "there where more crashes or byzantine servers than supported, or the client crashed");
+            return false;
         }
     }
 
@@ -220,14 +222,15 @@ public class ClientBL {
 
         finishLatch.await();
 
+        LocationReport report = null;
         if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            LocationReport report = (LocationReport) highestVal(readList);
+            report = (LocationReport) highestVal(readList);
             resetReadList();
-            return report;
         } else {
-            throw new InvalidParameterException("No enough responses for a quorum. This can only happen if " +
+            System.err.println("No enough server responses for a quorum. This can only happen if " +
                     "there where more crashes or byzantine servers than supported, or the client crashed");
         }
+        return report;
     }
 
     public Proofs ObtainMyProofs(Client client, List<Long> epochs)
@@ -279,14 +282,16 @@ public class ClientBL {
 
         finishLatch.await();
 
+        Proofs proofs = null;
         if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            Proofs proofs = (Proofs) highestVal(readList);
+            proofs = (Proofs) highestVal(readList);
             resetReadList();
             return proofs;
         } else {
-            throw new InvalidParameterException("No enough responses for a quorum. This can only happen if " +
-                    "there where more crashes or byzantine servers than supported, or the client crashes");
+            System.err.println("No enough server responses for a quorum. This can only happen if " +
+                    "there where more crashes or byzantine servers than supported, or the client crashed");
         }
+        return proofs;
     }
 
 

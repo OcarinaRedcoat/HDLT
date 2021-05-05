@@ -107,10 +107,13 @@ public class UserClient {
     }
 
     public Boolean submitLocationReport(Client client, LocationReport.Builder reportBuilder){
+        Boolean success = false;
+
         try {
-            clientBL.submitLocationReport(client, reportBuilder);
-            System.out.println("Submitted report successfully");
-            return true;
+            success = clientBL.submitLocationReport(client, reportBuilder);
+            if(success){
+                System.out.println("Submitted report successfully");
+            }
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |
                 CertificateException | InterruptedException e) {
@@ -119,7 +122,8 @@ public class UserClient {
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "server RPC failed: {0}:", e.getStatus().getDescription());
         }
-        return false;
+
+        return success;
     }
 
     public LocationReport obtainLocationReport(Client client, Long epoch){
@@ -127,8 +131,10 @@ public class UserClient {
 
         try {
             report = clientBL.obtainLocationReport(client, epoch);
-            System.out.println("I got the report Report you wanted: ");
-            System.out.println(report);
+            if(report != null){
+                System.out.println("I got the report Report you wanted: ");
+                System.out.println(report);
+            }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | IOException |
                 InvalidAlgorithmParameterException | CertificateException | InvalidParameterException |
@@ -147,7 +153,10 @@ public class UserClient {
 
         try {
             proofs = clientBL.ObtainMyProofs(client, epochs);
-            return proofs;
+            if(proofs != null){
+                System.out.println("I got the proofs you wanted: ");
+                System.out.println(proofs);
+            }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | InvalidKeySpecException | IOException |
                 InvalidAlgorithmParameterException | CertificateException | InvalidParameterException |
