@@ -6,6 +6,8 @@ import pt.tecnico.sec.hdlt.entities.Client;
 
 import javax.crypto.spec.IvParameterSpec;
 
+import java.util.List;
+
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.generateNonce;
 
 public class ProtoUtils {
@@ -44,13 +46,18 @@ public class ProtoUtils {
                 .build();
     }
 
-    public static ProofsQuery buildProofsQuery(Client client, int rid){
-        return ProofsQuery
+    public static ProofsQuery buildProofsQuery(Client client, int rid, List<Long> epochs){
+        ProofsQuery.Builder builder = ProofsQuery
                 .newBuilder()
                 .setUserId(client.getUser().getId())
                 .setNonce(generateNonce())
-                .setRid(rid)
-                .build();
+                .setRid(rid);
+
+        for (int i = 0; i < epochs.size(); i++) {
+            builder.setEpochs(i, epochs.get(i));
+        }
+
+        return builder.build();
     }
 
     public static SignedLocationQuery buildSignedLocationQuery(LocationQuery locationQuery, byte[] signature){
@@ -78,8 +85,8 @@ public class ProtoUtils {
                 .build();
     }
 
-    public static ObtainMyProofsRequest buildObtainMyProofsRequest(byte[] encryptedKey, byte[] encryptedMessage, IvParameterSpec iv){
-        return ObtainMyProofsRequest
+    public static RequestMyProofsRequest buildRequestMyProofsRequest(byte[] encryptedKey, byte[] encryptedMessage, IvParameterSpec iv){
+        return RequestMyProofsRequest
                 .newBuilder()
                 .setKey(ByteString.copyFrom(encryptedKey))
                 .setIv(ByteString.copyFrom(iv.getIV()))

@@ -2,6 +2,7 @@ package pt.tecnico.sec.hdlt.client.bll;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.grpc.Deadline;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.*;
@@ -38,6 +39,8 @@ public class ClientBL {
     private int ackList;
     private int rid;
     private List<ReadAck> readList;
+
+    private int iAux;
 
     public ClientBL(ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
         this.serverStubs = serverStubs;
@@ -182,33 +185,36 @@ public class ClientBL {
         byte[] encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key, iv);
 
         resetFinishLatch();
-        StreamObserver<ObtainLocationReportResponse> responseObserver = new StreamObserver<>() {
-            @Override
-            public void onNext(ObtainLocationReportResponse response) {
-                handleObtainLocationReportResponse(response, key, client);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                finishLatch.countDown();
-            }
-
-            @Override
-            public void onCompleted() {
-                if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-                    do{
-                        finishLatch.countDown();
-                    } while(finishLatch.getCount() != 1);
-                }
-                finishLatch.countDown();
-            }
-        };
-
         ObtainLocationReportRequest request;
-        for (int i = 0; i < serverStubs.size(); i++) {
-            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
+        List<StreamObserver<ObtainLocationReportResponse>> listObserver = new ArrayList<>();
+
+        for (iAux = 0; iAux < serverStubs.size(); iAux++) {
+            listObserver.add(new StreamObserver<>() {
+                @Override
+                public void onNext(ObtainLocationReportResponse response) {
+                    int serverId = iAux;
+                    handleObtainLocationReportResponse(response, key, client, serverId);
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    finishLatch.countDown();
+                }
+
+                @Override
+                public void onCompleted() {
+                    if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+                        do{
+                            finishLatch.countDown();
+                        } while(finishLatch.getCount() != 1);
+                    }
+                    finishLatch.countDown();
+                }
+            });
+
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(iAux + 1));
             request = buildObtainLocationReportRequest(encryptedKey, encryptedMessage, iv);
-            serverStubs.get(i).obtainLocationReport(request, responseObserver);
+            serverStubs.get(iAux).obtainLocationReport(request, listObserver.get(iAux));
         }
 
         finishLatch.await();
@@ -218,18 +224,18 @@ public class ClientBL {
             resetReadList();
             return report;
         } else {
-            //TODO Don't know what to do in this case (do we reset the ack list? if yes need to change restAck method)
-            throw new InvalidParameterException("No quorum");
+            throw new InvalidParameterException("No enough responses for a quorum. This can only happen if there where more crashes or byzantine servers than supported, or the client crashes");
         }
     }
 
+    //TODO falta amndar as epochs
     public Proofs ObtainMyProofs(Client client, List<Long> epochs)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException,
             InvalidAlgorithmParameterException, CertificateException, InterruptedException {
 
         rid++;
-        ProofsQuery proofsQuery = buildProofsQuery(client, rid);
+        ProofsQuery proofsQuery = buildProofsQuery(client, rid, epochs);
         byte[] signature = sign(proofsQuery.toByteArray(), client.getPrivKey());
         SignedProofsQuery signedProofsQuery = buildSignedProofsQuery(proofsQuery, signature);
 
@@ -238,33 +244,36 @@ public class ClientBL {
         byte[] encryptedMessage = symmetricEncrypt(signedProofsQuery.toByteArray(), key, iv);
 
         resetFinishLatch();
-        StreamObserver<ObtainMyProofsResponse> responseObserver = new StreamObserver<>() {
-            @Override
-            public void onNext(ObtainMyProofsResponse response) {
-                handleObtainMyProofsResponse(response, key, client);
-            }
+        RequestMyProofsRequest request;
+        List<StreamObserver<RequestMyProofsResponse>> listObserver = new ArrayList<>();
 
-            @Override
-            public void onError(Throwable t) {
-                finishLatch.countDown();
-            }
-
-            @Override
-            public void onCompleted() {
-                if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-                    do{
-                        finishLatch.countDown();
-                    } while(finishLatch.getCount() != 1);
+        for (iAux = 0; iAux < serverStubs.size(); iAux++) {
+            listObserver.add(new StreamObserver<>() {
+                @Override
+                public void onNext(RequestMyProofsResponse response) {
+                    int serverId = iAux+1;
+                    handleObtainMyProofsResponse(response, key, client, serverId);
                 }
-                finishLatch.countDown();
-            }
-        };
 
-        ObtainMyProofsRequest request;
-        for (int i = 0; i < serverStubs.size(); i++) {
-            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
-            request = buildObtainMyProofsRequest(encryptedKey, encryptedMessage, iv);
-            serverStubs.get(i).obtainMyProofs(request, responseObserver);
+                @Override
+                public void onError(Throwable t) {
+                    finishLatch.countDown();
+                }
+
+                @Override
+                public void onCompleted() {
+                    if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+                        do{
+                            finishLatch.countDown();
+                        } while(finishLatch.getCount() != 1);
+                    }
+                    finishLatch.countDown();
+                }
+            });
+
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(iAux + 1));
+            request = buildRequestMyProofsRequest(encryptedKey, encryptedMessage, iv);
+            serverStubs.get(iAux).requestMyProofs(request, listObserver.get(iAux));
         }
 
         finishLatch.await();
@@ -274,8 +283,7 @@ public class ClientBL {
             resetReadList();
             return proofs;
         } else {
-            //TODO Don't know what to do in this case (do we reset the ack list? if yes need to change restAck method)
-            throw new InvalidParameterException("No quorum");
+            throw new InvalidParameterException("No enough responses for a quorum. This can only happen if there where more crashes or byzantine servers than supported, or the client crashes");
         }
     }
 
@@ -305,18 +313,27 @@ public class ClientBL {
         }
     }
 
-    private void handleObtainLocationReportResponse(ObtainLocationReportResponse response, SecretKey key, Client client){
+    private void handleObtainLocationReportResponse(ObtainLocationReportResponse response, SecretKey key, Client client, int serverStubId){
         try {
-            byte[] encryptedBody = response.getEncryptedServerSignedSignedLocationReport().toByteArray();
+            byte[] encryptedBody = response.getEncryptedServerSignedSignedLocationReportRid().toByteArray();
             byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
-            ServerSignedSignedLocationReport serverSignedLocationReport = ServerSignedSignedLocationReport.parseFrom(decryptedMessage);
-            SignedLocationReport signedLocationReport = serverSignedLocationReport.getSignedLocationReport();
+            ServerSignedSignedLocationReportRid serverSignedLocationReport = ServerSignedSignedLocationReportRid.parseFrom(decryptedMessage);
+            SignedLocationReportRid signedLocationReportRid = serverSignedLocationReport.getSignedLocationReportRid();
+            SignedLocationReport signedLocationReport = signedLocationReportRid.getSignedLocationReport();
             LocationReport report = signedLocationReport.getLocationReport();
+
+            if(signedLocationReportRid.getServerId() != serverStubId){
+                return;
+            }
+
+            if(signedLocationReportRid.getRid() != rid){
+                return;
+            }
 
             //Ignore cases where server signature does not match
             byte[] message = signedLocationReport.toByteArray();
             byte[] signature = serverSignedLocationReport.getServerSignature().toByteArray();
-            if(!verifySignature(getServerPublicKey(serverSignedLocationReport.getServerId() + 1), message, signature)){
+            if(!verifySignature(getServerPublicKey(signedLocationReportRid.getServerId() + 1), message, signature)){
                 return;
             }
 
@@ -326,6 +343,8 @@ public class ClientBL {
             if(!verifySignature(getUserPublicKey(client.getUser().getId()), message, signature)){
                 return;
             }
+
+            //TODO verify report epoch is the one we asked
 
             if(readList.size() > (N_SERVERS + F)/2){
                 readList.add(new ReadAck(report.getWts(), report));
@@ -338,21 +357,29 @@ public class ClientBL {
         }
     }
 
-    private void handleObtainMyProofsResponse(ObtainMyProofsResponse response, SecretKey key, Client client){
+    private void handleObtainMyProofsResponse(RequestMyProofsResponse response, SecretKey key, Client client, int serverStubId){
         try {
             byte[] encryptedBody = response.getEncryptedServerSignedProofs().toByteArray();
             byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
             ServerSignedProofs serverSignedProofs = ServerSignedProofs.parseFrom(decryptedMessage);
             Proofs proofs = serverSignedProofs.getProofs();
 
-            //Ignore cases where server signature does not match
-            byte[] message = proofs.toByteArray();
-            byte[] signature = serverSignedProofs.getServerSignature().toByteArray();
-            if(!verifySignature(getServerPublicKey(response.getServerId() + 1), message, signature)){
+            if(proofs.getServerId() != serverStubId){
                 return;
             }
 
-            //Ignore cases where my signature does not match the proof TODO Not sure if i need to do this
+            if(proofs.getRid() != rid){
+                return;
+            }
+
+            //Ignore cases where server signature does not match
+            byte[] message = proofs.toByteArray();
+            byte[] signature = serverSignedProofs.getServerSignature().toByteArray();
+            if(!verifySignature(getServerPublicKey(proofs.getServerId() + 1), message, signature)){
+                return;
+            }
+
+            //Ignore cases where my signature does not match the proof TODO this is needed to verify the wts but i don't know how it is done here
             for (SignedLocationProof signedLocationProof : proofs.getLocationProofList()){
                 message = signedLocationProof.getLocationProof().toByteArray();
                 signature = signedLocationProof.getSignature().toByteArray();
@@ -361,8 +388,10 @@ public class ClientBL {
                 }
             }
 
+            //TODO verify proofs are from the epochs we asked
+
             if(readList.size() > (N_SERVERS + F)/2){
-                //TODO no idea where the wts is
+                //TODO no idea where the wts is (its implicit)
                 //readList.add(new ReadAck(report.getWts(), proofs));
             }
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
