@@ -23,10 +23,9 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
 
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        } catch (InvalidParameterException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
-            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+            // TODO verify if this cancels the request without answering to the client
+            responseObserver.onCompleted();
         }
     }
 
@@ -35,12 +34,9 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
         try {
             responseObserver.onNext(this.locationBL.obtainLocationReport(request));
             responseObserver.onCompleted();
-        } catch (NoSuchFieldException e) {
-            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
-        } catch (InvalidParameterException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
-            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+            // TODO verify if this cancels the request without answering to the client
+            responseObserver.onCompleted();
         }
     }
 
@@ -49,10 +45,9 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
         try {
             responseObserver.onNext(this.locationBL.obtainUsersAtLocation(request));
             responseObserver.onCompleted();
-        } catch (InvalidParameterException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
-            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+            // TODO verify if this cancels the request without answering to the client
+            responseObserver.onCompleted();
         }
     }
 
@@ -61,10 +56,9 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
         try {
             responseObserver.onNext(this.locationBL.requestMyProofs(request));
             responseObserver.onCompleted();
-        } catch (InvalidParameterException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
-            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+            // TODO verify if this cancels the request without answering to the client
+            responseObserver.onCompleted();
         }
     }
 }
