@@ -6,7 +6,7 @@ package pt.tecnico.sec.hdlt.communication;
 service LocationServer {
   rpc SubmitLocationReport (SubmitLocationReportRequest) returns (SubmitLocationReportResponse) {}
   rpc ObtainLocationReport (ObtainLocationReportRequest) returns (ObtainLocationReportResponse) {}
-  rpc ObtainMyProofs (ObtainMyProofsRequest) returns (ObtainMyProofsResponse) {}
+  rpc RequestMyProofs (RequestMyProofsRequest) returns (RequestMyProofsResponse) {}
   rpc ObtainUsersAtLocation (ObtainUsersAtLocationRequest) returns (ObtainUsersAtLocationResponse) {}
 }
 
@@ -75,6 +75,7 @@ message SignedAck {
 message Ack {
   int32 wts = 1;
   int32 serverId = 2;
+  string message = 3;
 }
 
 
@@ -100,20 +101,23 @@ message LocationQuery {
 }
 
 message ObtainLocationReportResponse {
-  bytes encryptedServerSignedSignedLocationReport = 1; // Encrypted bytes of message LocationInformation
+  bytes encryptedServerSignedSignedLocationReportRid = 1; // Encrypted bytes of message LocationInformation
   bytes iv = 2;
 }
 
-message ServerSignedSignedLocationReport {
-  SignedLocationReport signedLocationReport = 1;
+message ServerSignedSignedLocationReportRid {
+  SignedLocationReportRid signedLocationReportRid = 1;
   bytes serverSignature = 2;
-  int32 serverId = 3;
 }
 
+message SignedLocationReportRid {
+  SignedLocationReport signedLocationReport = 1;
+  int32 serverId = 2;
+  int32 rid = 3;
+}
 
-
-// ---------------------------------- ObtainMyProofs ----------------------------------
-message ObtainMyProofsRequest {
+// ---------------------------------- RequestMyProofs ----------------------------------
+message RequestMyProofsRequest {
   bytes encryptedSignedProofsQuery = 1;
   bytes key = 2;
   bytes iv = 3;
@@ -126,14 +130,14 @@ message SignedProofsQuery {
 
 message ProofsQuery {
   int32 userId = 1;
-  string nonce = 2;
-  int32 rid = 3;
+  repeated int64 epochs = 2;
+  string nonce = 3;
+  int32 rid = 4;
 }
 
-message ObtainMyProofsResponse {
+message RequestMyProofsResponse {
   bytes encryptedServerSignedProofs = 1; // Encrypted bytes of message LocationInformation
   bytes iv = 2;
-  int32 serverId = 3;
 }
 
 message ServerSignedProofs {
@@ -143,6 +147,8 @@ message ServerSignedProofs {
 
 message Proofs {
   repeated SignedLocationProof locationProof = 1;
+  int32 serverId = 2;
+  int32 rid = 3;
 }
 
 // ---------------------------------- ObtainUsersAtLocationRequest ----------------------------------
