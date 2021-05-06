@@ -45,36 +45,39 @@ public class LocationBL {
     public SubmitLocationReportResponse submitLocationReport(SubmitLocationReportRequest request) throws Exception {
         // Authenticate request
         byte[] key = decryptKey(request.getKey().toByteArray(), this.privateKey);
-        byte[] reportBytes = decryptRequest(request.getEncryptedSignedLocationReport().toByteArray(), key, request.getIv().toByteArray());
-        SignedLocationReport signedReport = SignedLocationReport.parseFrom(reportBytes);
+        byte[] authSignedReportBytes = decryptRequest(request.getEncryptedAuthenticatedSignedLocationReportWrite().toByteArray(), key, request.getIv().toByteArray());
+        AuthenticatedSignedLocationReportWrite authSignedReport = AuthenticatedSignedLocationReportWrite.parseFrom(authSignedReportBytes);
+        SignedLocationReportWrite signedReportWrite = authSignedReport.getSignedLocationReportWrite();
+        SignedLocationReport signedReport = signedReportWrite.getSignedLocationReport();
 
-        if (this.nonceSet.contains(signedReport.getLocationReport().getNonce())) {
-            return submitLocationReportResponse(signedReport.getLocationReport().getWts(), "Invalid nonce", key);
+        if (this.nonceSet.contains(signedReportWrite.getNonce())) {
+            return submitLocationReportResponse(signedReport.getLocationReport().getWts(), signedReportWrite.getRid(),"Invalid nonce", key);
         }
 
-        this.nonceSet.add(signedReport.getLocationReport().getNonce());
-        this.nonceWriteQueue.write(signedReport.getLocationReport().getNonce());
+        this.nonceSet.add(signedReportWrite.getNonce());
+        this.nonceWriteQueue.write(signedReportWrite.getNonce());
 
         if (!verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
-                signedReport.getLocationReport().toByteArray(), signedReport.getUserSignature().toByteArray())) {
+                authSignedReport.getSignedLocationReportWrite().toByteArray(), authSignedReport.getSignature().toByteArray())) {
             throw new InvalidParameterException("Unable to authenticate request");
         }
 
-        return handleSubmitLocationReport(signedReport, key);
+        return handleSubmitLocationReport(signedReportWrite, key);
     }
 
-    public SubmitLocationReportResponse handleSubmitLocationReport(SignedLocationReport signedReport, byte[] key) throws Exception {
+    public SubmitLocationReportResponse handleSubmitLocationReport(SignedLocationReportWrite signedReportWrite, byte[] key) throws Exception {
+        SignedLocationReport signedReport = signedReportWrite.getSignedLocationReport();
         LocationReport report = signedReport.getLocationReport();
         LocationInformation information = report.getLocationInformation();
 
         LocationReportKey rKey = new LocationReportKey(information.getUserId(), information.getEpoch());
         if (this.locationReports.containsKey(rKey)) {
-            return submitLocationReportResponse(report.getWts(), "Repeated location report", key);
+            return submitLocationReportResponse(report.getWts(), signedReportWrite.getRid(), "Repeated location report", key);
         }
 
         boolean validReport = true;
         String message = "OK";
-        if (!validReport(information, report, this.numberByzantineUsers)) {
+        if (!validReport(signedReport, this.numberByzantineUsers)) {
             validReport = false;
             message = "Invalid location report";
         }
@@ -84,11 +87,11 @@ public class LocationBL {
         this.locationReports.put(rKey, signedReport);
         this.messageWriteQueue.write(signedReport);
 
-        return submitLocationReportResponse(report.getWts(), message, key);
+        return submitLocationReportResponse(report.getWts(), signedReportWrite.getRid(), message, key);
     }
 
-    private SubmitLocationReportResponse submitLocationReportResponse(int wts, String message, byte[] key) throws Exception {
-        Ack ack = Ack.newBuilder().setWts(wts).setMessage(message).build();
+    private SubmitLocationReportResponse submitLocationReportResponse(int wts, int rid, String message, byte[] key) throws Exception {
+        Ack ack = Ack.newBuilder().setWts(wts).setRid(rid).setMessage(message).build();
 
         SignedAck signedAck  = SignedAck.newBuilder()
                 .setAck(ack)
@@ -266,15 +269,20 @@ public class LocationBL {
         return CryptographicUtils.symmetricEncrypt(data, CryptographicUtils.convertToSymmetricKey(secretKey), iv);
     }
 
-    private boolean validReport(LocationInformation information, LocationReport report, int numberByzantineUsers) throws Exception {
+    private boolean validReport(SignedLocationReport signedReport, int numberByzantineUsers) throws Exception {
 
-        HashSet<Integer> witnessIds = new HashSet<>();
-
-        if (report.getLocationProofList().size() <= numberByzantineUsers) {
+        if (!verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
+                signedReport.getLocationReport().toByteArray(), signedReport.getUserSignature().toByteArray())) {
             return false;
         }
 
-        for (SignedLocationProof sProof : report.getLocationProofList()) {
+        HashSet<Integer> witnessIds = new HashSet<>();
+
+        if (signedReport.getLocationReport().getLocationProofList().size() <= numberByzantineUsers) {
+            return false;
+        }
+
+        for (SignedLocationProof sProof : signedReport.getLocationReport().getLocationProofList()) {
             LocationProof lProof = sProof.getLocationProof();
 
             if (witnessIds.contains(lProof.getWitnessId())) {
@@ -287,7 +295,7 @@ public class LocationBL {
                 return false;
             }
 
-            if (!verifyLocationProof(information, lProof)) {
+            if (!verifyLocationProof(signedReport.getLocationReport().getLocationInformation(), lProof)) {
                 return false;
             }
         }
