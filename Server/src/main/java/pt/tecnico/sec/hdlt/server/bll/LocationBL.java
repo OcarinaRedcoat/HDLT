@@ -223,7 +223,7 @@ public class LocationBL {
         this.nonceSet.add(proofsQuery.getNonce());
         this.nonceWriteQueue.write(proofsQuery.getNonce());
 
-        if (!verifyHaSignature(proofsQuery.toByteArray(), signedProofsQuery.getSignature().toByteArray())) {
+        if (!verifySignature(proofsQuery.getUserId(), proofsQuery.toByteArray(), signedProofsQuery.getSignature().toByteArray())) {
             throw new InvalidParameterException("Invalid signature");
         }
 
