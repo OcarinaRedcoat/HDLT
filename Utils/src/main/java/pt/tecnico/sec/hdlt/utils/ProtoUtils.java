@@ -54,7 +54,7 @@ public class ProtoUtils {
                 .setRid(rid);
 
         for (int i = 0; i < epochs.size(); i++) {
-            builder.setEpochs(i, epochs.get(i));
+            builder.addEpochs(epochs.get(i));
         }
 
         return builder.build();

@@ -69,7 +69,6 @@ public class ClientBL {
 
         LocationReport.Builder reportBuilder = LocationReport
                 .newBuilder()
-                .setNonce(generateNonce())
                 .setLocationInformation(locationInformation);
 
         final CountDownLatch finishLatch = new CountDownLatch(userStubs.size());
@@ -123,7 +122,11 @@ public class ClientBL {
         this.wts++;
         this.rid++;
         this.acks = 0;
-        LocationReport report = reportBuilder.setWts(this.wts).setRid(this.rid).build();
+        LocationReport report = reportBuilder
+                .setWts(this.wts)
+                .setRid(this.rid)
+                .setNonce(generateNonce())
+                .build();
         return submitLocationReport(report);
     }
 
@@ -172,7 +175,7 @@ public class ClientBL {
         }
 
         finishLatch.await();
-        if(acks > (N_SERVERS + F)/2){
+        if(ackList.size() > (N_SERVERS + F)/2){
             this.acks = 0;
             if(reading){
                 reading = false;
@@ -338,7 +341,7 @@ public class ClientBL {
                 return;
             }
 
-            byte[] message = signedLocationReport.toByteArray();
+            byte[] message = signedLocationReportRid.toByteArray();
             byte[] signature = serverSignedLocationReport.getServerSignature().toByteArray();
             if(!verifySignature(getServerPublicKey(serverId), message, signature)){
                 return;

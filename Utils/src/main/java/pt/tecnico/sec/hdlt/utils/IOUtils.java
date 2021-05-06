@@ -22,7 +22,7 @@ public class IOUtils {
             Scanner scanner = new Scanner(System.in);
             if(scanner.hasNextInt())
                 return scanner.nextInt();
-            System.out.println(errMessage);
+            System.err.println(errMessage);
         } while(true);
     }
 
@@ -31,22 +31,30 @@ public class IOUtils {
             Scanner scanner = new Scanner(System.in);
             if(scanner.hasNextLong())
                 return scanner.nextLong();
-            System.out.println(errMessage);
+            System.err.println(errMessage);
         } while(true);
     }
 
-    public static List<Long> readLongs(String errorMessage){
-        Scanner scanner = new Scanner(System.in);
-        List<Long> list = new ArrayList<>();
+    public static List<Long> readLongs(String errMessage){
+        String line;
+        String[] longs;
+        List<Long> listLongs = new ArrayList<>();
         do{
-            while (scanner.hasNextLong())
-                list.add(scanner.nextLong());
+            line = readLine();
+            longs = line.split(" ");
+            for (String aux : longs) {
+                try {
+                    listLongs.add(Long.parseLong(aux));
+                } catch (Exception e){
 
-            if(list.size() == 0)
-                System.err.println(errorMessage);
-        } while(list.size() != 0);
+                }
+            }
+            if(listLongs.size() == 0){
+                System.err.println(errMessage);
+            }
+        } while(listLongs.size() == 0);
 
-        return list;
+        return listLongs;
     }
 
     public static User readUser(){
