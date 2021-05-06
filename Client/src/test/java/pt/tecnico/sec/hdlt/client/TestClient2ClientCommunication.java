@@ -39,8 +39,8 @@ public class TestClient2ClientCommunication
         Client client7 = new Client(readUser(gridFileLocation, 7), "client_7");
         UserServer userServer7 = new UserServer(client7);
 
-        LocationReport locationReport = userClient1.requestLocationProofs(4L, 1).build();
-        assertNull(locationReport);
+        LocationReport.Builder builder = userClient1.requestLocationProofs(4L, 1);
+        assertNull(builder);
 
         userServer7.stop();
     }
@@ -54,8 +54,8 @@ public class TestClient2ClientCommunication
         Client client13 = new Client(readUser(gridFileLocation, 13), "client_13");
         UserServer userServer13 = new UserServer(client13);
 
-        LocationReport locationReport = userClient1.requestLocationProofs(16L, 0).build();
-        assertNull(locationReport);
+        LocationReport.Builder builder = userClient1.requestLocationProofs(16L, 0);
+        assertNull(builder);
 
         userServer13.stop();
     }
@@ -69,8 +69,8 @@ public class TestClient2ClientCommunication
         Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
         UserServer userServer1 = new UserServer(client1);
 
-        LocationReport locationReport = userClient13.requestLocationProofs(16L, 0).build();
-        assertNull(locationReport);
+        LocationReport.Builder builder = userClient13.requestLocationProofs(16L, 0);
+        assertNull(builder);
 
         userServer1.stop();
     }
