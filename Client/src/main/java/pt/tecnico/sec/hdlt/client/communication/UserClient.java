@@ -92,8 +92,7 @@ public class UserClient {
         try {
             ArrayList<Long> witnessesId = client.getUser().getPositionWithEpoch(epoch).getCloseBy();
             createCloseUsersAsyncStubs(witnessesId);
-            logger.info("Requesting Proof to user close by:");
-
+            System.out.println("Requesting Proof to user close by:");
             reportBuilder = clientBL.requestLocationProofs(userStubs, epoch, f, witnessesId);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InterruptedException |
@@ -111,6 +110,7 @@ public class UserClient {
         LocationReport locationReport;
 
         try {
+            System.out.println("Submitting location report:");
             locationReport = clientBL.submitLocationReport(reportBuilder);
             if(locationReport != null){
                 System.out.println("Submitted report successfully");
@@ -135,13 +135,13 @@ public class UserClient {
         LocationReport report = null;
 
         try {
+            System.out.println("Obtaining location report:");
             report = clientBL.obtainLocationReport(epoch);
             if(report != null){
                 System.out.println("I got the report Report you wanted: ");
                 System.out.println(report);
             } else {
-                System.err.println("No enough server responses for a quorum. This can only happen if " +
-                        "there where more crashes or byzantine servers than supported, or the client crashed");
+                System.out.println("I was unsuccessful at getting the report");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | IOException | InvalidAlgorithmParameterException |
@@ -159,13 +159,13 @@ public class UserClient {
         Proofs proofs = null;
 
         try {
+            System.out.println("Obtaining my proofs:");
             proofs = clientBL.ObtainMyProofs(epochs);
             if(proofs != null){
                 System.out.println("I got the proofs you wanted: ");
                 System.out.println(proofs);
             } else {
-                System.err.println("No enough server responses for a quorum. This can only happen if " +
-                        "there where more crashes or byzantine servers than supported, or the client crashed");
+                System.out.println("I was unsuccessful at getting the proofs");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | IOException | InvalidAlgorithmParameterException |
