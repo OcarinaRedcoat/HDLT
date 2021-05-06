@@ -1,11 +1,8 @@
 package pt.tecnico.sec.hdlt.server.service;
 
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
-
-import java.security.InvalidParameterException;
 
 // https://grpc.github.io/grpc/core/md_doc_statuscodes.html
 public class LocationServerService extends LocationServerGrpc.LocationServerImplBase {

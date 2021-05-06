@@ -17,9 +17,20 @@ service ClientServer {
 // ---------------------------------- SubmitLocationReport ----------------------------------
 
 message SubmitLocationReportRequest {
-  bytes encryptedSignedLocationReport = 1;
+  bytes encryptedAuthenticatedSignedLocationReportWrite = 1;
   bytes key = 2;
   bytes iv = 3;
+}
+
+message AuthenticatedSignedLocationReportWrite {
+  SignedLocationReportWrite signedLocationReportWrite = 1;
+  bytes signature = 2;
+}
+
+message SignedLocationReportWrite {
+  SignedLocationReport signedLocationReport = 1;
+  string nonce = 2;
+  int32 rid = 3;
 }
 
 message SignedLocationReport {
@@ -31,9 +42,7 @@ message SignedLocationReport {
 message LocationReport {
   LocationInformation locationInformation = 1;
   repeated SignedLocationProof locationProof = 2;
-  string nonce = 3;
   int32 wts = 4;
-  int32 rid = 5;
 }
 
 message LocationInformationRequest {
@@ -76,6 +85,7 @@ message SignedAck {
 
 message Ack {
   int32 wts = 1;
+  int32 rid = 2;
   string message = 3;
 }
 
