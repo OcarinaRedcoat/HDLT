@@ -68,6 +68,15 @@ public class ProtoUtils {
                 .build();
     }
 
+    public static SignedLocationReportWrite buildSignedLocationReportWrite(SignedLocationReport signedLocationReport, int rid, String nonce){
+        return SignedLocationReportWrite
+                .newBuilder()
+                .setSignedLocationReport(signedLocationReport)
+                .setNonce(nonce)
+                .setRid(rid)
+                .build();
+    }
+
     public static SignedProofsQuery buildSignedProofsQuery(ProofsQuery proofsQuery, byte[] signature){
         return SignedProofsQuery
                 .newBuilder()
@@ -107,7 +116,16 @@ public class ProtoUtils {
                 .newBuilder()
                 .setKey(ByteString.copyFrom(encryptedKey))
                 .setIv(ByteString.copyFrom(iv.getIV()))
-                .setEncryptedSignedLocationReport(ByteString.copyFrom(encryptedMessage))
+                .setEncryptedAuthenticatedSignedLocationReportWrite(ByteString.copyFrom(encryptedMessage))
                 .build();
     }
+
+    public static AuthenticatedSignedLocationReportWrite buildAuthenticatedSignedLocationReportWrite(SignedLocationReportWrite signedLocationReportWrite, byte[] signature){
+        return AuthenticatedSignedLocationReportWrite
+                .newBuilder()
+                .setSignedLocationReportWrite(signedLocationReportWrite)
+                .setSignature(ByteString.copyFrom(signature))
+                .build();
+    }
+
 }

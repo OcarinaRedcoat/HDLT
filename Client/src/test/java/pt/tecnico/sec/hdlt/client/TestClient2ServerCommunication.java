@@ -31,7 +31,6 @@ public class TestClient2ServerCommunication {
 
     private void startServer(int id, LocationServer server, LocationBL locationBL){
         try {
-            locationBL = new LocationBL(1, "server_1");
             server.start(id, locationBL);
         } catch (Exception e) {
             fail();

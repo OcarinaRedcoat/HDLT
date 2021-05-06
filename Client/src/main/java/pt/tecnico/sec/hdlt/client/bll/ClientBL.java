@@ -29,6 +29,7 @@ import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
 import static pt.tecnico.sec.hdlt.utils.GeneralUtils.F;
 import static pt.tecnico.sec.hdlt.utils.GeneralUtils.N_SERVERS;
 import static pt.tecnico.sec.hdlt.utils.ProtoUtils.*;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSignedLocationReportWrite;
 
 public class ClientBL {
 
@@ -124,8 +125,6 @@ public class ClientBL {
         this.acks = 0;
         LocationReport report = reportBuilder
                 .setWts(this.wts)
-                .setRid(this.rid)
-                .setNonce(generateNonce())
                 .build();
         return submitLocationReport(report);
     }
@@ -138,9 +137,16 @@ public class ClientBL {
         byte[] signature = sign(report.toByteArray(), client.getPrivKey());
         SignedLocationReport signedLocationReport = buildSignedLocationReport(report, signature);
 
+        SignedLocationReportWrite signedLocationReportWrite =
+                buildSignedLocationReportWrite(signedLocationReport, this.rid, generateNonce());
+
+        signature = sign(signedLocationReportWrite.toByteArray(), client.getPrivKey());
+        AuthenticatedSignedLocationReportWrite authenticatedSignedLocationReportWrite =
+                buildAuthenticatedSignedLocationReportWrite(signedLocationReportWrite, signature);
+
         SecretKey key = generateSecretKey();
         IvParameterSpec iv = generateIv();
-        byte[] encryptedMessage = symmetricEncrypt(signedLocationReport.toByteArray(), key, iv);
+        byte[] encryptedMessage = symmetricEncrypt(authenticatedSignedLocationReportWrite.toByteArray(), key, iv);
 
         resetFinishLatch();
         SubmitLocationReportRequest request;
