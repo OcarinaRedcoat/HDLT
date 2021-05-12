@@ -79,12 +79,13 @@ public class ProtoUtils {
                 .build();
     }
 
-    public static SignedLocationReportWrite buildSignedLocationReportWrite(SignedLocationReport signedLocationReport, int rid, String nonce){
+    public static SignedLocationReportWrite buildSignedLocationReportWrite(SignedLocationReport signedLocationReport, int rid, String nonce, Boolean isHa){
         return SignedLocationReportWrite
                 .newBuilder()
                 .setSignedLocationReport(signedLocationReport)
                 .setNonce(nonce)
                 .setRid(rid)
+                .setIsHa(isHa)
                 .build();
     }
 

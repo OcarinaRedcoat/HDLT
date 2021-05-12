@@ -138,7 +138,7 @@ public class ClientBL {
         SignedLocationReport signedLocationReport = buildSignedLocationReport(report, signature);
 
         SignedLocationReportWrite signedLocationReportWrite =
-                buildSignedLocationReportWrite(signedLocationReport, this.rid, generateNonce());
+                buildSignedLocationReportWrite(signedLocationReport, this.rid, generateNonce(), false);
 
         signature = sign(signedLocationReportWrite.toByteArray(), client.getPrivKey());
         AuthenticatedSignedLocationReportWrite authenticatedSignedLocationReportWrite =

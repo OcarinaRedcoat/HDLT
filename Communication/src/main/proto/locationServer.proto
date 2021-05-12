@@ -31,6 +31,7 @@ message SignedLocationReportWrite {
   SignedLocationReport signedLocationReport = 1;
   string nonce = 2;
   int32 rid = 3;
+  bool isHa = 4;
 }
 
 message SignedLocationReport {
