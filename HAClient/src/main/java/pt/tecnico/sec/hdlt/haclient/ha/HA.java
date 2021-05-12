@@ -10,11 +10,9 @@ import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.getKeyPairFromKeyStor
 
 public class HA {
 
-    private static HA INSTANCE = null;
-
     private KeyPair keyPair;
 
-    private HA() {
+    public HA() {
         try{
             this.keyPair = getKeyPairFromKeyStore(
                     new File("../keys/ha_1.jks"),
@@ -33,14 +31,6 @@ public class HA {
 
     public PublicKey getPublicKey() {
         return keyPair.getPublic();
-    }
-
-
-    public static HA getInstance(){
-        if (INSTANCE == null){
-            INSTANCE = new HA();
-        }
-        return INSTANCE;
     }
 
 }

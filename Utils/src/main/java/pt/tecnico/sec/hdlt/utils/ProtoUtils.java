@@ -46,6 +46,17 @@ public class ProtoUtils {
                 .build();
     }
 
+    public static LocationQuery buildHALocationQuery(int clientId, Long epoch, int rid){
+        return LocationQuery
+                .newBuilder()
+                .setUserId(clientId)
+                .setEpoch(epoch)
+                .setIsHA(true)
+                .setNonce(generateNonce())
+                .setRid(rid)
+                .build();
+    }
+
     public static ProofsQuery buildProofsQuery(Client client, int rid, List<Long> epochs){
         ProofsQuery.Builder builder = ProofsQuery
                 .newBuilder()
@@ -128,4 +139,38 @@ public class ProtoUtils {
                 .build();
     }
 
+    public static Position buildPosition(long x, long y){
+        return Position
+                .newBuilder()
+                .setX(x)
+                .setY(y)
+                .build();
+    }
+
+    public static UsersAtLocationQuery buildUsersAtLocationQuery(Position pos, long epoch, int rid){
+        return UsersAtLocationQuery
+                .newBuilder()
+                .setPos(pos)
+                .setEpoch(epoch)
+                .setNonce(generateNonce())
+                .setRid(rid)
+                .build();
+    }
+
+    public static SignedUsersAtLocationQuery buildSignedUsersAtLocationQuery(UsersAtLocationQuery query, byte[] signature){
+        return SignedUsersAtLocationQuery
+            .newBuilder()
+            .setUsersAtLocationQuery(query)
+            .setSignature(ByteString.copyFrom(signature))
+            .build();
+    }
+
+    public static ObtainUsersAtLocationRequest buildObtainUsersAtLocationRequest(byte[] request, IvParameterSpec iv, byte[] key){
+        return ObtainUsersAtLocationRequest
+            .newBuilder()
+            .setEncryptedSignedUsersAtLocationQuery(ByteString.copyFrom(request))
+            .setIv(ByteString.copyFrom(iv.getIV()))
+            .setKey(ByteString.copyFrom(key))
+            .build();
+    }
 }

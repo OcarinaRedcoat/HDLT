@@ -21,53 +21,93 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.*;
+
 public class HAClient {
 
     private static HAClient INSTANCE = null;
     private static HA ha = null;
 
-    private LocationServerGrpc.LocationServerBlockingStub serverStub;
-    private ManagedChannel serverChannel;
+
+    private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
+    private ArrayList<ManagedChannel> serverChannels;
+
+
+//    private LocationServerGrpc.LocationServerBlockingStub serverStub;
+//    private ManagedChannel serverChannel;
     private static final Logger logger = Logger.getLogger(HAClient.class.getName());
 
-    private HAClient(String host, int port) {
-        createServerChannel(host, port);
-        HA.getInstance();
+    private HABL haBL;
+
+     public HAClient(HA ha) {
+        createServerStubs();
+        this.haBL = new HABL(ha, serverStubs);
+        //HA.getInstance();
     }
 
-
-    private void createServerChannel(String host, int port){
-        String target = host + ":" + String.valueOf(port);
-        serverChannel = ManagedChannelBuilder.forTarget(target)
-                .usePlaintext()
-                .build();
-        serverStub = LocationServerGrpc.newBlockingStub(serverChannel);
+    private void createServerStubs(){
+        serverStubs = new ArrayList<>();
+        serverChannels = new ArrayList<>();
+        for (int i = 0; i < N_SERVERS; i++) {
+            String target = SERVER_HOST + ":" + (SERVER_START_PORT + i);
+            ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
+                    .usePlaintext()
+                    .build();
+            serverChannels.add(channel);
+            LocationServerGrpc.LocationServerStub stub = LocationServerGrpc.newStub(channel);
+            serverStubs.add(stub);
+        }
     }
 
     public void serverShutdown(){
-        serverChannel.shutdownNow();
+         for (ManagedChannel channel : serverChannels){
+             channel.shutdownNow();
+         }
+
+         serverChannels = new ArrayList<>();
+         serverStubs = new ArrayList<>();
     }
 
-    public static HAClient getInstance() {
-        if (INSTANCE == null)
-            INSTANCE = new HAClient("localhost", 50051);
-        return INSTANCE;
-    }
 
-    public SignedLocationReport obtainLocationReport(int userId, Long epoch){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public LocationReport obtainLocationReport(int userId, Long epoch){
         logger.info("Obtain Location Report:");
 
-        SignedLocationReport report = null;
+        LocationReport report = null;
 
-        try{
-            report = HABL.obtainLocationReport(userId, epoch, serverStub);
-            System.out.println(report);
+        try {
+            report = haBL.obtainLocationReport(userId, epoch);
+            if (report != null){
+                System.out.println("I got the Report that you wanted for user " + userId);
+                System.out.println(report);
+            } else {
+                System.out.println("I was unsuccessful at getting the Report for user " + userId);
+            }
         } catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
                 | InvalidAlgorithmParameterException | IOException | CertificateException e) {
-            System.err.println(e.getMessage());
+            //System.err.println(e.getMessage());
+            System.err.println("Something went wrong!");
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         return report;
@@ -75,13 +115,13 @@ public class HAClient {
     /* Params: pos, ep .....
      * Specification: returns a list of users that were at position pos at epoch ep
      */
-    public List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep) {
+    public List<LocationReport> obtainUsersAtLocation(long x, long y, long ep) {
         logger.info("Obtain Users At Location:");
 
-        List<SignedLocationReport> listReport;
+        List<LocationReport> listReport;
 
         try{
-            listReport = HABL.obtainUsersAtLocation(x , y , ep, serverStub);
+            listReport = haBL.obtainUsersAtLocation(x , y , ep);
             return listReport;
         }catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException
@@ -89,6 +129,8 @@ public class HAClient {
             System.err.println(e.getMessage());
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus().getDescription());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         return null;

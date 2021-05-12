@@ -13,7 +13,7 @@ import static pt.tecnico.sec.hdlt.utils.IOUtils.readUser;
 
 public class TestHA
 {
-
+/*
     private static final String gridFileLocation = "../grids.output.json";
 
     private LocationServer server;
@@ -49,7 +49,7 @@ public class TestHA
             e.printStackTrace();
         }
     }
-
+*/
 //    TODO asks for input
 //    @Test
 //    public void obtainLocationReport()

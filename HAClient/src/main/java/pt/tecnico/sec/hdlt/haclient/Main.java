@@ -1,7 +1,9 @@
 package pt.tecnico.sec.hdlt.haclient;
 
+import pt.tecnico.sec.hdlt.communication.LocationReport;
 import pt.tecnico.sec.hdlt.communication.SignedLocationReport;
 import pt.tecnico.sec.hdlt.haclient.communication.HAClient;
+import pt.tecnico.sec.hdlt.haclient.ha.HA;
 
 import java.util.List;
 
@@ -23,7 +25,8 @@ public class Main {
         long epoch;
         int userId, command;
 
-        HAClient.getInstance();
+        HA myHA = new HA();
+        HAClient haClient = new HAClient(myHA);
 
         System.out.println("||| HA INITIALIZED |||");
         do {
@@ -33,15 +36,15 @@ public class Main {
                 case 1:
                     epoch = readEpoch();
                     userId = readUserId();
-                    SignedLocationReport report = HAClient.getInstance().obtainLocationReport(userId, epoch);
+                    LocationReport report = haClient.obtainLocationReport(userId, epoch);
                     break;
                 case 2:
                     epoch = readEpoch();
                     long x = readPosX();
                     long y = readPosY();
-                    List<SignedLocationReport> listReport = HAClient.getInstance().obtainUsersAtLocation(x, y, epoch);
+                    List<LocationReport> listReport = haClient.obtainUsersAtLocation(x, y, epoch);
                     if (listReport != null) {
-                        for (SignedLocationReport rep: listReport) {
+                        for (LocationReport rep: listReport) {
                             System.out.println(rep);
                         }
                     }
@@ -53,6 +56,6 @@ public class Main {
             }
         } while (command != 3);
 
-        HAClient.getInstance().serverShutdown();
+        haClient.serverShutdown();
     }
 }

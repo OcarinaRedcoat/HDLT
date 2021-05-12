@@ -1,14 +1,19 @@
 package pt.tecnico.sec.hdlt.haclient.bll;
 
 import com.google.protobuf.ByteString;
+import io.grpc.stub.StreamObserver;
+import pt.tecnico.sec.hdlt.entities.ReadAck;
+import pt.tecnico.sec.hdlt.haclient.communication.HAClient;
 import pt.tecnico.sec.hdlt.haclient.ha.HA;
 import pt.tecnico.sec.hdlt.communication.*;
 
+import javax.annotation.Signed;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.xml.stream.Location;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -17,58 +22,173 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Stream;
 
-import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
+import static pt.tecnico.sec.hdlt.utils.DependableUtils.*;
+import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
+import static pt.tecnico.sec.hdlt.utils.FileUtils.getUserPublicKey;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.F;
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.N_SERVERS;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.*;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSignedLocationReportWrite;
 
 public class HABL {
 
-    public static SignedLocationReport obtainLocationReport(int userId, Long epoch, LocationServerGrpc.LocationServerBlockingStub serverStub)
-            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
-            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException, CertificateException {
+    private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
+    private CountDownLatch finishLatch;
+    private HA ha;
 
-        LocationQuery locationQuery = LocationQuery
-                .newBuilder()
-                .setUserId(userId)
-                .setEpoch(epoch)
-                .setIsHA(true)
-                .build();
+    private int wts;
+    private int acks;
+    private int rid;
+    private List<ReadAck> readList;
+    private List<Ack> ackList;
+    private Boolean reading;
 
-        byte[] signature = sign(locationQuery.toByteArray(), HA.getInstance().getPrivateKey());
 
-        SignedLocationQuery signedLocationQuery = SignedLocationQuery
-                .newBuilder()
-                .setLocationQuery(locationQuery)
-                .setSignature(ByteString.copyFrom(signature))
-                .build();
+    public HABL(HA ha, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs){
+       this.ha = ha;
+       this.serverStubs = serverStubs;
+       this.wts = 0;
+       this.acks = 0;
+       this.rid = 0;
+       this.readList = new LinkedList<>();
+       this.ackList = new LinkedList<>();
+       this.reading = false;
+    }
+
+    private void resetFinishLatch(){ this.finishLatch = new CountDownLatch(serverStubs.size());}
+
+
+
+
+
+
+    //FIXME: client privkey....
+    public LocationReport submitLocationReport(SignedLocationReport signedLocationReport) throws BadPaddingException,
+            InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException,
+            NoSuchPaddingException, InvalidKeyException, SignatureException, InterruptedException, CertificateException,
+            IOException {
+
+        SignedLocationReportWrite signedLocationReportWrite =
+                buildSignedLocationReportWrite(signedLocationReport, this.rid, generateNonce());
+
+        byte[] signature = sign(signedLocationReportWrite.toByteArray(), ha.getPrivateKey());
+        AuthenticatedSignedLocationReportWrite authenticatedSignedLocationReportWrite =
+                buildAuthenticatedSignedLocationReportWrite(signedLocationReportWrite, signature);
 
         SecretKey key = generateSecretKey();
+        IvParameterSpec iv = generateIv();
+        byte[] encryptedMessage = symmetricEncrypt(authenticatedSignedLocationReportWrite.toByteArray(), key, iv);
 
+        resetFinishLatch();
+        SubmitLocationReportRequest request;
+        StreamObserver<SubmitLocationReportResponse> observer;
+        for (int i = 0; i < serverStubs.size(); i++) {
+            final int serverId = i + 1;
+            observer = new StreamObserver<>() {
+                @Override
+                public void onNext(SubmitLocationReportResponse response) {
+                    handleSubmitLocationReportResponse(response, key, serverId);
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    finishLatch.countDown();
+                }
+
+                @Override
+                public void onCompleted() {
+                    finishLatch.countDown();
+                    if(ackList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+                        do{
+                            finishLatch.countDown();
+                        } while(finishLatch.getCount() != 0);
+                    }
+                }
+            };
+
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(serverId));
+            request = buildSubmitLocationReportRequest(encryptedKey, encryptedMessage, iv);
+            serverStubs.get(i).submitLocationReport(request, observer);
+        }
+
+        finishLatch.await();
+        if(ackList.size() > (N_SERVERS + F)/2){
+            this.acks = 0;
+            if(reading){
+                reading = false;
+            }
+            return signedLocationReport.getLocationReport();
+        }
+        return null;
+    }
+
+
+
+    public LocationReport obtainLocationReport(int userId, Long epoch)
+            throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchPaddingException,
+            BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException, CertificateException, InterruptedException {
+
+        this.rid++;
+        this.acks = 0;
+        this.readList = new LinkedList<>();
+        this.reading = true;
+
+        LocationQuery locationQuery = buildHALocationQuery(userId, epoch, rid);
+        byte[] signature = sign(locationQuery.toByteArray(), ha.getPrivateKey());
+
+        SignedLocationQuery signedLocationQuery = buildSignedLocationQuery(locationQuery, signature);
+
+        SecretKey key = generateSecretKey();
         IvParameterSpec iv = generateIv();
         byte[] encryptedMessage = symmetricEncrypt(signedLocationQuery.toByteArray(), key, iv);
-        byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
 
-        ObtainLocationReportRequest request = ObtainLocationReportRequest
-                .newBuilder()
-                .setKey(ByteString.copyFrom(encryptedKey))
-                .setIv(ByteString.copyFrom(iv.getIV()))
-                .setEncryptedSignedLocationQuery(ByteString.copyFrom(encryptedMessage))
-                .build();
+        resetFinishLatch();
+        ObtainLocationReportRequest request;
+        StreamObserver<ObtainLocationReportResponse> observer;
+        for (int i=0; i < serverStubs.size(); i++){
+            final int serverId = i + 1;
+            observer = new StreamObserver<ObtainLocationReportResponse>() {
+                @Override
+                public void onNext(ObtainLocationReportResponse obtainLocationReportResponse) {
+                    handleObtainLocationReportResponse(obtainLocationReportResponse, key, serverId, userId, epoch);
+                }
 
-        ObtainLocationReportResponse response = serverStub.obtainLocationReport(request);
-        byte[] decryptedMessage = symmetricDecrypt(
-                response.getEncryptedServerSignedSignedLocationReport().toByteArray(),
-                key,
-                new IvParameterSpec(response.getIv().toByteArray()));
+                @Override
+                public void onError(Throwable throwable) {
+                    finishLatch.countDown();
+                }
 
-        ServerSignedSignedLocationReport signedSignedLocationReport = ServerSignedSignedLocationReport.parseFrom(decryptedMessage);
+                @Override
+                public void onCompleted() {
+                    finishLatch.countDown();
+                    if (readList.size() > (N_SERVERS + F)/2){
+                        do{
+                            finishLatch.countDown();
+                        } while(finishLatch.getCount() != 0);
+                    }
+                }
+            };
 
-        SignedLocationReport report = signedSignedLocationReport.getSignedLocationReport();
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(serverId));
+            request = buildObtainLocationReportRequest(encryptedKey, encryptedMessage, iv);
+            serverStubs.get(i).obtainLocationReport(request, observer);
+        }
 
-        if(!verifySignature(getServerPublicKey(1), report.toByteArray(),
-                signedSignedLocationReport.getServerSignature().toByteArray())){
-            throw new InvalidKeyException("Invalid server signature");
+        finishLatch.await();
+
+        SignedLocationReport signedLocationReport = null;
+        LocationReport report = null;
+        if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+            signedLocationReport = (SignedLocationReport) highestAck(readList).getValue();
+            this.readList = new LinkedList<>();
+            report = submitLocationReport(signedLocationReport);
         }
 
         return report;
@@ -76,58 +196,179 @@ public class HABL {
     /* Params: pos, ep .....
      * Specification: returns a list of users that were at position pos at epoch ep
      */
-    public static List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep, LocationServerGrpc.LocationServerBlockingStub serverStub)
+    public List<LocationReport> obtainUsersAtLocation(long x, long y, long ep)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidAlgorithmParameterException,
-            BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, CertificateException {
-        Position pos = Position.newBuilder()
-                .setX(x)
-                .setY(y)
-                .build();
+            BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, CertificateException, InterruptedException {
 
-        UsersAtLocationQuery usersAtLocationQuery = UsersAtLocationQuery
-                .newBuilder()
-                .setPos(pos)
-                .setEpoch(ep)
-                .setNonce(generateNonce())
-                .build();
+        this.rid++;
+        this.acks = 0;
+        this.readList = new LinkedList<>();
+        this.reading = true;
 
-        byte[] signature = sign(usersAtLocationQuery.toByteArray(), HA.getInstance().getPrivateKey());
+        Position pos = buildPosition(x, y);
 
-        SignedUsersAtLocationQuery signedUsersAtLocationQuery = SignedUsersAtLocationQuery
-                .newBuilder()
-                .setUsersAtLocationQuery(usersAtLocationQuery)
-                .setSignature(ByteString.copyFrom(signature))
-                .build();
+        UsersAtLocationQuery usersAtLocationQuery = buildUsersAtLocationQuery(pos, ep, rid);
+
+        byte[] signature = sign(usersAtLocationQuery.toByteArray(), ha.getPrivateKey());
+
+        SignedUsersAtLocationQuery signedUsersAtLocationQuery = buildSignedUsersAtLocationQuery(usersAtLocationQuery, signature);
+
 
         SecretKey key = generateSecretKey();
-
         IvParameterSpec iv = generateIv();
         byte[] encryptedMessage = symmetricEncrypt(signedUsersAtLocationQuery.toByteArray(), key, iv);
-        byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
 
-        ObtainUsersAtLocationRequest obtainUsersAtLocationRequest = ObtainUsersAtLocationRequest
-                .newBuilder()
-                .setEncryptedSignedUsersAtLocationQuery(ByteString.copyFrom(encryptedMessage))
-                .setIv(ByteString.copyFrom(iv.getIV()))
-                .setKey(ByteString.copyFrom(encryptedKey))
-                .build();
 
-        ObtainUsersAtLocationResponse response = serverStub.obtainUsersAtLocation(obtainUsersAtLocationRequest);
 
-        byte[] decryptedMessage = symmetricDecrypt(response.getEncryptedSignedLocationReportList().toByteArray(),
-                key,
-                new IvParameterSpec(response.getIv().toByteArray()));
 
-        ServerSignedSignedLocationReportList signedSignedLocationReportList = ServerSignedSignedLocationReportList.parseFrom(decryptedMessage);
-        SignedLocationReportList signedLocationReportList = signedSignedLocationReportList.getSignedLocationReportList();
+        resetFinishLatch();
+        ObtainUsersAtLocationRequest request;
+        StreamObserver<ObtainUsersAtLocationResponse> observer;
+        for (int i=0; i < serverStubs.size(); i++){
+            final int serverId = i + 1;
+            observer = new StreamObserver<ObtainUsersAtLocationResponse>() {
+                @Override
+                public void onNext(ObtainUsersAtLocationResponse obtainUsersAtLocationResponse) {
+                        handleObtainUsersAtLocation(obtainUsersAtLocationResponse, key, serverId, ep, x, y);
+                }
 
-        List<SignedLocationReport> list = new ArrayList<>(signedLocationReportList.getSignedLocationReportListList());
+                @Override
+                public void onError(Throwable throwable) {
+                    finishLatch.countDown();
+                }
 
-        if(!verifySignature(getServerPublicKey(1), signedLocationReportList.toByteArray(),
-                signedSignedLocationReportList.getServerSignature().toByteArray())){
-            throw new InvalidKeyException("Invalid server signature");
+
+                @Override
+                public void onCompleted() {
+                    finishLatch.countDown();
+                    if (readList.size() > (N_SERVERS + F)/2){
+                        do{
+                            finishLatch.countDown();
+                        } while(finishLatch.getCount() != 0);
+                    }
+                }
+
+            };
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
+
+            request = buildObtainUsersAtLocationRequest( encryptedMessage, iv, encryptedKey);
+            serverStubs.get(i).obtainUsersAtLocation(request, observer);
         }
 
-        return list;
+        finishLatch.await();
+
+
+        List<LocationReport> locationReports = null;
+
+        if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+            locationReports = (List<LocationReport>) highestAck(readList).getValue(); //TODO: check this
+            this.readList = new LinkedList<>();
+        }
+
+        return locationReports;
     }
+
+
+
+    private void handleObtainLocationReportResponse(ObtainLocationReportResponse response, SecretKey key, int serverId, int userId,Long epoch){
+        try {
+            byte[] encryptedBody = response.getEncryptedServerSignedSignedLocationReportRid().toByteArray();
+            byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
+            ServerSignedSignedLocationReportRid serverSignedLocationReport = ServerSignedSignedLocationReportRid.parseFrom(decryptedMessage);
+            SignedLocationReportRid signedLocationReportRid = serverSignedLocationReport.getSignedLocationReportRid();
+            SignedLocationReport signedLocationReport = signedLocationReportRid.getSignedLocationReport();
+            LocationReport report = signedLocationReport.getLocationReport();
+
+            if(signedLocationReportRid.getRid() != rid || report.getLocationInformation().getEpoch() != epoch){
+                return;
+            }
+
+            byte[] message = signedLocationReportRid.toByteArray();
+            byte[] signature = serverSignedLocationReport.getServerSignature().toByteArray();
+            if(!verifySignature(getServerPublicKey(serverId), message, signature)){
+                return;
+            }
+
+            message = report.toByteArray();
+            signature = signedLocationReport.getUserSignature().toByteArray();
+            if(!verifySignature(getUserPublicKey(userId), message, signature)){
+                return;
+            }
+
+            readList.add(new ReadAck(report.getWts(), signedLocationReport));
+        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
+                NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
+                SignatureException e) {
+            System.err.println("Received an incorrect server response with message: " + e.getMessage());
+        }
+    }
+
+
+    //TODO: verify
+    private void handleObtainUsersAtLocation(ObtainUsersAtLocationResponse response, SecretKey key, int serverId, Long epoch, long x, long y){
+        try {
+            byte[] encryptedBody = response.getEncryptedSignedLocationReportList().toByteArray();
+            byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
+            ServerSignedSignedLocationReportList serverSignedSignedLocationReportList = ServerSignedSignedLocationReportList.parseFrom(decryptedMessage);
+            SignedLocationReportList signedLocationReportList = serverSignedSignedLocationReportList.getSignedLocationReportList();
+            List<SignedLocationReport> signedLocationReports = signedLocationReportList.getSignedLocationReportListList();
+
+            byte[] serverSignedSignedLocationReportListMessage = serverSignedSignedLocationReportList.toByteArray();
+            byte[] serverSignature = serverSignedSignedLocationReportList.getServerSignature().toByteArray();
+
+            if (signedLocationReportList.getRid() != rid ||
+                    !verifySignature(getServerPublicKey(serverId), serverSignedSignedLocationReportListMessage, serverSignature)){
+                return;
+            }
+
+            List<LocationReport> reportList = new ArrayList<>();
+            for (SignedLocationReport signedLocationReport: signedLocationReports){
+                LocationReport report = signedLocationReport.getLocationReport();
+                if(report.getLocationInformation().getEpoch() != epoch || report.getLocationInformation().getPosition().getX() != x ||
+                    report.getLocationInformation().getPosition().getY() != y){
+                    return;
+                }
+
+                byte[] message = signedLocationReport.toByteArray();
+                byte[] signature = signedLocationReport.getUserSignature().toByteArray();
+                int userId = signedLocationReport.getLocationReport().getLocationInformation().getUserId();
+                if (!verifySignature(getUserPublicKey(userId), message, signature)){
+                    return;
+                }
+                reportList.add(report);
+            }
+
+            readList.add(new ReadAck(1, reportList));
+
+        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
+                NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
+                SignatureException e) {
+            System.err.println("Received an incorrect server response with message: " + e.getMessage());
+        }
+    }
+
+    private void handleSubmitLocationReportResponse(SubmitLocationReportResponse response, SecretKey key, int serverId){
+        try {
+            acks++;
+
+            byte[] encryptedSignedAck = response.getEncryptedSignedAck().toByteArray();
+            byte[] decryptedSignedAck = symmetricDecrypt(encryptedSignedAck, key, new IvParameterSpec(response.getIv().toByteArray()));
+
+            SignedAck signedAck = SignedAck.parseFrom(decryptedSignedAck);
+            Ack ack = signedAck.getAck();
+
+            byte[] message = ack.toByteArray();
+            byte[] signature = signedAck.getSignature().toByteArray();
+            if(ack.getWts() == wts && verifySignature(getServerPublicKey(serverId), message, signature)){
+                ackList.add(ack);
+            }
+        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
+                NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
+                SignatureException e) {
+
+            System.err.println("Received an incorrect server response with message: " + e.getMessage());
+        }
+    }
+
+
 }
