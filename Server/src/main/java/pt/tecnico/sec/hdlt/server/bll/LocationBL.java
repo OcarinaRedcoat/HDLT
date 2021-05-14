@@ -57,9 +57,13 @@ public class LocationBL {
         this.nonceSet.add(signedReportWrite.getNonce());
         this.nonceWriteQueue.write(signedReportWrite.getNonce());
 
-        if (!verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
-                authSignedReport.getSignedLocationReportWrite().toByteArray(), authSignedReport.getSignature().toByteArray())) {
-            throw new InvalidParameterException("Unable to authenticate request");
+        boolean verifySignature = signedReportWrite.getIsHa() ?
+                verifyHaSignature(authSignedReport.getSignedLocationReportWrite().toByteArray(), authSignedReport.getSignature().toByteArray()) :
+                verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
+                        authSignedReport.getSignedLocationReportWrite().toByteArray(), authSignedReport.getSignature().toByteArray());
+
+        if (!verifySignature) {
+            throw new InvalidParameterException("Invalid location query signature");
         }
 
         return handleSubmitLocationReport(signedReportWrite, key);
