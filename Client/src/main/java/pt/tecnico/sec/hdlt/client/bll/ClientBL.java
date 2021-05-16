@@ -138,7 +138,7 @@ public class ClientBL {
         SignedLocationReport signedLocationReport = buildSignedLocationReport(report, signature);
 
         SignedLocationReportWrite signedLocationReportWrite =
-                buildSignedLocationReportWrite(signedLocationReport, this.rid, generateNonce(), false);
+                buildSignedLocationReportWrite(signedLocationReport, this.rid, false);
 
         signature = sign(signedLocationReportWrite.toByteArray(), client.getPrivKey());
         AuthenticatedSignedLocationReportWrite authenticatedSignedLocationReportWrite =
@@ -200,7 +200,7 @@ public class ClientBL {
         this.readList = new LinkedList<>();
         this.reading = true;
 
-        LocationQuery locationQuery = buildLocationQuery(client, epoch, rid);
+        LocationQuery locationQuery = buildLocationQuery(client.getUser().getId(), epoch, rid, false);
         byte[] signature = sign(locationQuery.toByteArray(), client.getPrivKey());
         SignedLocationQuery signedLocationQuery = buildSignedLocationQuery(locationQuery, signature);
 

@@ -6,9 +6,12 @@ import pt.tecnico.sec.hdlt.entities.Client;
 
 import javax.crypto.spec.IvParameterSpec;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.generateNonce;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.isValidPoW;
 
 public class ProtoUtils {
 
@@ -36,39 +39,40 @@ public class ProtoUtils {
                 .build();
     }
 
-    public static LocationQuery buildLocationQuery(Client client, Long epoch, int rid){
-        return LocationQuery
-                .newBuilder()
-                .setUserId(client.getUser().getId())
-                .setEpoch(epoch)
-                .setNonce(generateNonce())
-                .setRid(rid)
-                .build();
+    public static LocationQuery buildLocationQuery(int clientId, Long epoch, int rid, Boolean isHa)
+            throws IOException, NoSuchAlgorithmException {
+        LocationQuery locationQuery;
+        do{
+            locationQuery = LocationQuery
+                    .newBuilder()
+                    .setUserId(clientId)
+                    .setEpoch(epoch)
+                    .setIsHA(isHa)
+                    .setNonce(generateNonce())
+                    .setRid(rid)
+                    .build();
+        } while (!isValidPoW(locationQuery));
+        return locationQuery;
     }
 
-    public static LocationQuery buildHALocationQuery(int clientId, Long epoch, int rid){
-        return LocationQuery
-                .newBuilder()
-                .setUserId(clientId)
-                .setEpoch(epoch)
-                .setIsHA(true)
-                .setNonce(generateNonce())
-                .setRid(rid)
-                .build();
-    }
+    public static ProofsQuery buildProofsQuery(Client client, int rid, List<Long> epochs)
+            throws IOException, NoSuchAlgorithmException {
+        ProofsQuery proofsQuery;
+        ProofsQuery.Builder builder;
+        do{
+            builder = ProofsQuery
+                    .newBuilder()
+                    .setUserId(client.getUser().getId())
+                    .setNonce(generateNonce())
+                    .setRid(rid);
 
-    public static ProofsQuery buildProofsQuery(Client client, int rid, List<Long> epochs){
-        ProofsQuery.Builder builder = ProofsQuery
-                .newBuilder()
-                .setUserId(client.getUser().getId())
-                .setNonce(generateNonce())
-                .setRid(rid);
+            for (int i = 0; i < epochs.size(); i++) {
+                builder.addEpochs(epochs.get(i));
+            }
 
-        for (int i = 0; i < epochs.size(); i++) {
-            builder.addEpochs(epochs.get(i));
-        }
-
-        return builder.build();
+            proofsQuery = builder.build();
+        } while (!isValidPoW(proofsQuery));
+        return proofsQuery;
     }
 
     public static SignedLocationQuery buildSignedLocationQuery(LocationQuery locationQuery, byte[] signature){
@@ -79,14 +83,19 @@ public class ProtoUtils {
                 .build();
     }
 
-    public static SignedLocationReportWrite buildSignedLocationReportWrite(SignedLocationReport signedLocationReport, int rid, String nonce, Boolean isHa){
-        return SignedLocationReportWrite
-                .newBuilder()
-                .setSignedLocationReport(signedLocationReport)
-                .setNonce(nonce)
-                .setRid(rid)
-                .setIsHa(isHa)
-                .build();
+    public static SignedLocationReportWrite buildSignedLocationReportWrite(SignedLocationReport signedLocationReport, int rid, Boolean isHa)
+            throws IOException, NoSuchAlgorithmException {
+        SignedLocationReportWrite signedLocationReportWrite;
+        do{
+            signedLocationReportWrite = SignedLocationReportWrite
+                    .newBuilder()
+                    .setSignedLocationReport(signedLocationReport)
+                    .setNonce(generateNonce())
+                    .setRid(rid)
+                    .setIsHa(isHa)
+                    .build();
+        } while (!isValidPoW(signedLocationReportWrite));
+        return signedLocationReportWrite;
     }
 
     public static SignedProofsQuery buildSignedProofsQuery(ProofsQuery proofsQuery, byte[] signature){
@@ -148,14 +157,19 @@ public class ProtoUtils {
                 .build();
     }
 
-    public static UsersAtLocationQuery buildUsersAtLocationQuery(Position pos, long epoch, int rid){
-        return UsersAtLocationQuery
-                .newBuilder()
-                .setPos(pos)
-                .setEpoch(epoch)
-                .setNonce(generateNonce())
-                .setRid(rid)
-                .build();
+    public static UsersAtLocationQuery buildUsersAtLocationQuery(Position pos, long epoch, int rid)
+            throws IOException, NoSuchAlgorithmException {
+        UsersAtLocationQuery usersAtLocationQuery;
+        do{
+            usersAtLocationQuery = UsersAtLocationQuery
+                    .newBuilder()
+                    .setPos(pos)
+                    .setEpoch(epoch)
+                    .setNonce(generateNonce())
+                    .setRid(rid)
+                    .build();
+        } while (!isValidPoW(usersAtLocationQuery));
+        return usersAtLocationQuery;
     }
 
     public static SignedUsersAtLocationQuery buildSignedUsersAtLocationQuery(UsersAtLocationQuery query, byte[] signature){

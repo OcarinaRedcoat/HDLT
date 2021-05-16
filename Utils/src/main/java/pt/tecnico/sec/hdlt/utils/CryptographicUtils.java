@@ -3,8 +3,10 @@ package pt.tecnico.sec.hdlt.utils;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -23,7 +25,8 @@ public class CryptographicUtils {
     private static final int ASYMMETRIC_KEY_SIZE = 2048;
     private static final String SIGN_ALGORITHM = "SHA256withRSA";
     private static final String HASH_ALGORITHM = "SHA-256";
-    private static final int NONCE_SIZE = 20;
+    private static final int NONCE_SIZE = 30;
+    private static final String LEADINGPOWZEROS = "000";
 
     public static SecretKey generateSecretKey() throws NoSuchAlgorithmException {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(SYMMETRIC_ALGORITHM);
@@ -114,6 +117,14 @@ public class CryptographicUtils {
         return Base64.getEncoder().encodeToString(md.digest(data.getBytes()));
     }
 
+    public static String createMessageDigest(Object obj) throws NoSuchAlgorithmException, IOException {
+        MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream os = new ObjectOutputStream(out);
+        os.writeObject(obj);
+        return Base64.getEncoder().encodeToString(md.digest(out.toByteArray()));
+    }
+
     public static boolean verifyMessageDigest(String data, String digest) throws NoSuchAlgorithmException {
         String computedDigest = createMessageDigest(data);
         return computedDigest.equals(digest);
@@ -154,5 +165,10 @@ public class CryptographicUtils {
             stringBuilder.append(secureRandom.nextInt(10));
         }
         return stringBuilder.toString();
+    }
+
+    public static Boolean isValidPoW(Object obj) throws IOException, NoSuchAlgorithmException {
+        String hash = createMessageDigest(obj);
+        return hash.startsWith(LEADINGPOWZEROS);
     }
 }

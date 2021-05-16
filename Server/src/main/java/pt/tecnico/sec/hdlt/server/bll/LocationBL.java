@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.isValidPoW;
+
 public class LocationBL {
 
     private final MessageWriteQueue messageWriteQueue;
@@ -49,6 +51,10 @@ public class LocationBL {
         AuthenticatedSignedLocationReportWrite authSignedReport = AuthenticatedSignedLocationReportWrite.parseFrom(authSignedReportBytes);
         SignedLocationReportWrite signedReportWrite = authSignedReport.getSignedLocationReportWrite();
         SignedLocationReport signedReport = signedReportWrite.getSignedLocationReport();
+
+        if(!isValidPoW(signedReportWrite)){
+            return submitLocationReportResponse(signedReport.getLocationReport().getWts(), signedReportWrite.getRid(),"Invalid pow", key);
+        }
 
         if (this.nonceSet.contains(signedReportWrite.getNonce())) {
             return submitLocationReportResponse(signedReport.getLocationReport().getWts(), signedReportWrite.getRid(),"Invalid nonce", key);
@@ -120,6 +126,10 @@ public class LocationBL {
         SignedLocationQuery sLocationQuery = SignedLocationQuery.parseFrom(queryBytes);
         LocationQuery locationQuery = sLocationQuery.getLocationQuery();
 
+        if(!isValidPoW(locationQuery)){
+            throw new InvalidParameterException("Invalid pow");
+        }
+
         if (this.nonceSet.contains(locationQuery.getNonce())) {
             throw new InvalidParameterException("Invalid nonce");
         }
@@ -167,6 +177,10 @@ public class LocationBL {
 
         SignedUsersAtLocationQuery sUsersAtLocationQuery = SignedUsersAtLocationQuery.parseFrom(queryBytes);
         UsersAtLocationQuery usersAtLocationQuery = sUsersAtLocationQuery.getUsersAtLocationQuery();
+
+        if(!isValidPoW(usersAtLocationQuery)){
+            throw new InvalidParameterException("Invalid pow");
+        }
 
         if (this.nonceSet.contains(usersAtLocationQuery.getNonce())) {
             throw new InvalidParameterException("Invalid nonce");
@@ -219,6 +233,10 @@ public class LocationBL {
 
         SignedProofsQuery signedProofsQuery = SignedProofsQuery.parseFrom(queryBytes);
         ProofsQuery proofsQuery = signedProofsQuery.getProofsQuery();
+
+        if(!isValidPoW(proofsQuery)){
+            throw new InvalidParameterException("Invalid pow");
+        }
 
         if (this.nonceSet.contains(proofsQuery.getNonce())) {
             throw new InvalidParameterException("Invalid nonce");

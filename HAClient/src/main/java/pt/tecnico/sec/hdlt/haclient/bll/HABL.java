@@ -76,7 +76,7 @@ public class HABL {
             IOException {
 
         SignedLocationReportWrite signedLocationReportWrite =
-                buildSignedLocationReportWrite(signedLocationReport, this.rid, generateNonce());
+                buildSignedLocationReportWrite(signedLocationReport, this.rid, true);
 
         byte[] signature = sign(signedLocationReportWrite.toByteArray(), ha.getPrivateKey());
         AuthenticatedSignedLocationReportWrite authenticatedSignedLocationReportWrite =
