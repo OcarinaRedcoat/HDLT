@@ -1,6 +1,7 @@
 package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.sun.jdi.InternalException;
 import pt.tecnico.sec.hdlt.server.entities.BroadcastVars;
 import pt.tecnico.sec.hdlt.utils.FileUtils;
@@ -23,6 +24,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.isValidPoW;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.verifySignature;
+import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 
 public class LocationBL {
 
@@ -105,7 +108,7 @@ public class LocationBL {
         signedReport = signedReport.toBuilder().setValid(validReport).build();
 
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, new BroadcastVars());
-        if(aux != null){
+        if(aux != null && aux.getSentEcho()){
             return submitLocationReportResponse(signedReportWrite.getRid(), "Repeated location report", key);
         }
         //TODO broadcast echo and ready after with listeners
@@ -294,12 +297,76 @@ public class LocationBL {
                 .build();
     }
 
-    public EchoResponse echo(EchoRequest request) {
-        return null;
+    //TODO Fazer PoW? vale a pena fazer as verificações todas visto que a unica lógica é adicionar aos echos?
+    public EchoResponse echo(EchoRequest request) throws Exception {
+        byte[] key = decryptKey(request.getEncryptedKey().toByteArray(), this.privateKey);
+        byte[] authSignedEchoBytes = decryptRequest(request.getEncryptedServerSignedEcho().toByteArray(), key, request.getIv().toByteArray());
+        ServerSignedEcho serverSignedEcho = ServerSignedEcho.parseFrom(authSignedEchoBytes);
+        Echo echo = serverSignedEcho.getEcho();
+        SignedLocationReport signedReport = echo.getSignedLocationReport();
+
+        if (this.nonceSet.contains(echo.getNonce())) {
+            return EchoResponse.newBuilder().build();
+        }
+
+        this.nonceSet.add(echo.getNonce());
+        this.nonceWriteQueue.write(echo.getNonce());
+
+        if(verifyServerSignature(serverSignedEcho.getServerId(), serverSignedEcho.getEcho().toByteArray(),
+                serverSignedEcho.getSignature().toByteArray())){
+            return EchoResponse.newBuilder().build();
+        }
+
+        if(verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
+                signedReport.getLocationReport().toByteArray(),
+                signedReport.getUserSignature().toByteArray())){
+            return EchoResponse.newBuilder().build();
+        }
+
+        BroadcastVars broadcastVars = new BroadcastVars();
+        broadcastVars.getEchos().add(serverSignedEcho);
+        BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
+        if(aux != null){ //if it already add elements then just add it to the list
+            aux.getEchos().add(serverSignedEcho);
+        }
+
+        return EchoResponse.newBuilder().build();
     }
 
-    public ReadyResponse ready(ReadyRequest request) {
-        return null;
+    //TODO Fazer PoW? vale a pena fazer as verificações todas visto que a unica lógica é adicionar aos readys?
+    public ReadyResponse ready(ReadyRequest request) throws Exception {
+        byte[] key = decryptKey(request.getEncryptedKey().toByteArray(), this.privateKey);
+        byte[] authSignedEchoBytes = decryptRequest(request.getEncryptedServerSignedReady().toByteArray(), key, request.getIv().toByteArray());
+        ServerSignedEcho serverSignedEcho = ServerSignedEcho.parseFrom(authSignedEchoBytes);
+        Echo echo = serverSignedEcho.getEcho();
+        SignedLocationReport signedReport = echo.getSignedLocationReport();
+
+        if (this.nonceSet.contains(echo.getNonce())) {
+            return ReadyResponse.newBuilder().build();
+        }
+
+        this.nonceSet.add(echo.getNonce());
+        this.nonceWriteQueue.write(echo.getNonce());
+
+        if(verifyServerSignature(serverSignedEcho.getServerId(), serverSignedEcho.getEcho().toByteArray(),
+                serverSignedEcho.getSignature().toByteArray())){
+            return ReadyResponse.newBuilder().build();
+        }
+
+        if(verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
+                signedReport.getLocationReport().toByteArray(),
+                signedReport.getUserSignature().toByteArray())){
+            return ReadyResponse.newBuilder().build();
+        }
+
+        BroadcastVars broadcastVars = new BroadcastVars();
+        broadcastVars.getEchos().add(serverSignedEcho);
+        BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
+        if(aux != null){ //if it already add elements then just add it to the list
+            aux.getEchos().add(serverSignedEcho);
+        }
+
+        return ReadyResponse.newBuilder().build();
     }
 
     private byte[] decryptKey(byte[] key, PrivateKey privateKey) throws Exception {
@@ -351,6 +418,10 @@ public class LocationBL {
 
     private boolean verifySignature(int userId, byte[] message, byte[] signature) throws Exception {
         return CryptographicUtils.verifySignature(FileUtils.getUserPublicKey(userId), message, signature);
+    }
+
+    private boolean verifyServerSignature(int serverId, byte[] message, byte[] signature) throws Exception {
+        return CryptographicUtils.verifySignature(FileUtils.getServerPublicKey(serverId), message, signature);
     }
 
     private boolean verifyLocationProof(LocationInformation lInfo, LocationProof lProof) {

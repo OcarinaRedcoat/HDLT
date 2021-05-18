@@ -203,7 +203,21 @@ message ObtainUsersAtLocationResponse {
 // ---------------------------------- ECHO of reliable broadcast ----------------------------------
 
 message EchoRequest {
+  bytes encryptedServerSignedEcho = 1;
+  bytes encryptedKey = 2;
+  bytes iv = 3;
+}
 
+message ServerSignedEcho {
+  Echo echo = 1;
+  bytes signature = 2;
+  int32 serverId = 3;
+}
+
+//used as POW
+message Echo {
+  SignedLocationReport signedLocationReport = 1;
+  string nonce = 2;
 }
 
 message EchoResponse {
@@ -213,7 +227,20 @@ message EchoResponse {
 // ---------------------------------- READY of reliable broadcast ----------------------------------
 
 message ReadyRequest {
+  bytes encryptedServerSignedReady = 1;
+  bytes encryptedKey = 2;
+  bytes iv = 3;
+}
 
+message ServerSignedReady {
+  Ready ready = 1;
+  bytes signature = 2;
+}
+
+//used as POW
+message Ready {
+  SignedLocationReport signedLocationReport = 1;
+  string nonce = 2;
 }
 
 message ReadyResponse {
