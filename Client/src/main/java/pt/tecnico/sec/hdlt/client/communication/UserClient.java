@@ -141,7 +141,7 @@ public class UserClient {
                 System.out.println("I got the report Report you wanted: ");
                 System.out.println(report);
             } else {
-                System.out.println("I was unsuccessful at getting the report");
+                System.out.println("I was unsuccessful at getting the report (Probably didn't get a quorum)");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | IOException | InvalidAlgorithmParameterException |
@@ -165,7 +165,7 @@ public class UserClient {
                 System.out.println("I got the proofs you wanted: ");
                 System.out.println(proofs);
             } else {
-                System.out.println("I was unsuccessful at getting the proofs");
+                System.out.println("I was unsuccessful at getting the proofs (Probably didn't get a quorum)");
             }
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchPaddingException |
                 BadPaddingException | IllegalBlockSizeException | IOException | InvalidAlgorithmParameterException |

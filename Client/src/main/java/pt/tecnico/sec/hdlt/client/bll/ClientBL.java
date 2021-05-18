@@ -1,12 +1,10 @@
 package pt.tecnico.sec.hdlt.client.bll;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import io.grpc.Deadline;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.*;
-import pt.tecnico.sec.hdlt.entities.ReadAck;
+import pt.tecnico.sec.hdlt.entities.ListOfReceivedMyProofs;
+import pt.tecnico.sec.hdlt.entities.LocationReports;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -16,13 +14,11 @@ import javax.crypto.spec.IvParameterSpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static pt.tecnico.sec.hdlt.utils.DependableUtils.*;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getUserPublicKey;
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
@@ -37,20 +33,18 @@ public class ClientBL {
     private CountDownLatch finishLatch;
     private Client client;
 
-    private int wts;
-    private int acks;
     private int rid;
-    private List<ReadAck> readList;
+    private ListOfReceivedMyProofs listOfReceivedMyProofs;
+    private LocationReports locationReports;
     private List<Ack> ackList;
     private Boolean reading;
 
     public ClientBL(Client client, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
         this.client = client;
         this.serverStubs = serverStubs;
-        this.wts = 0;
-        this.acks = 0;
         this.rid = 0;
-        this.readList = new LinkedList<>();
+        this.listOfReceivedMyProofs = new ListOfReceivedMyProofs();
+        this.locationReports = new LocationReports();
         this.ackList = new LinkedList<>();
         this.reading = false;
     }
@@ -120,11 +114,8 @@ public class ClientBL {
             SignatureException, NoSuchPaddingException, InvalidAlgorithmParameterException, CertificateException,
             IOException {
 
-        this.wts++;
         this.rid++;
-        this.acks = 0;
         LocationReport report = reportBuilder
-                .setWts(this.wts)
                 .build();
         return submitLocationReport(report);
     }
@@ -182,7 +173,6 @@ public class ClientBL {
 
         finishLatch.await();
         if(ackList.size() > (N_SERVERS + F)/2){
-            this.acks = 0;
             if(reading){
                 reading = false;
             }
@@ -196,8 +186,7 @@ public class ClientBL {
             SignatureException, InterruptedException, CertificateException, IOException {
 
         this.rid++;
-        this.acks = 0;
-        this.readList = new LinkedList<>();
+        this.locationReports = new LocationReports();
         this.reading = true;
 
         LocationQuery locationQuery = buildLocationQuery(client.getUser().getId(), epoch, rid, false);
@@ -227,7 +216,7 @@ public class ClientBL {
                 @Override
                 public void onCompleted() {
                     finishLatch.countDown();
-                    if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+                    if(locationReports.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
                         do{
                             finishLatch.countDown();
                         } while(finishLatch.getCount() != 0);
@@ -243,9 +232,9 @@ public class ClientBL {
         finishLatch.await();
 
         LocationReport report = null;
-        if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            report = (LocationReport) highestAck(readList).getValue();
-            this.readList = new LinkedList<>();
+        if(locationReports.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+            report = locationReports.getBestLocationReport();
+            this.locationReports = new LocationReports();
             report = submitLocationReport(report);
         }
         return report;
@@ -256,7 +245,7 @@ public class ClientBL {
             IllegalBlockSizeException, InterruptedException, CertificateException, IOException {
 
         this.rid++;
-        this.readList = new LinkedList<>();
+        this.listOfReceivedMyProofs = new ListOfReceivedMyProofs();
 
         ProofsQuery proofsQuery = buildProofsQuery(client, rid, epochs);
         byte[] signature = sign(proofsQuery.toByteArray(), client.getPrivKey());
@@ -286,7 +275,7 @@ public class ClientBL {
                 @Override
                 public void onCompleted() {
                     finishLatch.countDown();
-                    if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+                    if(listOfReceivedMyProofs.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
                         do{
                             finishLatch.countDown();
                         } while(finishLatch.getCount() != 0);
@@ -302,9 +291,9 @@ public class ClientBL {
         finishLatch.await();
 
         Proofs proofs = null;
-        if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            proofs = biggestProofsList(readList);
-            this.readList = new LinkedList<>();
+        if(listOfReceivedMyProofs.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+            proofs = listOfReceivedMyProofs.getBestProofs();
+            listOfReceivedMyProofs = new ListOfReceivedMyProofs();
         }
         return proofs;
     }
@@ -313,8 +302,6 @@ public class ClientBL {
 
     private void handleSubmitLocationReportResponse(SubmitLocationReportResponse response, SecretKey key, int serverId){
         try {
-            acks++;
-
             byte[] encryptedSignedAck = response.getEncryptedSignedAck().toByteArray();
             byte[] decryptedSignedAck = symmetricDecrypt(encryptedSignedAck, key, new IvParameterSpec(response.getIv().toByteArray()));
 
@@ -323,13 +310,10 @@ public class ClientBL {
 
             byte[] message = ack.toByteArray();
             byte[] signature = signedAck.getSignature().toByteArray();
-            if(ack.getWts() == wts && verifySignature(getServerPublicKey(serverId), message, signature)){
+            if(verifySignature(getServerPublicKey(serverId), message, signature)){
                 ackList.add(ack);
             }
-        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
-                NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
-                SignatureException e) {
-
+        } catch (Exception e) {
             System.err.println("Received an incorrect server response with message: " + e.getMessage());
         }
     }
@@ -359,10 +343,8 @@ public class ClientBL {
                 return;
             }
 
-            readList.add(new ReadAck(report.getWts(), report));
-        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
-                NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
-                SignatureException e) {
+            locationReports.addLocationReport(report);
+        } catch (Exception e) {
             System.err.println("Received an incorrect server response with message: " + e.getMessage());
         }
     }
@@ -393,10 +375,8 @@ public class ClientBL {
                 }
             }
 
-            readList.add(new ReadAck(1, proofs));
-        } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
-                NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
-                SignatureException e) {
+            listOfReceivedMyProofs.addReceivedProofs(proofs);
+        } catch (Exception e) {
             System.err.println("Received an incorrect server response with message: " + e.getMessage());
         }
     }

@@ -44,7 +44,6 @@ message SignedLocationReport {
 message LocationReport {
   LocationInformation locationInformation = 1;
   repeated SignedLocationProof locationProof = 2;
-  int32 wts = 4;
 }
 
 message LocationInformationRequest {
@@ -86,7 +85,6 @@ message SignedAck {
 }
 
 message Ack {
-  int32 wts = 1;
   int32 rid = 2;
   string message = 3;
 }
