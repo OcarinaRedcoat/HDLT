@@ -2,6 +2,7 @@ package pt.tecnico.sec.hdlt.server.bll;
 
 import com.google.protobuf.ByteString;
 import com.sun.jdi.InternalException;
+import pt.tecnico.sec.hdlt.server.entities.BroadcastVars;
 import pt.tecnico.sec.hdlt.utils.FileUtils;
 import pt.tecnico.sec.hdlt.utils.GeneralUtils;
 import pt.tecnico.sec.hdlt.communication.*;
@@ -12,9 +13,11 @@ import pt.tecnico.sec.hdlt.server.utils.NonceWriteQueue;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 
 import javax.crypto.spec.IvParameterSpec;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,21 +29,28 @@ public class LocationBL {
     private final MessageWriteQueue messageWriteQueue;
     private final NonceWriteQueue nonceWriteQueue;
     private final ConcurrentHashMap<LocationReportKey, SignedLocationReport> locationReports;
+    private ConcurrentHashMap<SignedLocationReport, BroadcastVars> broadcast;
     private final Set<String> nonceSet;
-    private final PrivateKey privateKey;
     private final int numberByzantineUsers;
+    private PrivateKey privateKey;
 
-    public LocationBL(int serverId, String serverPwd) throws Exception {
+    public LocationBL(int serverId, String serverPwd) {
         Path messageFilePath = Paths.get("../Server/src/main/resources/server_" + serverId + ".txt");
         Path nonceFilePath = Paths.get("../Server/src/main/resources/server_" + serverId + "_nonce.txt");
 
         this.messageWriteQueue = new MessageWriteQueue(messageFilePath);
         this.nonceWriteQueue = new NonceWriteQueue(nonceFilePath);
-
         this.locationReports = ReadFile.createReportsMap(messageFilePath);
+        this.broadcast = new ConcurrentHashMap<>();
         this.nonceSet = ReadFile.createNonceSet(nonceFilePath);
 
-        this.privateKey = CryptographicUtils.getServerPrivateKey(serverId, serverPwd);
+        try {
+            this.privateKey = CryptographicUtils.getServerPrivateKey(serverId, serverPwd);
+        } catch (Exception e) {
+            System.err.println("There was a problem reading the server private key. Make sure the keyStore exists and is correct.");
+            System.exit(1);
+        }
+
         this.numberByzantineUsers = GeneralUtils.F;
     }
 
@@ -53,11 +63,11 @@ public class LocationBL {
         SignedLocationReport signedReport = signedReportWrite.getSignedLocationReport();
 
         if(!isValidPoW(signedReportWrite)){
-            return submitLocationReportResponse(signedReport.getLocationReport().getWts(), signedReportWrite.getRid(),"Invalid pow", key);
+            return submitLocationReportResponse(signedReportWrite.getRid(),"Invalid pow", key);
         }
 
         if (this.nonceSet.contains(signedReportWrite.getNonce())) {
-            return submitLocationReportResponse(signedReport.getLocationReport().getWts(), signedReportWrite.getRid(),"Invalid nonce", key);
+            return submitLocationReportResponse(signedReportWrite.getRid(),"Invalid nonce", key);
         }
 
         this.nonceSet.add(signedReportWrite.getNonce());
@@ -82,7 +92,7 @@ public class LocationBL {
 
         LocationReportKey rKey = new LocationReportKey(information.getUserId(), information.getEpoch());
         if (this.locationReports.containsKey(rKey)) {
-            return submitLocationReportResponse(report.getWts(), signedReportWrite.getRid(), "Repeated location report", key);
+            return submitLocationReportResponse(signedReportWrite.getRid(), "Repeated location report", key);
         }
 
         boolean validReport = true;
@@ -94,14 +104,20 @@ public class LocationBL {
 
         signedReport = signedReport.toBuilder().setValid(validReport).build();
 
+        BroadcastVars aux = broadcast.putIfAbsent(signedReport, new BroadcastVars());
+        if(aux != null){
+            return submitLocationReportResponse(signedReportWrite.getRid(), "Repeated location report", key);
+        }
+        //TODO broadcast echo and ready after with listeners
+
         this.locationReports.put(rKey, signedReport);
         this.messageWriteQueue.write(signedReport);
 
-        return submitLocationReportResponse(report.getWts(), signedReportWrite.getRid(), message, key);
+        return submitLocationReportResponse(signedReportWrite.getRid(), message, key);
     }
 
-    private SubmitLocationReportResponse submitLocationReportResponse(int wts, int rid, String message, byte[] key) throws Exception {
-        Ack ack = Ack.newBuilder().setWts(wts).setRid(rid).setMessage(message).build();
+    private SubmitLocationReportResponse submitLocationReportResponse(int rid, String message, byte[] key) throws Exception {
+        Ack ack = Ack.newBuilder().setRid(rid).setMessage(message).build();
 
         SignedAck signedAck  = SignedAck.newBuilder()
                 .setAck(ack)
@@ -276,6 +292,14 @@ public class LocationBL {
                 .setEncryptedServerSignedProofs(ByteString.copyFrom(encryptResponse(serverSignedProofs.toByteArray(), secretKey, iv)))
                 .setIv(ByteString.copyFrom(iv.getIV()))
                 .build();
+    }
+
+    public EchoResponse echo(EchoRequest request) {
+        return null;
+    }
+
+    public ReadyResponse ready(ReadyRequest request) {
+        return null;
     }
 
     private byte[] decryptKey(byte[] key, PrivateKey privateKey) throws Exception {

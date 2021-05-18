@@ -58,4 +58,26 @@ public class LocationServerService extends LocationServerGrpc.LocationServerImpl
             responseObserver.onCompleted();
         }
     }
+
+    @Override
+    public void echo(EchoRequest request, StreamObserver<EchoResponse> responseObserver) {
+        try {
+            responseObserver.onNext(this.locationBL.echo(request));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            // TODO verify if this cancels the request without answering to the client
+            responseObserver.onCompleted();
+        }
+    }
+
+    @Override
+    public void ready(ReadyRequest request, StreamObserver<ReadyResponse> responseObserver) {
+        try {
+            responseObserver.onNext(this.locationBL.ready(request));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            // TODO verify if this cancels the request without answering to the client
+            responseObserver.onCompleted();
+        }
+    }
 }

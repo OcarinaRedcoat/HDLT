@@ -1,6 +1,5 @@
-package pt.tecnico.sec.hdlt.client.communication;
+package pt.tecnico.sec.hdlt.client.services;
 
-import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import pt.tecnico.sec.hdlt.entities.Client;
 
@@ -8,22 +7,21 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-public class UserServer {
+public class Server {
 
-    private static final Logger logger = Logger.getLogger(UserServer.class.getName());
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
 
-    private Server server;
+    private io.grpc.Server server;
 
-    public UserServer(Client client) {
+    public Server(Client client) {
         start(client);
-        server = null;
     }
 
-    public void start(Client client) {
+    private void start(Client client) {
         try{
             /* The port on which the server should run */
             server = ServerBuilder.forPort(client.getUser().getPort())
-                    .addService(new UserImpl(client))
+                    .addService(new Impl(client))
                     .build()
                     .start();
             logger.info("Server started, listening on " + client.getUser().getPort());
@@ -32,8 +30,7 @@ public class UserServer {
                 public void run() {
                     // Use stderr here since the logger may have been reset by its JVM shutdown hook.
                     System.err.println("*** shutting down gRPC server since JVM is shutting down");
-                    UserServer.this.stop();
-                    System.err.println("*** server shut down");
+                    Server.this.stop();
                 }
             });
         } catch (IOException e) {
@@ -46,7 +43,7 @@ public class UserServer {
         if (server != null) {
             try{
                 server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
-                System.out.println("Server shut down.");
+                System.err.println("*** server shut down");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

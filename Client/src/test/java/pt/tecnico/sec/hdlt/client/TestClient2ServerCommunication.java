@@ -1,10 +1,6 @@
 package pt.tecnico.sec.hdlt.client;
 
 import org.junit.Test;
-import pt.tecnico.sec.hdlt.client.communication.UserClient;
-import pt.tecnico.sec.hdlt.client.communication.UserServer;
-import pt.tecnico.sec.hdlt.entities.Client;
-import pt.tecnico.sec.hdlt.communication.LocationReport;
 import pt.tecnico.sec.hdlt.server.LocationServer;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 
@@ -29,13 +25,13 @@ public class TestClient2ServerCommunication {
         return null;
     }
 
-    private void startServer(int id, LocationServer server, LocationBL locationBL){
-        try {
-            server.start(id, locationBL);
-        } catch (Exception e) {
-            fail();
-        }
-    }
+//    private void startServer(int id, LocationServer server, LocationBL locationBL){
+//        try {
+//            server.start(id, locationBL);
+//        } catch (Exception e) {
+//            fail();
+//        }
+//    }
 
     private void stopServer(LocationServer server, LocationBL locationBL){
         try {

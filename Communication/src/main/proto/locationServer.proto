@@ -8,9 +8,11 @@ service LocationServer {
   rpc ObtainLocationReport (ObtainLocationReportRequest) returns (ObtainLocationReportResponse) {}
   rpc RequestMyProofs (RequestMyProofsRequest) returns (RequestMyProofsResponse) {}
   rpc ObtainUsersAtLocation (ObtainUsersAtLocationRequest) returns (ObtainUsersAtLocationResponse) {}
+  rpc Echo (EchoRequest) returns (EchoResponse) {}
+  rpc Ready (ReadyRequest) returns (ReadyResponse) {}
 }
 
-service ClientServer {
+service ClientToClient {
   rpc RequestLocationProof (LocationInformationRequest) returns (SignedLocationProof) {}
 }
 
@@ -197,3 +199,26 @@ message ObtainUsersAtLocationResponse {
   bytes encryptedSignedLocationReportList = 1; // Encrypted bytes of message LocationInformation
   bytes iv = 2;
 }
+
+// ---------------------------------- ECHO of reliable broadcast ----------------------------------
+
+message EchoRequest {
+
+}
+
+message EchoResponse {
+
+}
+
+// ---------------------------------- READY of reliable broadcast ----------------------------------
+
+message ReadyRequest {
+
+}
+
+message ReadyResponse {
+
+}
+
+
+

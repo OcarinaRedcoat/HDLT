@@ -1,5 +1,7 @@
 package pt.tecnico.sec.hdlt.server.entities;
 
+import pt.tecnico.sec.hdlt.communication.LocationReport;
+
 import java.util.Objects;
 
 public class LocationReportKey {

@@ -17,8 +17,9 @@ import java.security.spec.InvalidKeySpecException;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getUserPublicKey;
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.sign;
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.verifySignature;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.*;
 
-public class ServerBL {
+public class ResponseBL {
 
     public static SignedLocationProof requestLocationProof(Client client, LocationInformationRequest req, StreamObserver<SignedLocationProof> responseObserver)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidParameterException, IOException,
@@ -26,6 +27,7 @@ public class ServerBL {
 
         LocationInformation locationInformation = req.getLocationInformation();
         int requesterId = locationInformation.getUserId();
+        long epoch = locationInformation.getEpoch();
 
         if(!verifySignature(getUserPublicKey(requesterId), locationInformation.toByteArray(),
                 req.getSignature().toByteArray())){
@@ -33,30 +35,12 @@ public class ServerBL {
             throw new InvalidParameterException("Invalid location report client signature");
         }
 
-        User me = client.getUser();
-        long epoch = locationInformation.getEpoch();
-
-        if(me.isCloseTo(requesterId, epoch)) {
-            Position position = Position
-                    .newBuilder()
-                    .setX(me.getPositionWithEpoch(epoch).getxPos())
-                    .setY(me.getPositionWithEpoch(epoch).getyPos())
-                    .build();
-
-            LocationProof proof = LocationProof
-                    .newBuilder()
-                    .setProverId(requesterId)
-                    .setWitnessId(client.getUser().getId())
-                    .setEpoch(epoch)
-                    .setPosition(position)
-                    .build();
+        if(client.getUser().isCloseTo(requesterId, epoch)) {
+            LocationProof proof = buildLocationProof(client, epoch, requesterId);
 
             byte[] signature = sign(proof.toByteArray(), client.getPrivKey());
 
-            return SignedLocationProof.newBuilder()
-                    .setLocationProof(proof)
-                    .setSignature(ByteString.copyFrom(signature))
-                    .build();
+            return buildSignedLocationProof(proof, signature);
         } else {
             throw new InvalidParameterException("Invalid requester Id, i am not close to him.");
         }

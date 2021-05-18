@@ -1,9 +1,9 @@
-package pt.tecnico.sec.hdlt.client.communication;
+package pt.tecnico.sec.hdlt.client.services;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import pt.tecnico.sec.hdlt.client.bll.ClientBL;
+import pt.tecnico.sec.hdlt.client.bll.RequestBL;
 import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 
@@ -13,9 +13,9 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,21 +25,20 @@ public class UserClient {
 
     private static final Logger logger = Logger.getLogger(UserClient.class.getName());
 
-    private ArrayList<ClientServerGrpc.ClientServerStub> userStubs;
+    private ArrayList<ClientToClientGrpc.ClientToClientStub> userStubs;
     private ArrayList<ManagedChannel> userChannels;
 
     private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
     private ArrayList<ManagedChannel> serverChannels;
 
-    private ClientBL clientBL;
-
+    private RequestBL requestBL;
     private Client client;
 
     public UserClient(Client client){
         this.userStubs = new ArrayList<>();
         this.userChannels = new ArrayList<>();
         createServerStubs();
-        this.clientBL = new ClientBL(client, serverStubs);
+        this.requestBL = new RequestBL(client, serverStubs);
         this.client = client;
     }
 
@@ -52,7 +51,7 @@ public class UserClient {
                     .usePlaintext()
                     .build();
             userChannels.add(channel);
-            ClientServerGrpc.ClientServerStub stub = ClientServerGrpc.newStub(channel);
+            ClientToClientGrpc.ClientToClientStub stub = ClientToClientGrpc.newStub(channel);
             userStubs.add(stub);
         }
     }
@@ -73,7 +72,11 @@ public class UserClient {
 
     private void closeUserChannels(){
         for (ManagedChannel channel : userChannels) {
-            channel.shutdownNow();
+            try {
+                channel.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         userChannels = new ArrayList<>();
         userStubs = new ArrayList<>();
@@ -81,7 +84,11 @@ public class UserClient {
 
     public void closeServerChannel(){
         for (ManagedChannel channel : serverChannels) {
-            channel.shutdownNow();
+            try {
+                channel.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         serverChannels = new ArrayList<>();
         serverStubs = new ArrayList<>();
@@ -93,7 +100,7 @@ public class UserClient {
             ArrayList<Long> witnessesId = client.getUser().getPositionWithEpoch(epoch).getCloseBy();
             createCloseUsersAsyncStubs(witnessesId);
             System.out.println("Requesting Proof to user close by:");
-            reportBuilder = clientBL.requestLocationProofs(userStubs, epoch, f, witnessesId);
+            reportBuilder = requestBL.requestLocationProofs(userStubs, epoch, f, witnessesId);
             System.out.println("Got the location proofs");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InterruptedException |
                 InvalidParameterException e) {
@@ -111,7 +118,7 @@ public class UserClient {
 
         try {
             System.out.println("Submitting location report:");
-            locationReport = clientBL.submitLocationReport(reportBuilder);
+            locationReport = requestBL.submitLocationReport(reportBuilder);
             if(locationReport != null){
                 System.out.println("Submitted report successfully");
                 return true;
@@ -136,7 +143,7 @@ public class UserClient {
 
         try {
             System.out.println("Obtaining location report:");
-            report = clientBL.obtainLocationReport(epoch);
+            report = requestBL.obtainLocationReport(epoch);
             if(report != null){
                 System.out.println("I got the report Report you wanted: ");
                 System.out.println(report);
@@ -160,7 +167,7 @@ public class UserClient {
 
         try {
             System.out.println("Obtaining my proofs:");
-            proofs = clientBL.ObtainMyProofs(epochs);
+            proofs = requestBL.ObtainMyProofs(epochs);
             if(proofs != null){
                 System.out.println("I got the proofs you wanted: ");
                 System.out.println(proofs);

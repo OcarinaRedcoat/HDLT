@@ -22,6 +22,16 @@ public class ProtoUtils {
                 .build();
     }
 
+    public static LocationProof buildLocationProof(Client client, Long epoch, int requesterId){
+        return LocationProof
+                .newBuilder()
+                .setProverId(requesterId)
+                .setWitnessId(client.getUser().getId())
+                .setEpoch(epoch)
+                .setPosition(buildPosition(client, epoch))
+                .build();
+    }
+
     public static LocationInformation buildLocationInformation(Client client, Long epoch){
         return LocationInformation
                 .newBuilder()
@@ -79,6 +89,13 @@ public class ProtoUtils {
         return SignedLocationQuery
                 .newBuilder()
                 .setLocationQuery(locationQuery)
+                .setSignature(ByteString.copyFrom(signature))
+                .build();
+    }
+
+    public static SignedLocationProof buildSignedLocationProof(LocationProof proof, byte[] signature){
+        return SignedLocationProof.newBuilder()
+                .setLocationProof(proof)
                 .setSignature(ByteString.copyFrom(signature))
                 .build();
     }

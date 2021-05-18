@@ -27,7 +27,7 @@ import static pt.tecnico.sec.hdlt.utils.GeneralUtils.N_SERVERS;
 import static pt.tecnico.sec.hdlt.utils.ProtoUtils.*;
 import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSignedLocationReportWrite;
 
-public class ClientBL {
+public class RequestBL {
 
     private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
     private CountDownLatch finishLatch;
@@ -39,7 +39,7 @@ public class ClientBL {
     private List<Ack> ackList;
     private Boolean reading;
 
-    public ClientBL(Client client, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
+    public RequestBL(Client client, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
         this.client = client;
         this.serverStubs = serverStubs;
         this.rid = 0;
@@ -54,7 +54,7 @@ public class ClientBL {
     }
 
 
-    public LocationReport.Builder requestLocationProofs(ArrayList<ClientServerGrpc.ClientServerStub> userStubs,
+    public LocationReport.Builder requestLocationProofs(ArrayList<ClientToClientGrpc.ClientToClientStub> userStubs,
                                                         Long epoch, int f, ArrayList<Long> witnessesId)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InterruptedException {
 

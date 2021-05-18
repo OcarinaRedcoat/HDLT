@@ -1,17 +1,12 @@
 package pt.tecnico.sec.hdlt.client;
 
-import pt.tecnico.sec.hdlt.client.communication.UserClient;
-import pt.tecnico.sec.hdlt.client.communication.UserServer;
-import pt.tecnico.sec.hdlt.communication.SignedLocationReportWrite;
+import pt.tecnico.sec.hdlt.client.services.UserClient;
+import pt.tecnico.sec.hdlt.client.services.Server;
 import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-
 import static pt.tecnico.sec.hdlt.utils.GeneralUtils.*;
 import static pt.tecnico.sec.hdlt.utils.IOUtils.*;
-import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSignedLocationReportWrite;
 
 public class Main
 {
@@ -31,11 +26,10 @@ public class Main
     //     ../grids.output.json
     public static void main(String[] args) {
         Client client = new Client(readUser());
-        UserServer serverGrpc = new UserServer(client);
+        Server serverGrpc = new Server(client);
         UserClient clientGrpc = new UserClient(client);
 
         int command;
-
         System.out.println("||| CLIENT INITIALIZED |||");
         do{
             printCommands();
