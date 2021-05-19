@@ -3,6 +3,7 @@ package pt.tecnico.sec.hdlt.server.bll;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.sun.jdi.InternalException;
+import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -176,101 +177,114 @@ public class LocationBL {
         System.out.println("Store report successfully");
     }
 
-    public void submitEcho(SignedLocationReport signedLocationReport) throws Exception {
-        System.out.println("Submitting echo requests to servers.");
-        Echo echo = Echo.newBuilder()
-                .setSignedLocationReport(signedLocationReport)
-                .setServerId(serverId)
-                .setNonce(generateNonce())
-                .build();
+    public void submitEcho(SignedLocationReport signedLocationReport) {
+        Context context = Context.current().fork();
+        context.run(() -> {
+            try {
+                System.out.println("Submitting echo requests to servers.");
+                Echo echo = Echo.newBuilder()
+                        .setSignedLocationReport(signedLocationReport)
+                        .setServerId(serverId)
+                        .setNonce(generateNonce())
+                        .build();
 
-        byte[] signature = sign(echo.toByteArray(), this.privateKey);
-        ServerSignedEcho serverSignedEcho = ServerSignedEcho.newBuilder()
-                .setEcho(echo)
-                .setSignature(ByteString.copyFrom(signature))
-                .build();
+                byte[] signature = sign(echo.toByteArray(), this.privateKey);
+                ServerSignedEcho serverSignedEcho = ServerSignedEcho.newBuilder()
+                        .setEcho(echo)
+                        .setSignature(ByteString.copyFrom(signature))
+                        .build();
 
-        SecretKey key = generateSecretKey();
-        IvParameterSpec iv = generateIv();
-        byte[] encryptedMessage = symmetricEncrypt(serverSignedEcho.toByteArray(), key, iv);
+                SecretKey key = generateSecretKey();
+                IvParameterSpec iv = generateIv();
+                byte[] encryptedMessage = symmetricEncrypt(serverSignedEcho.toByteArray(), key, iv);
 
 
-        EchoRequest.Builder echoRequestBuilder = EchoRequest.newBuilder()
-                .setIv(ByteString.copyFrom(iv.getIV()))
-                .setEncryptedServerSignedEcho(ByteString.copyFrom(encryptedMessage));
+                EchoRequest.Builder echoRequestBuilder = EchoRequest.newBuilder()
+                        .setIv(ByteString.copyFrom(iv.getIV()))
+                        .setEncryptedServerSignedEcho(ByteString.copyFrom(encryptedMessage));
 
-        StreamObserver<EchoResponse> observer = new StreamObserver<>() {
-            @Override
-            public void onNext(EchoResponse response) {
+                StreamObserver<EchoResponse> observer = new StreamObserver<>() {
+                    @Override
+                    public void onNext(EchoResponse response) {
 
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+
+                    }
+
+                    @Override
+                    public void onCompleted() {
+
+                    }
+                };
+
+                EchoRequest request;
+                for (int i = 0; i < serverStubs.size(); i++) {
+                    byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
+                    request = echoRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
+                    serverStubs.get(i).echo(request, observer);
+                    System.out.println("Submitted echo to server: " + (i + 1));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            @Override
-            public void onError(Throwable t) {
-
-            }
-
-            @Override
-            public void onCompleted() {
-
-            }
-        };
-
-        EchoRequest request;
-        for (int i = 0; i < serverStubs.size(); i++) {
-            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
-            request = echoRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
-            serverStubs.get(i).echo(request, observer);
-            System.out.println("Submitted echo to server: " + (i + 1));
-        }
+        });
     }
 
-    public void submitReady(SignedLocationReport signedLocationReport) throws Exception {
-        System.out.println("Submitting ready requests to servers.");
-        Ready ready = Ready.newBuilder()
-                .setSignedLocationReport(signedLocationReport)
-                .setServerId(serverId)
-                .setNonce(generateNonce())
-                .build();
+    public void submitReady(SignedLocationReport signedLocationReport) {
+        Context context = Context.current().fork();
+        context.run(() -> {
+            try {
+                System.out.println("Submitting ready requests to servers.");
+                Ready ready = Ready.newBuilder()
+                        .setSignedLocationReport(signedLocationReport)
+                        .setServerId(serverId)
+                        .setNonce(generateNonce())
+                        .build();
 
-        byte[] signature = sign(ready.toByteArray(), this.privateKey);
-        ServerSignedReady serverSignedReady = ServerSignedReady.newBuilder()
-                .setReady(ready)
-                .setSignature(ByteString.copyFrom(signature))
-                .build();
+                byte[] signature = sign(ready.toByteArray(), this.privateKey);
+                ServerSignedReady serverSignedReady = ServerSignedReady.newBuilder()
+                        .setReady(ready)
+                        .setSignature(ByteString.copyFrom(signature))
+                        .build();
 
-        SecretKey key = generateSecretKey();
-        IvParameterSpec iv = generateIv();
-        byte[] encryptedMessage = symmetricEncrypt(serverSignedReady.toByteArray(), key, iv);
+                SecretKey key = generateSecretKey();
+                IvParameterSpec iv = generateIv();
+                byte[] encryptedMessage = symmetricEncrypt(serverSignedReady.toByteArray(), key, iv);
 
-        ReadyRequest.Builder readyRequestBuilder = ReadyRequest.newBuilder()
-                .setIv(ByteString.copyFrom(iv.getIV()))
-                .setEncryptedServerSignedReady(ByteString.copyFrom(encryptedMessage));
+                ReadyRequest.Builder readyRequestBuilder = ReadyRequest.newBuilder()
+                        .setIv(ByteString.copyFrom(iv.getIV()))
+                        .setEncryptedServerSignedReady(ByteString.copyFrom(encryptedMessage));
 
-        StreamObserver<ReadyResponse> observer = new StreamObserver<>() {
-            @Override
-            public void onNext(ReadyResponse response) {
+                StreamObserver<ReadyResponse> observer = new StreamObserver<>() {
+                    @Override
+                    public void onNext(ReadyResponse response) {
 
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                    }
+                };
+
+                ReadyRequest request;
+                for (int i = 0; i < serverStubs.size(); i++) {
+                    byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
+                    request = readyRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
+                    serverStubs.get(i).ready(request, observer);
+                    System.out.println("Submitted ready to server: " + (i + 1));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            @Override
-            public void onError(Throwable t) {
-
-            }
-
-            @Override
-            public void onCompleted() {
-
-            }
-        };
-
-        ReadyRequest request;
-        for (int i = 0; i < serverStubs.size(); i++) {
-            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
-            request = readyRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
-            serverStubs.get(i).ready(request, observer);
-            System.out.println("Submitted ready to server: " + (i + 1));
-        }
+        });
     }
 
     private SubmitLocationReportResponse submitLocationReportResponse(int rid, String message, byte[] key) throws Exception {
