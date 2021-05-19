@@ -20,6 +20,7 @@ public class SignedLocationReports {
 
     public void addLocationReport(SignedLocationReport locationReport) {
         for (int i = 0; i < this.signedLocationReports.size(); i++) {
+            //TODO this equals doesn't work
             if(this.signedLocationReports.get(i).equals(locationReport)){
                 this.numberOfOccurrences.set(i, this.numberOfOccurrences.get(i) + 1);
                 return;

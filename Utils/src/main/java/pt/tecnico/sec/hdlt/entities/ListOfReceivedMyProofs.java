@@ -21,6 +21,7 @@ public class ListOfReceivedMyProofs {
 
     public void addReceivedProofs(Proofs receivedMyProofs) {
         for (int i = 0; i < this.listOfReceivedProofs.size(); i++) {
+            //TODO this equals doesn't work
             if(this.listOfReceivedProofs.get(i).equals(receivedMyProofs)){
                 this.numberOfOccurrences.set(i, this.numberOfOccurrences.get(i) + 1);
                 return;

@@ -105,6 +105,7 @@ public class LocationBL {
     }
 
     public SubmitLocationReportResponse submitLocationReport(SubmitLocationReportRequest request) throws Exception {
+        System.out.println("Someone submitted a report.");
         // Authenticate request
         byte[] key = decryptKey(request.getKey().toByteArray(), this.privateKey);
         byte[] authSignedReportBytes = decryptRequest(request.getEncryptedAuthenticatedSignedLocationReportWrite().toByteArray(), key, request.getIv().toByteArray());
@@ -156,7 +157,7 @@ public class LocationBL {
 
         BroadcastVars broadcastVars = new BroadcastVars();
         broadcastVars.setSentEcho(true);
-        BroadcastVars aux = broadcast.putIfAbsent(signedReportWrite.getSignedLocationReport(), broadcastVars);
+        BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
         if(aux != null){
             if(aux.setSentEcho(true)){
                 return submitLocationReportResponse(signedReportWrite.getRid(), "Already in echo phase", key);
@@ -165,41 +166,18 @@ public class LocationBL {
         }
 
         submitEcho(signedReport);
-
-        if(broadcastVars.getSentReady()){
-            return submitLocationReportResponse(signedReportWrite.getRid(), "Already in ready phase", key);
-        }
-
-        while (!broadcastVars.getSentReady()){
-            if(broadcastVars.getEchos().size() > (N_SERVERS + F)/2){
-                broadcastVars.setSentReady(true);
-                submitReady(signedReport);
-            }
-            if(broadcastVars.getReadys().size() > F){
-                broadcastVars.setSentReady(true);
-                submitReady(signedReport);
-            }
-            wait(50);
-        }
-
-        if(broadcastVars.getDelivered()){
-            return submitLocationReportResponse(signedReportWrite.getRid(), "Already in deliver phase", key);
-        }
-
-        while (!broadcastVars.getDelivered()){
-            wait(50);
-            if(broadcastVars.getReadys().size() > 2*F){
-                broadcastVars.setDelivered(true);
-                this.locationReports.put(rKey, signedReport);
-                this.messageWriteQueue.write(signedReport);
-
-            }
-        }
-
+        broadcastVars.getBlocker().await();
         return submitLocationReportResponse(signedReportWrite.getRid(), message, key);
     }
 
+    private void deliver(SignedLocationReport signedReport, LocationReportKey rKey) throws Exception {
+        this.locationReports.put(rKey, signedReport);
+        this.messageWriteQueue.write(signedReport);
+        System.out.println("Store report successfully");
+    }
+
     public void submitEcho(SignedLocationReport signedLocationReport) throws Exception {
+        System.out.println("Submitting echo requests to servers.");
         Echo echo = Echo.newBuilder()
                 .setSignedLocationReport(signedLocationReport)
                 .setServerId(serverId)
@@ -243,10 +221,12 @@ public class LocationBL {
             byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
             request = echoRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
             serverStubs.get(i).echo(request, observer);
+            System.out.println("Submitted echo to server: " + (i + 1));
         }
     }
 
     public void submitReady(SignedLocationReport signedLocationReport) throws Exception {
+        System.out.println("Submitting ready requests to servers.");
         Ready ready = Ready.newBuilder()
                 .setSignedLocationReport(signedLocationReport)
                 .setServerId(serverId)
@@ -262,7 +242,6 @@ public class LocationBL {
         SecretKey key = generateSecretKey();
         IvParameterSpec iv = generateIv();
         byte[] encryptedMessage = symmetricEncrypt(serverSignedReady.toByteArray(), key, iv);
-
 
         ReadyRequest.Builder readyRequestBuilder = ReadyRequest.newBuilder()
                 .setIv(ByteString.copyFrom(iv.getIV()))
@@ -290,6 +269,7 @@ public class LocationBL {
             byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
             request = readyRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
             serverStubs.get(i).ready(request, observer);
+            System.out.println("Submitted ready to server: " + (i + 1));
         }
     }
 
@@ -485,12 +465,12 @@ public class LocationBL {
         this.nonceSet.add(echo.getNonce());
         this.nonceWriteQueue.write(echo.getNonce());
 
-        if(verifyServerSignature(echo.getServerId(), serverSignedEcho.getEcho().toByteArray(),
+        if(!verifyServerSignature(echo.getServerId(), serverSignedEcho.getEcho().toByteArray(),
                 serverSignedEcho.getSignature().toByteArray())){
             return EchoResponse.newBuilder().build();
         }
 
-        if(verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
+        if(!verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
                 signedReport.getLocationReport().toByteArray(),
                 signedReport.getUserSignature().toByteArray())){
             return EchoResponse.newBuilder().build();
@@ -500,7 +480,14 @@ public class LocationBL {
         broadcastVars.getEchos().add(serverSignedEcho);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
         if(aux != null){
+            System.out.println("Got and echo.");
             aux.addEcho(serverSignedEcho);
+            broadcastVars = aux;
+        }
+
+        if(broadcastVars.getEchos().size() > (N_SERVERS + F)/2 && !broadcastVars.getSentReady()){
+            broadcastVars.setSentReady(true);
+            submitReady(signedReport);
         }
 
         return EchoResponse.newBuilder().build();
@@ -520,12 +507,12 @@ public class LocationBL {
         this.nonceSet.add(ready.getNonce());
         this.nonceWriteQueue.write(ready.getNonce());
 
-        if(verifyServerSignature(ready.getServerId(), serverSignedReady.getReady().toByteArray(),
+        if(!verifyServerSignature(ready.getServerId(), serverSignedReady.getReady().toByteArray(),
                 serverSignedReady.getSignature().toByteArray())){
             return ReadyResponse.newBuilder().build();
         }
 
-        if(verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
+        if(!verifySignature(signedReport.getLocationReport().getLocationInformation().getUserId(),
                 signedReport.getLocationReport().toByteArray(),
                 signedReport.getUserSignature().toByteArray())){
             return ReadyResponse.newBuilder().build();
@@ -535,7 +522,21 @@ public class LocationBL {
         broadcastVars.getReadys().add(serverSignedReady);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
         if(aux != null){
+            System.out.println("Got a ready.");
             aux.addReady(serverSignedReady);
+            broadcastVars = aux;
+        }
+
+        if(broadcastVars.getReadys().size() > F && !broadcastVars.getSentReady()){
+            broadcastVars.setSentReady(true);
+            submitReady(signedReport);
+        }
+
+        if(broadcastVars.getReadys().size() > 2*F && !broadcastVars.getDelivered()){
+            broadcastVars.setDelivered(true);
+            LocationInformation locationInformation =  signedReport.getLocationReport().getLocationInformation();
+            deliver(signedReport, new LocationReportKey(locationInformation.getUserId(), locationInformation.getEpoch()));
+            broadcastVars.freeBlocker();
         }
 
         return ReadyResponse.newBuilder().build();

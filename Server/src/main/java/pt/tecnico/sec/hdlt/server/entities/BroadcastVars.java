@@ -19,13 +19,13 @@ public class BroadcastVars {
     private Boolean delivered;
     private CopyOnWriteArrayList<ServerSignedEcho> echos;
     private CopyOnWriteArrayList<ServerSignedReady> readys;
-
-
+    private CountDownLatch blocker;
 
     public BroadcastVars() {
         this.sentEcho = false;
         this.sentReady = false;
         this.delivered = false;
+        this.blocker = new CountDownLatch(1);
         this.echos = new CopyOnWriteArrayList<>();
         this.readys = new CopyOnWriteArrayList<>();
     }
@@ -72,7 +72,7 @@ public class BroadcastVars {
         this.readys = ready;
     }
 
-    public void addEcho(ServerSignedEcho serverSignedEcho){
+    public synchronized void addEcho(ServerSignedEcho serverSignedEcho){
         for (ServerSignedEcho aux: echos){
             if(aux.getEcho().getServerId() == serverSignedEcho.getEcho().getServerId()){
                 return;
@@ -81,12 +81,20 @@ public class BroadcastVars {
         echos.add(serverSignedEcho);
     }
 
-    public void addReady(ServerSignedReady serverSignedReady){
+    public synchronized void addReady(ServerSignedReady serverSignedReady){
         for (ServerSignedReady aux: readys){
             if(aux.getReady().getServerId() == serverSignedReady.getReady().getServerId()){
                 return;
             }
         }
         readys.add(serverSignedReady);
+    }
+
+    public CountDownLatch getBlocker() {
+        return blocker;
+    }
+
+    public void freeBlocker() {
+        blocker.countDown();
     }
 }

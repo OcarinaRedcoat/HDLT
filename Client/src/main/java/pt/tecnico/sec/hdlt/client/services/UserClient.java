@@ -99,9 +99,9 @@ public class UserClient {
         try {
             ArrayList<Long> witnessesId = client.getUser().getPositionWithEpoch(epoch).getCloseBy();
             createCloseUsersAsyncStubs(witnessesId);
-            System.out.println("Requesting Proof to user close by:");
+            System.out.println("Requesting Proof to user close by.");
             reportBuilder = requestBL.requestLocationProofs(userStubs, epoch, f, witnessesId);
-            System.out.println("Got the location proofs");
+            System.out.println("Got the location proofs.");
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InterruptedException |
                 InvalidParameterException e) {
 
@@ -117,14 +117,14 @@ public class UserClient {
         LocationReport locationReport;
 
         try {
-            System.out.println("Submitting location report:");
+            System.out.println("Submitting location report.");
             locationReport = requestBL.submitLocationReport(reportBuilder);
             if(locationReport != null){
-                System.out.println("Submitted report successfully");
+                System.out.println("Submitted report successfully.");
                 return true;
             } else {
                 System.err.println("No enough server responses for a quorum. This can only happen if " +
-                        "there where more crashes or byzantine servers than supported, or the client crashed");
+                        "there where more crashes or byzantine servers than supported, or the client crashed.");
             }
         } catch (NoSuchAlgorithmException | SignatureException | InvalidAlgorithmParameterException | IOException |
                 InvalidKeyException | BadPaddingException | NoSuchPaddingException | IllegalBlockSizeException |

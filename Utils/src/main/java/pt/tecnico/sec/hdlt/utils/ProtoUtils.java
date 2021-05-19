@@ -52,6 +52,7 @@ public class ProtoUtils {
     public static LocationQuery buildLocationQuery(int clientId, Long epoch, int rid, Boolean isHa)
             throws IOException, NoSuchAlgorithmException {
         LocationQuery locationQuery;
+        System.out.println("Generating PoW.");
         do{
             locationQuery = LocationQuery
                     .newBuilder()
@@ -62,6 +63,7 @@ public class ProtoUtils {
                     .setRid(rid)
                     .build();
         } while (!isValidPoW(locationQuery));
+        System.out.println("PoW Generated.");
         return locationQuery;
     }
 
@@ -69,6 +71,7 @@ public class ProtoUtils {
             throws IOException, NoSuchAlgorithmException {
         ProofsQuery proofsQuery;
         ProofsQuery.Builder builder;
+        System.out.println("Generating PoW.");
         do{
             builder = ProofsQuery
                     .newBuilder()
@@ -82,6 +85,7 @@ public class ProtoUtils {
 
             proofsQuery = builder.build();
         } while (!isValidPoW(proofsQuery));
+        System.out.println("PoW Generated.");
         return proofsQuery;
     }
 
@@ -103,6 +107,7 @@ public class ProtoUtils {
     public static SignedLocationReportWrite buildSignedLocationReportWrite(SignedLocationReport signedLocationReport, int rid, Boolean isHa)
             throws IOException, NoSuchAlgorithmException {
         SignedLocationReportWrite signedLocationReportWrite;
+        System.out.println("Generating PoW.");
         do{
             signedLocationReportWrite = SignedLocationReportWrite
                     .newBuilder()
@@ -112,6 +117,7 @@ public class ProtoUtils {
                     .setIsHa(isHa)
                     .build();
         } while (!isValidPoW(signedLocationReportWrite));
+        System.out.println("PoW Generated.");
         return signedLocationReportWrite;
     }
 
@@ -177,6 +183,7 @@ public class ProtoUtils {
     public static UsersAtLocationQuery buildUsersAtLocationQuery(Position pos, long epoch, int rid)
             throws IOException, NoSuchAlgorithmException {
         UsersAtLocationQuery usersAtLocationQuery;
+        System.out.println("Generating PoW.");
         do{
             usersAtLocationQuery = UsersAtLocationQuery
                     .newBuilder()
@@ -186,6 +193,7 @@ public class ProtoUtils {
                     .setRid(rid)
                     .build();
         } while (!isValidPoW(usersAtLocationQuery));
+        System.out.println("PoW Generated.");
         return usersAtLocationQuery;
     }
 

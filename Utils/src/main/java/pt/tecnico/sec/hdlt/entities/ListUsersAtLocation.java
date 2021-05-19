@@ -19,6 +19,7 @@ public class ListUsersAtLocation {
 
     public void addReceivedSignedLocationReport(SignedLocationReportList receivedSignedLocationReportList) {
         for (int i = 0; i < this.signedLocationReportLists.size(); i++) {
+            //TODO this equals doesn't work
             if(this.signedLocationReportLists.get(i).equals(receivedSignedLocationReportList)){
                 this.numberOfOccurrences.set(i, this.numberOfOccurrences.get(i) + 1);
                 return;
