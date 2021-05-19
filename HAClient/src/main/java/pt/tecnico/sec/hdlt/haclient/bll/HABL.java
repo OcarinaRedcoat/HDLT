@@ -1,19 +1,16 @@
 package pt.tecnico.sec.hdlt.haclient.bll;
 
-import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
-import pt.tecnico.sec.hdlt.entities.ReadAck;
-import pt.tecnico.sec.hdlt.haclient.communication.HAClient;
+import pt.tecnico.sec.hdlt.entities.ListUsersAtLocation;
+import pt.tecnico.sec.hdlt.entities.SignedLocationReports;
 import pt.tecnico.sec.hdlt.haclient.ha.HA;
 import pt.tecnico.sec.hdlt.communication.*;
 
-import javax.annotation.Signed;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import javax.xml.stream.Location;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -25,13 +22,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Stream;
 
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
-import static pt.tecnico.sec.hdlt.utils.DependableUtils.*;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getUserPublicKey;
-import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
 import static pt.tecnico.sec.hdlt.utils.GeneralUtils.F;
 import static pt.tecnico.sec.hdlt.utils.GeneralUtils.N_SERVERS;
 import static pt.tecnico.sec.hdlt.utils.ProtoUtils.*;
@@ -43,10 +37,10 @@ public class HABL {
     private CountDownLatch finishLatch;
     private HA ha;
 
-    private int wts;
     private int acks;
     private int rid;
-    private List<ReadAck> readList;
+    private SignedLocationReports signedLocationReports;
+    private ListUsersAtLocation listOfUsersAtLocation;
     private List<Ack> ackList;
     private Boolean reading;
 
@@ -54,10 +48,9 @@ public class HABL {
     public HABL(HA ha, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs){
        this.ha = ha;
        this.serverStubs = serverStubs;
-       this.wts = 0;
-       this.acks = 0;
        this.rid = 0;
-       this.readList = new LinkedList<>();
+       this.signedLocationReports = new SignedLocationReports();
+       this.listOfUsersAtLocation = new ListUsersAtLocation();
        this.ackList = new LinkedList<>();
        this.reading = false;
     }
@@ -136,13 +129,11 @@ public class HABL {
             BadPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException, CertificateException, InterruptedException {
 
         this.rid++;
-        this.acks = 0;
-        this.readList = new LinkedList<>();
+        this.signedLocationReports = new SignedLocationReports();
         this.reading = true;
 
-        LocationQuery locationQuery = buildHALocationQuery(userId, epoch, rid);
+        LocationQuery locationQuery = buildLocationQuery(userId, epoch, rid, true);
         byte[] signature = sign(locationQuery.toByteArray(), ha.getPrivateKey());
-
         SignedLocationQuery signedLocationQuery = buildSignedLocationQuery(locationQuery, signature);
 
         SecretKey key = generateSecretKey();
@@ -154,7 +145,7 @@ public class HABL {
         StreamObserver<ObtainLocationReportResponse> observer;
         for (int i=0; i < serverStubs.size(); i++){
             final int serverId = i + 1;
-            observer = new StreamObserver<ObtainLocationReportResponse>() {
+            observer = new StreamObserver<>() {
                 @Override
                 public void onNext(ObtainLocationReportResponse obtainLocationReportResponse) {
                     handleObtainLocationReportResponse(obtainLocationReportResponse, key, serverId, userId, epoch);
@@ -168,7 +159,7 @@ public class HABL {
                 @Override
                 public void onCompleted() {
                     finishLatch.countDown();
-                    if (readList.size() > (N_SERVERS + F)/2){
+                    if (signedLocationReports.numberOfAcks() > (N_SERVERS + F)/2){
                         do{
                             finishLatch.countDown();
                         } while(finishLatch.getCount() != 0);
@@ -185,9 +176,9 @@ public class HABL {
 
         SignedLocationReport signedLocationReport = null;
         LocationReport report = null;
-        if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            signedLocationReport = (SignedLocationReport) highestAck(readList).getValue();
-            this.readList = new LinkedList<>();
+        if(signedLocationReports.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+            signedLocationReport = signedLocationReports.getBestLocationReport();
+            this.signedLocationReports = new SignedLocationReports();
             report = submitLocationReport(signedLocationReport);
         }
 
@@ -197,13 +188,12 @@ public class HABL {
     /* Params: pos, ep .....
      * Specification: returns a list of users that were at position pos at epoch ep
      */
-    public List<LocationReport> obtainUsersAtLocation(long x, long y, long ep)
+    public List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep)
             throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidAlgorithmParameterException,
             BadPaddingException, NoSuchPaddingException, IllegalBlockSizeException, IOException, InvalidKeySpecException, CertificateException, InterruptedException {
 
         this.rid++;
-        this.acks = 0;
-        this.readList = new LinkedList<>();
+        this.listOfUsersAtLocation = new ListUsersAtLocation();
         this.reading = true;
 
         Position pos = buildPosition(x, y);
@@ -242,10 +232,10 @@ public class HABL {
                 @Override
                 public void onCompleted() {
                     finishLatch.countDown();
-                    if (readList.size() > (N_SERVERS + F)/2){
+                    if (listOfUsersAtLocation.numberOfAcks() > (N_SERVERS + F)/2 ){
                         do{
                             finishLatch.countDown();
-                        } while(finishLatch.getCount() != 0);
+                        } while (finishLatch.getCount() != 0);
                     }
                 }
 
@@ -259,14 +249,15 @@ public class HABL {
         finishLatch.await();
 
 
-        List<LocationReport> locationReports = null;
-
-        if(readList.size() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            locationReports = (List<LocationReport>) highestAck(readList).getValue(); //TODO: check this
-            this.readList = new LinkedList<>();
+        SignedLocationReportList locationReports = null;
+        List<SignedLocationReport> listOfSignedLocationReports = null;
+        if(listOfUsersAtLocation.numberOfAcks() > (N_SERVERS + F)/2 ){
+            locationReports = listOfUsersAtLocation.getBestSignedLocationReportList();
+            listOfSignedLocationReports = locationReports.getSignedLocationReportListList();
+            listOfUsersAtLocation = new ListUsersAtLocation();
         }
 
-        return locationReports;
+        return listOfSignedLocationReports;
     }
 
 
@@ -296,7 +287,7 @@ public class HABL {
                 return;
             }
 
-            readList.add(new ReadAck(report.getWts(), signedLocationReport));
+            signedLocationReports.addLocationReport(signedLocationReport);
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
                 NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
                 SignatureException e) {
@@ -339,8 +330,9 @@ public class HABL {
                 reportList.add(report);
             }
 
-            readList.add(new ReadAck(1, reportList));
 
+
+            listOfUsersAtLocation.addReceivedSignedLocationReport(signedLocationReportList);
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
                 NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
                 SignatureException e) {
@@ -350,7 +342,6 @@ public class HABL {
 
     private void handleSubmitLocationReportResponse(SubmitLocationReportResponse response, SecretKey key, int serverId){
         try {
-            acks++;
 
             byte[] encryptedSignedAck = response.getEncryptedSignedAck().toByteArray();
             byte[] decryptedSignedAck = symmetricDecrypt(encryptedSignedAck, key, new IvParameterSpec(response.getIv().toByteArray()));
@@ -360,7 +351,7 @@ public class HABL {
 
             byte[] message = ack.toByteArray();
             byte[] signature = signedAck.getSignature().toByteArray();
-            if(ack.getWts() == wts && verifySignature(getServerPublicKey(serverId), message, signature)){
+            if(verifySignature(getServerPublicKey(serverId), message, signature)){
                 ackList.add(ack);
             }
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |

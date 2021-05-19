@@ -18,6 +18,7 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,30 +62,16 @@ public class HAClient {
 
     public void serverShutdown(){
          for (ManagedChannel channel : serverChannels){
-             channel.shutdownNow();
+             try {
+                 channel.shutdownNow().awaitTermination(30, TimeUnit.SECONDS);
+             } catch (InterruptedException e) {
+                 e.printStackTrace();
+             }
          }
 
          serverChannels = new ArrayList<>();
          serverStubs = new ArrayList<>();
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public LocationReport obtainLocationReport(int userId, Long epoch){
         logger.info("Obtain Location Report:");
@@ -92,6 +79,7 @@ public class HAClient {
         LocationReport report = null;
 
         try {
+            System.out.println("Obtaining location report:");
             report = haBL.obtainLocationReport(userId, epoch);
             if (report != null){
                 System.out.println("I got the Report that you wanted for user " + userId);
@@ -115,10 +103,10 @@ public class HAClient {
     /* Params: pos, ep .....
      * Specification: returns a list of users that were at position pos at epoch ep
      */
-    public List<LocationReport> obtainUsersAtLocation(long x, long y, long ep) {
+    public List<SignedLocationReport> obtainUsersAtLocation(long x, long y, long ep) {
         logger.info("Obtain Users At Location:");
 
-        List<LocationReport> listReport;
+        List<SignedLocationReport> listReport;
 
         try{
             listReport = haBL.obtainUsersAtLocation(x , y , ep);

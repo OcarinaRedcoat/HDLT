@@ -37,15 +37,16 @@ public class Main {
                     epoch = readEpoch();
                     userId = readUserId();
                     LocationReport report = haClient.obtainLocationReport(userId, epoch);
+                    System.out.println(report);
                     break;
                 case 2:
                     epoch = readEpoch();
                     long x = readPosX();
                     long y = readPosY();
-                    List<LocationReport> listReport = haClient.obtainUsersAtLocation(x, y, epoch);
+                    List<SignedLocationReport> listReport = haClient.obtainUsersAtLocation(x, y, epoch);
                     if (listReport != null) {
-                        for (LocationReport rep: listReport) {
-                            System.out.println(rep);
+                        for (SignedLocationReport rep: listReport) {
+                            System.out.println(rep.getLocationReport());
                         }
                     }
                     break;
