@@ -181,7 +181,6 @@ public class LocationBL {
         Context context = Context.current().fork();
         context.run(() -> {
             try {
-                System.out.println("Submitting echo requests to servers.");
                 Echo echo = Echo.newBuilder()
                         .setSignedLocationReport(signedLocationReport)
                         .setServerId(serverId)
@@ -225,7 +224,6 @@ public class LocationBL {
                     byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
                     request = echoRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
                     serverStubs.get(i).echo(request, observer);
-                    System.out.println("Submitted echo to server: " + (i + 1));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -237,7 +235,6 @@ public class LocationBL {
         Context context = Context.current().fork();
         context.run(() -> {
             try {
-                System.out.println("Submitting ready requests to servers.");
                 Ready ready = Ready.newBuilder()
                         .setSignedLocationReport(signedLocationReport)
                         .setServerId(serverId)
@@ -279,7 +276,6 @@ public class LocationBL {
                     byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
                     request = readyRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
                     serverStubs.get(i).ready(request, observer);
-                    System.out.println("Submitted ready to server: " + (i + 1));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -494,7 +490,6 @@ public class LocationBL {
         broadcastVars.getEchos().add(serverSignedEcho);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
         if(aux != null){
-            System.out.println("Got and echo.");
             aux.addEcho(serverSignedEcho);
             broadcastVars = aux;
         }
@@ -536,7 +531,6 @@ public class LocationBL {
         broadcastVars.getReadys().add(serverSignedReady);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
         if(aux != null){
-            System.out.println("Got a ready.");
             aux.addReady(serverSignedReady);
             broadcastVars = aux;
         }
