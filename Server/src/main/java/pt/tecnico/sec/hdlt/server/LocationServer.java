@@ -46,6 +46,7 @@ public class LocationServer {
     }
 
     public void stop() {
+        this.locationBL.closeServerChannel();
         if (this.server != null) {
             try{
                 this.server.shutdown().awaitTermination(30, TimeUnit.SECONDS);

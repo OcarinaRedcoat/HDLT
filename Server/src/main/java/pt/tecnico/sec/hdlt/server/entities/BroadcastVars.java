@@ -8,43 +8,51 @@ import pt.tecnico.sec.hdlt.communication.ServerSignedReady;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.F;
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.N_SERVERS;
 
 public class BroadcastVars {
     private Boolean sentEcho;
     private Boolean sentReady;
     private Boolean delivered;
     private CopyOnWriteArrayList<ServerSignedEcho> echos;
-    private CopyOnWriteArrayList<ServerSignedReady> ready;
+    private CopyOnWriteArrayList<ServerSignedReady> readys;
+
+
 
     public BroadcastVars() {
         this.sentEcho = false;
         this.sentReady = false;
         this.delivered = false;
         this.echos = new CopyOnWriteArrayList<>();
-        this.ready = new CopyOnWriteArrayList<>();
+        this.readys = new CopyOnWriteArrayList<>();
     }
 
-    public Boolean getSentEcho() {
+    public synchronized Boolean getSentEcho() {
         return sentEcho;
     }
 
-    public void setSentEcho(Boolean sentEcho) {
+    public synchronized Boolean setSentEcho(Boolean sentEcho) {
+        Boolean aux = this.sentEcho;
         this.sentEcho = sentEcho;
+        return aux;
     }
 
-    public Boolean getSentReady() {
+    public synchronized Boolean getSentReady() {
         return sentReady;
     }
 
-    public void setSentReady(Boolean sentReady) {
+    public synchronized void setSentReady(Boolean sentReady) {
         this.sentReady = sentReady;
     }
 
-    public Boolean getDelivered() {
+    public synchronized Boolean getDelivered() {
         return delivered;
     }
 
-    public void setDelivered(Boolean delivered) {
+    public synchronized void setDelivered(Boolean delivered) {
         this.delivered = delivered;
     }
 
@@ -56,11 +64,29 @@ public class BroadcastVars {
         this.echos = echos;
     }
 
-    public CopyOnWriteArrayList<ServerSignedReady> getReady() {
-        return ready;
+    public CopyOnWriteArrayList<ServerSignedReady> getReadys() {
+        return readys;
     }
 
     public void setReady(CopyOnWriteArrayList<ServerSignedReady> ready) {
-        this.ready = ready;
+        this.readys = ready;
+    }
+
+    public void addEcho(ServerSignedEcho serverSignedEcho){
+        for (ServerSignedEcho aux: echos){
+            if(aux.getEcho().getServerId() == serverSignedEcho.getEcho().getServerId()){
+                return;
+            }
+        }
+        echos.add(serverSignedEcho);
+    }
+
+    public void addReady(ServerSignedReady serverSignedReady){
+        for (ServerSignedReady aux: readys){
+            if(aux.getReady().getServerId() == serverSignedReady.getReady().getServerId()){
+                return;
+            }
+        }
+        readys.add(serverSignedReady);
     }
 }

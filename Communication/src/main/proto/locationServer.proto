@@ -211,13 +211,13 @@ message EchoRequest {
 message ServerSignedEcho {
   Echo echo = 1;
   bytes signature = 2;
-  int32 serverId = 3;
 }
 
 //used as POW
 message Echo {
   SignedLocationReport signedLocationReport = 1;
   string nonce = 2;
+  int32 serverId = 3;
 }
 
 message EchoResponse {
@@ -241,6 +241,7 @@ message ServerSignedReady {
 message Ready {
   SignedLocationReport signedLocationReport = 1;
   string nonce = 2;
+  int32 serverId = 3;
 }
 
 message ReadyResponse {

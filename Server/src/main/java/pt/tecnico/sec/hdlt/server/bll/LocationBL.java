@@ -3,6 +3,10 @@ package pt.tecnico.sec.hdlt.server.bll;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.sun.jdi.InternalException;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.server.entities.BroadcastVars;
 import pt.tecnico.sec.hdlt.utils.FileUtils;
 import pt.tecnico.sec.hdlt.utils.GeneralUtils;
@@ -13,39 +17,56 @@ import pt.tecnico.sec.hdlt.server.utils.MessageWriteQueue;
 import pt.tecnico.sec.hdlt.server.utils.NonceWriteQueue;
 import pt.tecnico.sec.hdlt.server.utils.ReadFile;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
-import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.isValidPoW;
-import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.verifySignature;
+import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
+import static pt.tecnico.sec.hdlt.utils.GeneralUtils.*;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildAuthenticatedSignedLocationReportWrite;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSubmitLocationReportRequest;
 
 public class LocationBL {
 
     private final MessageWriteQueue messageWriteQueue;
     private final NonceWriteQueue nonceWriteQueue;
     private final ConcurrentHashMap<LocationReportKey, SignedLocationReport> locationReports;
-    private ConcurrentHashMap<SignedLocationReport, BroadcastVars> broadcast;
+    private final ConcurrentHashMap<SignedLocationReport, BroadcastVars> broadcast;
     private final Set<String> nonceSet;
     private final int numberByzantineUsers;
     private PrivateKey privateKey;
+
+    private int serverId;
+    private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
+    private ArrayList<ManagedChannel> serverChannels;
 
     public LocationBL(int serverId, String serverPwd) {
         Path messageFilePath = Paths.get("../Server/src/main/resources/server_" + serverId + ".txt");
         Path nonceFilePath = Paths.get("../Server/src/main/resources/server_" + serverId + "_nonce.txt");
 
+        this.serverId = serverId;
         this.messageWriteQueue = new MessageWriteQueue(messageFilePath);
         this.nonceWriteQueue = new NonceWriteQueue(nonceFilePath);
         this.locationReports = ReadFile.createReportsMap(messageFilePath);
         this.broadcast = new ConcurrentHashMap<>();
         this.nonceSet = ReadFile.createNonceSet(nonceFilePath);
+
+        createServerStubs();
 
         try {
             this.privateKey = CryptographicUtils.getServerPrivateKey(serverId, serverPwd);
@@ -55,6 +76,32 @@ public class LocationBL {
         }
 
         this.numberByzantineUsers = GeneralUtils.F;
+    }
+
+    private void createServerStubs(){
+        serverStubs = new ArrayList<>();
+        serverChannels = new ArrayList<>();
+        for (int i = 0; i < N_SERVERS; i++) {
+            String target = SERVER_HOST + ":" + (SERVER_START_PORT + i);
+            ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
+                    .usePlaintext()
+                    .build();
+            serverChannels.add(channel);
+            LocationServerGrpc.LocationServerStub stub = LocationServerGrpc.newStub(channel);
+            serverStubs.add(stub);
+        }
+    }
+
+    public void closeServerChannel(){
+        for (ManagedChannel channel : serverChannels) {
+            try {
+                channel.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        serverChannels = new ArrayList<>();
+        serverStubs = new ArrayList<>();
     }
 
     public SubmitLocationReportResponse submitLocationReport(SubmitLocationReportRequest request) throws Exception {
@@ -107,16 +154,143 @@ public class LocationBL {
 
         signedReport = signedReport.toBuilder().setValid(validReport).build();
 
-        BroadcastVars aux = broadcast.putIfAbsent(signedReport, new BroadcastVars());
-        if(aux != null && aux.getSentEcho()){
-            return submitLocationReportResponse(signedReportWrite.getRid(), "Repeated location report", key);
+        BroadcastVars broadcastVars = new BroadcastVars();
+        broadcastVars.setSentEcho(true);
+        BroadcastVars aux = broadcast.putIfAbsent(signedReportWrite.getSignedLocationReport(), broadcastVars);
+        if(aux != null){
+            if(aux.setSentEcho(true)){
+                return submitLocationReportResponse(signedReportWrite.getRid(), "Already in echo phase", key);
+            }
+            broadcastVars = aux;
         }
-        //TODO broadcast echo and ready after with listeners
 
-        this.locationReports.put(rKey, signedReport);
-        this.messageWriteQueue.write(signedReport);
+        submitEcho(signedReport);
+
+        if(broadcastVars.getSentReady()){
+            return submitLocationReportResponse(signedReportWrite.getRid(), "Already in ready phase", key);
+        }
+
+        while (!broadcastVars.getSentReady()){
+            if(broadcastVars.getEchos().size() > (N_SERVERS + F)/2){
+                broadcastVars.setSentReady(true);
+                submitReady(signedReport);
+            }
+            if(broadcastVars.getReadys().size() > F){
+                broadcastVars.setSentReady(true);
+                submitReady(signedReport);
+            }
+            wait(50);
+        }
+
+        if(broadcastVars.getDelivered()){
+            return submitLocationReportResponse(signedReportWrite.getRid(), "Already in deliver phase", key);
+        }
+
+        while (!broadcastVars.getDelivered()){
+            wait(50);
+            if(broadcastVars.getReadys().size() > 2*F){
+                broadcastVars.setDelivered(true);
+                this.locationReports.put(rKey, signedReport);
+                this.messageWriteQueue.write(signedReport);
+
+            }
+        }
 
         return submitLocationReportResponse(signedReportWrite.getRid(), message, key);
+    }
+
+    public void submitEcho(SignedLocationReport signedLocationReport) throws Exception {
+        Echo echo = Echo.newBuilder()
+                .setSignedLocationReport(signedLocationReport)
+                .setServerId(serverId)
+                .setNonce(generateNonce())
+                .build();
+
+        byte[] signature = sign(echo.toByteArray(), this.privateKey);
+        ServerSignedEcho serverSignedEcho = ServerSignedEcho.newBuilder()
+                .setEcho(echo)
+                .setSignature(ByteString.copyFrom(signature))
+                .build();
+
+        SecretKey key = generateSecretKey();
+        IvParameterSpec iv = generateIv();
+        byte[] encryptedMessage = symmetricEncrypt(serverSignedEcho.toByteArray(), key, iv);
+
+
+        EchoRequest.Builder echoRequestBuilder = EchoRequest.newBuilder()
+                .setIv(ByteString.copyFrom(iv.getIV()))
+                .setEncryptedServerSignedEcho(ByteString.copyFrom(encryptedMessage));
+
+        StreamObserver<EchoResponse> observer = new StreamObserver<>() {
+            @Override
+            public void onNext(EchoResponse response) {
+
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        };
+
+        EchoRequest request;
+        for (int i = 0; i < serverStubs.size(); i++) {
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
+            request = echoRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
+            serverStubs.get(i).echo(request, observer);
+        }
+    }
+
+    public void submitReady(SignedLocationReport signedLocationReport) throws Exception {
+        Ready ready = Ready.newBuilder()
+                .setSignedLocationReport(signedLocationReport)
+                .setServerId(serverId)
+                .setNonce(generateNonce())
+                .build();
+
+        byte[] signature = sign(ready.toByteArray(), this.privateKey);
+        ServerSignedReady serverSignedReady = ServerSignedReady.newBuilder()
+                .setReady(ready)
+                .setSignature(ByteString.copyFrom(signature))
+                .build();
+
+        SecretKey key = generateSecretKey();
+        IvParameterSpec iv = generateIv();
+        byte[] encryptedMessage = symmetricEncrypt(serverSignedReady.toByteArray(), key, iv);
+
+
+        ReadyRequest.Builder readyRequestBuilder = ReadyRequest.newBuilder()
+                .setIv(ByteString.copyFrom(iv.getIV()))
+                .setEncryptedServerSignedReady(ByteString.copyFrom(encryptedMessage));
+
+        StreamObserver<ReadyResponse> observer = new StreamObserver<>() {
+            @Override
+            public void onNext(ReadyResponse response) {
+
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+        };
+
+        ReadyRequest request;
+        for (int i = 0; i < serverStubs.size(); i++) {
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
+            request = readyRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
+            serverStubs.get(i).ready(request, observer);
+        }
     }
 
     private SubmitLocationReportResponse submitLocationReportResponse(int rid, String message, byte[] key) throws Exception {
@@ -297,7 +471,6 @@ public class LocationBL {
                 .build();
     }
 
-    //TODO Fazer PoW? vale a pena fazer as verificações todas visto que a unica lógica é adicionar aos echos?
     public EchoResponse echo(EchoRequest request) throws Exception {
         byte[] key = decryptKey(request.getEncryptedKey().toByteArray(), this.privateKey);
         byte[] authSignedEchoBytes = decryptRequest(request.getEncryptedServerSignedEcho().toByteArray(), key, request.getIv().toByteArray());
@@ -312,7 +485,7 @@ public class LocationBL {
         this.nonceSet.add(echo.getNonce());
         this.nonceWriteQueue.write(echo.getNonce());
 
-        if(verifyServerSignature(serverSignedEcho.getServerId(), serverSignedEcho.getEcho().toByteArray(),
+        if(verifyServerSignature(echo.getServerId(), serverSignedEcho.getEcho().toByteArray(),
                 serverSignedEcho.getSignature().toByteArray())){
             return EchoResponse.newBuilder().build();
         }
@@ -326,30 +499,29 @@ public class LocationBL {
         BroadcastVars broadcastVars = new BroadcastVars();
         broadcastVars.getEchos().add(serverSignedEcho);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
-        if(aux != null){ //if it already add elements then just add it to the list
-            aux.getEchos().add(serverSignedEcho);
+        if(aux != null){
+            aux.addEcho(serverSignedEcho);
         }
 
         return EchoResponse.newBuilder().build();
     }
 
-    //TODO Fazer PoW? vale a pena fazer as verificações todas visto que a unica lógica é adicionar aos readys?
     public ReadyResponse ready(ReadyRequest request) throws Exception {
         byte[] key = decryptKey(request.getEncryptedKey().toByteArray(), this.privateKey);
         byte[] authSignedEchoBytes = decryptRequest(request.getEncryptedServerSignedReady().toByteArray(), key, request.getIv().toByteArray());
-        ServerSignedEcho serverSignedEcho = ServerSignedEcho.parseFrom(authSignedEchoBytes);
-        Echo echo = serverSignedEcho.getEcho();
-        SignedLocationReport signedReport = echo.getSignedLocationReport();
+        ServerSignedReady serverSignedReady = ServerSignedReady.parseFrom(authSignedEchoBytes);
+        Ready ready = serverSignedReady.getReady();
+        SignedLocationReport signedReport = ready.getSignedLocationReport();
 
-        if (this.nonceSet.contains(echo.getNonce())) {
+        if (this.nonceSet.contains(ready.getNonce())) {
             return ReadyResponse.newBuilder().build();
         }
 
-        this.nonceSet.add(echo.getNonce());
-        this.nonceWriteQueue.write(echo.getNonce());
+        this.nonceSet.add(ready.getNonce());
+        this.nonceWriteQueue.write(ready.getNonce());
 
-        if(verifyServerSignature(serverSignedEcho.getServerId(), serverSignedEcho.getEcho().toByteArray(),
-                serverSignedEcho.getSignature().toByteArray())){
+        if(verifyServerSignature(ready.getServerId(), serverSignedReady.getReady().toByteArray(),
+                serverSignedReady.getSignature().toByteArray())){
             return ReadyResponse.newBuilder().build();
         }
 
@@ -360,10 +532,10 @@ public class LocationBL {
         }
 
         BroadcastVars broadcastVars = new BroadcastVars();
-        broadcastVars.getEchos().add(serverSignedEcho);
+        broadcastVars.getReadys().add(serverSignedReady);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
-        if(aux != null){ //if it already add elements then just add it to the list
-            aux.getEchos().add(serverSignedEcho);
+        if(aux != null){
+            aux.addReady(serverSignedReady);
         }
 
         return ReadyResponse.newBuilder().build();

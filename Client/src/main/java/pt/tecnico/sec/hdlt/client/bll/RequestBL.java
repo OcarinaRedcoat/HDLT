@@ -4,7 +4,7 @@ import io.grpc.stub.StreamObserver;
 import pt.tecnico.sec.hdlt.entities.Client;
 import pt.tecnico.sec.hdlt.communication.*;
 import pt.tecnico.sec.hdlt.entities.ListOfReceivedMyProofs;
-import pt.tecnico.sec.hdlt.entities.LocationReports;
+import pt.tecnico.sec.hdlt.entities.SignedLocationReports;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -29,14 +29,14 @@ import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSignedLocationReportWrit
 
 public class RequestBL {
 
-    private ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
+    private final ArrayList<LocationServerGrpc.LocationServerStub> serverStubs;
     private CountDownLatch finishLatch;
-    private Client client;
+    private final Client client;
 
     private int rid;
     private ListOfReceivedMyProofs listOfReceivedMyProofs;
-    private LocationReports locationReports;
-    private List<Ack> ackList;
+    private SignedLocationReports signedLocationReports;
+    private final List<Ack> ackList;
     private Boolean reading;
 
     public RequestBL(Client client, ArrayList<LocationServerGrpc.LocationServerStub> serverStubs) {
@@ -44,7 +44,7 @@ public class RequestBL {
         this.serverStubs = serverStubs;
         this.rid = 0;
         this.listOfReceivedMyProofs = new ListOfReceivedMyProofs();
-        this.locationReports = new LocationReports();
+        this.signedLocationReports = new SignedLocationReports();
         this.ackList = new LinkedList<>();
         this.reading = false;
     }
@@ -186,7 +186,7 @@ public class RequestBL {
             SignatureException, InterruptedException, CertificateException, IOException {
 
         this.rid++;
-        this.locationReports = new LocationReports();
+        this.signedLocationReports = new SignedLocationReports();
         this.reading = true;
 
         LocationQuery locationQuery = buildLocationQuery(client.getUser().getId(), epoch, rid, false);
@@ -216,7 +216,7 @@ public class RequestBL {
                 @Override
                 public void onCompleted() {
                     finishLatch.countDown();
-                    if(locationReports.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+                    if(signedLocationReports.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
                         do{
                             finishLatch.countDown();
                         } while(finishLatch.getCount() != 0);
@@ -232,9 +232,9 @@ public class RequestBL {
         finishLatch.await();
 
         LocationReport report = null;
-        if(locationReports.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
-            report = locationReports.getBestLocationReport();
-            this.locationReports = new LocationReports();
+        if(signedLocationReports.numberOfAcks() > (N_SERVERS + F)/2){ //if we have enough just unblock the main thread
+            report = this.signedLocationReports.getBestLocationReport().getLocationReport();
+            this.signedLocationReports = new SignedLocationReports();
             report = submitLocationReport(report);
         }
         return report;
@@ -343,7 +343,7 @@ public class RequestBL {
                 return;
             }
 
-            locationReports.addLocationReport(report);
+            signedLocationReports.addLocationReport(signedLocationReport);
         } catch (Exception e) {
             System.err.println("Received an incorrect server response with message: " + e.getMessage());
         }
