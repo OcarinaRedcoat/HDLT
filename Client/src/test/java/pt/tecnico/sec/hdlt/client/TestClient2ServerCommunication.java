@@ -87,6 +87,8 @@ public class TestClient2ServerCommunication {
         assertNotNull(proofs);
 
         //STOP SERVERS
+        userClient1.closeServerChannel();
+        userClient6.closeServerChannel();
         server1.stop();
         server2.stop();
         server3.stop();

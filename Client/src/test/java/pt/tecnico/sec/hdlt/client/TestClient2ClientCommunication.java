@@ -27,6 +27,7 @@ public class TestClient2ClientCommunication
         LocationReport locationReport = userClient1.requestLocationProofs(2L, 1).build();
         assertNotNull(locationReport);
 
+        userClient1.closeServerChannel();
         server3.stop();
         server11.stop();
     }
@@ -42,6 +43,7 @@ public class TestClient2ClientCommunication
         LocationReport.Builder builder = userClient1.requestLocationProofs(4L, 1);
         assertNull(builder);
 
+        userClient1.closeServerChannel();
         server7.stop();
     }
 
@@ -57,6 +59,7 @@ public class TestClient2ClientCommunication
         LocationReport.Builder builder = userClient1.requestLocationProofs(16L, 0);
         assertNull(builder);
 
+        userClient1.closeServerChannel();
         server13.stop();
     }
 
@@ -72,6 +75,7 @@ public class TestClient2ClientCommunication
         LocationReport.Builder builder = userClient13.requestLocationProofs(16L, 0);
         assertNull(builder);
 
+        userClient13.closeServerChannel();
         server1.stop();
     }
 
