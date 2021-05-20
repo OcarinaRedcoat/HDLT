@@ -4,7 +4,9 @@ import org.junit.Test;
 import pt.tecnico.sec.hdlt.client.services.Server;
 import pt.tecnico.sec.hdlt.client.services.UserClient;
 import pt.tecnico.sec.hdlt.communication.LocationReport;
+import pt.tecnico.sec.hdlt.communication.Proofs;
 import pt.tecnico.sec.hdlt.entities.Client;
+import pt.tecnico.sec.hdlt.entities.User;
 import pt.tecnico.sec.hdlt.server.LocationServer;
 import pt.tecnico.sec.hdlt.server.bll.LocationBL;
 
@@ -12,6 +14,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static pt.tecnico.sec.hdlt.utils.IOUtils.readUser;
@@ -32,12 +37,13 @@ public class TestClient2ServerCommunication {
     }
 
     @Test
-    public void submitReportAndGetReport()
+    public void submitReportGetReportGetMyProofsTest()
     {
         //START CLIENTS
         Client client1 = new Client(readUser(gridFileLocation, 1), "client_1");
         UserClient userClient1 = new UserClient(client1);
         Client client6 = new Client(readUser(gridFileLocation, 6), "client_6");
+        UserClient userClient6 = new UserClient(client6);
         Server userServer6 = new Server(client6);
         Client client12 = new Client(readUser(gridFileLocation, 12), "client_12");
         Server userServer12 = new Server(client12);
@@ -73,6 +79,12 @@ public class TestClient2ServerCommunication {
         //GET A REPORT
         LocationReport locationReport = userClient1.obtainLocationReport(24L);
         assertNotNull(locationReport);
+
+        //Get my proofs
+        List<Long> aux = new ArrayList<>();
+        aux.add(24L);
+        Proofs proofs = userClient6.obtainMyProofs(aux);
+        assertNotNull(proofs);
 
         //STOP SERVERS
         server1.stop();

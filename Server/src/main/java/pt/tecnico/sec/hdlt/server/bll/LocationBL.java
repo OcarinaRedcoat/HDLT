@@ -39,8 +39,7 @@ import java.util.logging.Level;
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.utils.GeneralUtils.*;
-import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildAuthenticatedSignedLocationReportWrite;
-import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSubmitLocationReportRequest;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.*;
 
 public class LocationBL {
 
@@ -106,7 +105,6 @@ public class LocationBL {
     }
 
     public SubmitLocationReportResponse submitLocationReport(SubmitLocationReportRequest request) throws Exception {
-        System.out.println("Someone submitted a report.");
         // Authenticate request
         byte[] key = decryptKey(request.getKey().toByteArray(), this.privateKey);
         byte[] authSignedReportBytes = decryptRequest(request.getEncryptedAuthenticatedSignedLocationReportWrite().toByteArray(), key, request.getIv().toByteArray());
@@ -181,12 +179,7 @@ public class LocationBL {
         Context context = Context.current().fork();
         context.run(() -> {
             try {
-                System.out.println("Submitting echo requests to servers.");
-                Echo echo = Echo.newBuilder()
-                        .setSignedLocationReport(signedLocationReport)
-                        .setServerId(serverId)
-                        .setNonce(generateNonce())
-                        .build();
+                Echo echo = buildEcho(serverId, signedLocationReport);
 
                 byte[] signature = sign(echo.toByteArray(), this.privateKey);
                 ServerSignedEcho serverSignedEcho = ServerSignedEcho.newBuilder()
@@ -225,7 +218,6 @@ public class LocationBL {
                     byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
                     request = echoRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
                     serverStubs.get(i).echo(request, observer);
-                    System.out.println("Submitted echo to server: " + (i + 1));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -237,12 +229,7 @@ public class LocationBL {
         Context context = Context.current().fork();
         context.run(() -> {
             try {
-                System.out.println("Submitting ready requests to servers.");
-                Ready ready = Ready.newBuilder()
-                        .setSignedLocationReport(signedLocationReport)
-                        .setServerId(serverId)
-                        .setNonce(generateNonce())
-                        .build();
+                Ready ready = buildReady(serverId, signedLocationReport);
 
                 byte[] signature = sign(ready.toByteArray(), this.privateKey);
                 ServerSignedReady serverSignedReady = ServerSignedReady.newBuilder()
@@ -279,7 +266,6 @@ public class LocationBL {
                     byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i + 1));
                     request = readyRequestBuilder.setEncryptedKey(ByteString.copyFrom(encryptedKey)).build();
                     serverStubs.get(i).ready(request, observer);
-                    System.out.println("Submitted ready to server: " + (i + 1));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -472,6 +458,10 @@ public class LocationBL {
         Echo echo = serverSignedEcho.getEcho();
         SignedLocationReport signedReport = echo.getSignedLocationReport();
 
+        if(!isValidPoW(echo)){
+            return EchoResponse.newBuilder().build();
+        }
+
         if (this.nonceSet.contains(echo.getNonce())) {
             return EchoResponse.newBuilder().build();
         }
@@ -494,7 +484,6 @@ public class LocationBL {
         broadcastVars.getEchos().add(serverSignedEcho);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
         if(aux != null){
-            System.out.println("Got and echo.");
             aux.addEcho(serverSignedEcho);
             broadcastVars = aux;
         }
@@ -513,6 +502,10 @@ public class LocationBL {
         ServerSignedReady serverSignedReady = ServerSignedReady.parseFrom(authSignedEchoBytes);
         Ready ready = serverSignedReady.getReady();
         SignedLocationReport signedReport = ready.getSignedLocationReport();
+
+        if(!isValidPoW(ready)){
+            return ReadyResponse.newBuilder().build();
+        }
 
         if (this.nonceSet.contains(ready.getNonce())) {
             return ReadyResponse.newBuilder().build();
@@ -536,7 +529,6 @@ public class LocationBL {
         broadcastVars.getReadys().add(serverSignedReady);
         BroadcastVars aux = broadcast.putIfAbsent(signedReport, broadcastVars);
         if(aux != null){
-            System.out.println("Got a ready.");
             aux.addReady(serverSignedReady);
             broadcastVars = aux;
         }
