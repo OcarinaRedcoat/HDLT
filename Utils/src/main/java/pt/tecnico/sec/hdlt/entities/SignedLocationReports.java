@@ -22,6 +22,7 @@ public class SignedLocationReports {
         for (int i = 0; i < this.signedLocationReports.size(); i++) {
             if(this.signedLocationReports.get(i).equals(locationReport)){
                 this.numberOfOccurrences.set(i, this.numberOfOccurrences.get(i) + 1);
+                System.out.println(this.signedLocationReports.get(i).equals(locationReport));
                 return;
             }
         }
@@ -42,7 +43,6 @@ public class SignedLocationReports {
         if(count <= (N_SERVERS + F)/2){
             return null;
         }
-
         return best;
     }
 
