@@ -25,6 +25,18 @@ public class HA {
         }
     }
 
+    public HA(String password) {
+        try{
+            this.keyPair = getKeyPairFromKeyStore(
+                    new File("../keys/ha_1.jks"),
+                    password,
+                    "ha_1");
+        } catch (IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException |
+                KeyStoreException e) {
+            System.err.println("There was a problem reading the ha private and public RSA keys. Make sure they exist and are in the correct format.");
+            System.exit(1);
+        }
+    }
     public PrivateKey getPrivateKey() {
         return keyPair.getPrivate();
     }

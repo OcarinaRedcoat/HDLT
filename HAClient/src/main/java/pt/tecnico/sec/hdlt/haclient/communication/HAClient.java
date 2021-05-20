@@ -110,6 +110,11 @@ public class HAClient {
 
         try{
             listReport = haBL.obtainUsersAtLocation(x , y , ep);
+            if (listReport != null) {
+                for (SignedLocationReport rep: listReport) {
+                    System.out.println(rep.getLocationReport());
+                }
+            }
             return listReport;
         }catch (NoSuchAlgorithmException | SignatureException | NoSuchPaddingException | BadPaddingException |
                 InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | InvalidParameterException

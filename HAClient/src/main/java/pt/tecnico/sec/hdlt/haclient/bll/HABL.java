@@ -68,6 +68,7 @@ public class HABL {
             NoSuchPaddingException, InvalidKeyException, SignatureException, InterruptedException, CertificateException,
             IOException {
 
+
         SignedLocationReportWrite signedLocationReportWrite =
                 buildSignedLocationReportWrite(signedLocationReport, this.rid, true);
 
@@ -240,7 +241,7 @@ public class HABL {
                 }
 
             };
-            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(1));
+            byte[] encryptedKey = asymmetricEncrypt(key.getEncoded(), getServerPublicKey(i+1));
 
             request = buildObtainUsersAtLocationRequest( encryptedMessage, iv, encryptedKey);
             serverStubs.get(i).obtainUsersAtLocation(request, observer);
@@ -291,7 +292,6 @@ public class HABL {
         } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException |
                 NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | IOException |
                 SignatureException e) {
-            System.err.println("Received an incorrect server response with message: " + e.getMessage());
         }
     }
 
@@ -301,15 +301,17 @@ public class HABL {
         try {
             byte[] encryptedBody = response.getEncryptedSignedLocationReportList().toByteArray();
             byte[] decryptedMessage = symmetricDecrypt(encryptedBody, key, new IvParameterSpec(response.getIv().toByteArray()));
+
             ServerSignedSignedLocationReportList serverSignedSignedLocationReportList = ServerSignedSignedLocationReportList.parseFrom(decryptedMessage);
             SignedLocationReportList signedLocationReportList = serverSignedSignedLocationReportList.getSignedLocationReportList();
+
             List<SignedLocationReport> signedLocationReports = signedLocationReportList.getSignedLocationReportListList();
 
             byte[] serverSignedSignedLocationReportListMessage = serverSignedSignedLocationReportList.toByteArray();
             byte[] serverSignature = serverSignedSignedLocationReportList.getServerSignature().toByteArray();
 
             if (signedLocationReportList.getRid() != rid ||
-                    !verifySignature(getServerPublicKey(serverId), serverSignedSignedLocationReportListMessage, serverSignature)){
+                    !verifySignature(getServerPublicKey(serverId), signedLocationReportList.toByteArray(), serverSignature)){
                 return;
             }
 
@@ -321,7 +323,7 @@ public class HABL {
                     return;
                 }
 
-                byte[] message = signedLocationReport.toByteArray();
+                byte[] message = signedLocationReport.getLocationReport().toByteArray();
                 byte[] signature = signedLocationReport.getUserSignature().toByteArray();
                 int userId = signedLocationReport.getLocationReport().getLocationInformation().getUserId();
                 if (!verifySignature(getUserPublicKey(userId), message, signature)){
@@ -342,7 +344,6 @@ public class HABL {
 
     private void handleSubmitLocationReportResponse(SubmitLocationReportResponse response, SecretKey key, int serverId){
         try {
-
             byte[] encryptedSignedAck = response.getEncryptedSignedAck().toByteArray();
             byte[] decryptedSignedAck = symmetricDecrypt(encryptedSignedAck, key, new IvParameterSpec(response.getIv().toByteArray()));
 
