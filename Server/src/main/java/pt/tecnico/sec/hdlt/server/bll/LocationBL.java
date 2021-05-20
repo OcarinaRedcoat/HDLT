@@ -39,8 +39,7 @@ import java.util.logging.Level;
 import static pt.tecnico.sec.hdlt.utils.CryptographicUtils.*;
 import static pt.tecnico.sec.hdlt.utils.FileUtils.getServerPublicKey;
 import static pt.tecnico.sec.hdlt.utils.GeneralUtils.*;
-import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildAuthenticatedSignedLocationReportWrite;
-import static pt.tecnico.sec.hdlt.utils.ProtoUtils.buildSubmitLocationReportRequest;
+import static pt.tecnico.sec.hdlt.utils.ProtoUtils.*;
 
 public class LocationBL {
 
@@ -106,7 +105,6 @@ public class LocationBL {
     }
 
     public SubmitLocationReportResponse submitLocationReport(SubmitLocationReportRequest request) throws Exception {
-        System.out.println("Someone submitted a report.");
         // Authenticate request
         byte[] key = decryptKey(request.getKey().toByteArray(), this.privateKey);
         byte[] authSignedReportBytes = decryptRequest(request.getEncryptedAuthenticatedSignedLocationReportWrite().toByteArray(), key, request.getIv().toByteArray());
@@ -181,11 +179,7 @@ public class LocationBL {
         Context context = Context.current().fork();
         context.run(() -> {
             try {
-                Echo echo = Echo.newBuilder()
-                        .setSignedLocationReport(signedLocationReport)
-                        .setServerId(serverId)
-                        .setNonce(generateNonce())
-                        .build();
+                Echo echo = buildEcho(serverId, signedLocationReport);
 
                 byte[] signature = sign(echo.toByteArray(), this.privateKey);
                 ServerSignedEcho serverSignedEcho = ServerSignedEcho.newBuilder()
@@ -235,11 +229,7 @@ public class LocationBL {
         Context context = Context.current().fork();
         context.run(() -> {
             try {
-                Ready ready = Ready.newBuilder()
-                        .setSignedLocationReport(signedLocationReport)
-                        .setServerId(serverId)
-                        .setNonce(generateNonce())
-                        .build();
+                Ready ready = buildReady(serverId, signedLocationReport);
 
                 byte[] signature = sign(ready.toByteArray(), this.privateKey);
                 ServerSignedReady serverSignedReady = ServerSignedReady.newBuilder()
@@ -468,6 +458,10 @@ public class LocationBL {
         Echo echo = serverSignedEcho.getEcho();
         SignedLocationReport signedReport = echo.getSignedLocationReport();
 
+        if(!isValidPoW(echo)){
+            return EchoResponse.newBuilder().build();
+        }
+
         if (this.nonceSet.contains(echo.getNonce())) {
             return EchoResponse.newBuilder().build();
         }
@@ -508,6 +502,10 @@ public class LocationBL {
         ServerSignedReady serverSignedReady = ServerSignedReady.parseFrom(authSignedEchoBytes);
         Ready ready = serverSignedReady.getReady();
         SignedLocationReport signedReport = ready.getSignedLocationReport();
+
+        if(!isValidPoW(ready)){
+            return ReadyResponse.newBuilder().build();
+        }
 
         if (this.nonceSet.contains(ready.getNonce())) {
             return ReadyResponse.newBuilder().build();

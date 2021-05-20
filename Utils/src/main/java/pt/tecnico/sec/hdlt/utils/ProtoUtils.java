@@ -67,6 +67,32 @@ public class ProtoUtils {
         return locationQuery;
     }
 
+    public static Echo buildEcho(int serverId, SignedLocationReport signedLocationReport)
+            throws IOException, NoSuchAlgorithmException {
+        Echo echo;
+        do{
+            echo = Echo.newBuilder()
+                    .setSignedLocationReport(signedLocationReport)
+                    .setServerId(serverId)
+                    .setNonce(generateNonce())
+                    .build();
+        } while (!isValidPoW(echo));
+        return echo;
+    }
+
+    public static Ready buildReady(int serverId, SignedLocationReport signedLocationReport)
+            throws IOException, NoSuchAlgorithmException {
+        Ready ready;
+        do{
+            ready = Ready.newBuilder()
+                    .setSignedLocationReport(signedLocationReport)
+                    .setServerId(serverId)
+                    .setNonce(generateNonce())
+                    .build();
+        } while (!isValidPoW(ready));
+        return ready;
+    }
+
     public static ProofsQuery buildProofsQuery(Client client, int rid, List<Long> epochs)
             throws IOException, NoSuchAlgorithmException {
         ProofsQuery proofsQuery;

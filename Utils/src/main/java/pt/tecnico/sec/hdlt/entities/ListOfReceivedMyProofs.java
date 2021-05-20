@@ -19,9 +19,8 @@ public class ListOfReceivedMyProofs {
         this.numberOfOccurrences = new ArrayList<>();
     }
 
-    public void addReceivedProofs(Proofs receivedMyProofs) {
+    public synchronized void addReceivedProofs(Proofs receivedMyProofs) {
         for (int i = 0; i < this.listOfReceivedProofs.size(); i++) {
-            //TODO this equals doesn't work
             if(this.listOfReceivedProofs.get(i).equals(receivedMyProofs)){
                 this.numberOfOccurrences.set(i, this.numberOfOccurrences.get(i) + 1);
                 return;
@@ -31,7 +30,7 @@ public class ListOfReceivedMyProofs {
         this.numberOfOccurrences.add(1);
     }
 
-    public Proofs getBestProofs(){
+    public synchronized Proofs getBestProofs(){
         Proofs best = null;
         int count = 0;
         for (int i = 0; i < this.listOfReceivedProofs.size(); i++) {
@@ -48,7 +47,7 @@ public class ListOfReceivedMyProofs {
         return best;
     }
 
-    public int numberOfAcks(){
+    public synchronized int numberOfAcks(){
         int ackCount = 0;
         for (Integer aux: numberOfOccurrences){
             ackCount+=aux;

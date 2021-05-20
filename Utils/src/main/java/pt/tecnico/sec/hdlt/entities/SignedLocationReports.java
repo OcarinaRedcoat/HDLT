@@ -18,9 +18,8 @@ public class SignedLocationReports {
         this.numberOfOccurrences = new ArrayList<>();
     }
 
-    public void addLocationReport(SignedLocationReport locationReport) {
+    public synchronized void addLocationReport(SignedLocationReport locationReport) {
         for (int i = 0; i < this.signedLocationReports.size(); i++) {
-            //TODO this equals doesn't work
             if(this.signedLocationReports.get(i).equals(locationReport)){
                 this.numberOfOccurrences.set(i, this.numberOfOccurrences.get(i) + 1);
                 return;
@@ -30,7 +29,7 @@ public class SignedLocationReports {
         this.numberOfOccurrences.add(1);
     }
 
-    public SignedLocationReport getBestLocationReport(){
+    public synchronized SignedLocationReport getBestLocationReport(){
         SignedLocationReport best = null;
         int count = 0;
         for (int i = 0; i < this.signedLocationReports.size(); i++) {
@@ -47,7 +46,7 @@ public class SignedLocationReports {
         return best;
     }
 
-    public int numberOfAcks(){
+    public synchronized int numberOfAcks(){
         int ackCount = 0;
         for (Integer aux: numberOfOccurrences){
             ackCount+=aux;
