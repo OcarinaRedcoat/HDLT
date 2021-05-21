@@ -34,9 +34,9 @@ mvn exec:java
 To run the Server:
 
 ```
-mvn exec:java -Dexec.args="<# of byzantine users>"
+mvn exec:java -Dexec.args="<server_id> <server password>"
+By default the <server password> is server_<server_id>
 ```
-
 
 ### Run Tests
 
